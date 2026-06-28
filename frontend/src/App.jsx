@@ -73,12 +73,24 @@ const COIN_ICONS = {
 };
 
 const EXCHANGE_ICONS = {
+  // CEX
   'Binance':     'https://assets.coingecko.com/markets/images/52/small/binance.jpg',
   'Bybit':       'https://assets.coingecko.com/markets/images/698/small/bybit_spot.png',
   'Gate.io':     'https://assets.coingecko.com/markets/images/60/small/gate_io_logo1.jpg',
+  'OKX':         'https://assets.coingecko.com/markets/images/96/small/WeChat_Image_20220117220452.png',
+  'Kraken':      'https://assets.coingecko.com/markets/images/29/small/kraken.jpg',
+  'KuCoin':      'https://assets.coingecko.com/markets/images/61/small/kucoin.png',
+  'Coinbase':    'https://assets.coingecko.com/markets/images/23/small/Coinbase_Coin_Primary.png',
+  'HTX':         'https://assets.coingecko.com/markets/images/25/small/huobi.jpg',
+  // DEX
   'Raydium':     'https://assets.coingecko.com/coins/images/13928/small/PSigc4ie_400x400.jpg',
   'Uniswap':     'https://assets.coingecko.com/coins/images/12504/small/uniswap-uni.png',
   'PancakeSwap': 'https://assets.coingecko.com/coins/images/12632/small/pancakeswap-cake-logo.png',
+  'Orca':        'https://assets.coingecko.com/coins/images/17687/small/sunset-orca-icon.png',
+  'Curve':       'https://assets.coingecko.com/coins/images/12124/small/Curve.png',
+  'SushiSwap':   'https://assets.coingecko.com/coins/images/12271/small/512x512_Logo_no_chop.png',
+  'dYdX':        'https://assets.coingecko.com/coins/images/17500/small/hjnIm9bV.jpg',
+  'Jupiter':     'https://assets.coingecko.com/coins/images/34188/small/jup.png',
 };
 
 const SYMBOL_COLORS = {
@@ -206,12 +218,22 @@ function App() {
     const saved = localStorage.getItem('arbitrage_balances');
     if (saved) return JSON.parse(saved);
     return {
-      Binance: { USDC: 15420.50, ETH: 0.45, PEPE: 12500000, status: 'Online', latency: '52ms', type: 'CEX', network: 'Ethereum/BSC/Solana', apiStatus: 'Terkoneksi', fee: 'Spot: 0.1% | Penarikan: $1.0' },
-      Bybit: { USDC: 10200.00, SOL: 12.40, BONK: 5600000, status: 'Online', latency: '84ms', type: 'CEX', network: 'Ethereum/BSC/Solana', apiStatus: 'Terkoneksi', fee: 'Spot: 0.1% | Penarikan: $1.0' },
-      'Gate.io': { USDC: 4150.25, RENDER: 12.0, POPCAT: 85000, status: 'Online', latency: '120ms', type: 'CEX', network: 'Ethereum/BSC/Solana', apiStatus: 'Terkoneksi', fee: 'Spot: 0.2% | Penarikan: $1.5' },
-      Raydium: { USDC: 12850.10, SOL: 45.82, BONK: 15400000, status: 'Online', latency: '8ms', type: 'DEX', network: 'Solana (SPL)', apiStatus: 'Phantom Connected', fee: 'Swap: 0.25% | Gas: ~0.00005 SOL' },
-      Uniswap: { USDC: 3450.00, ETH: 1.15, W: 500000, status: 'Online', latency: '15ms', type: 'DEX', network: 'Ethereum/Arbitrum', apiStatus: 'MetaMask Connected', fee: 'Swap: 0.3% | Gas: ~0.002 ETH' },
-      PancakeSwap: { USDC: 1820.75, BNB: 2.40, FLOKI: 2500000, status: 'Online', latency: '22ms', type: 'DEX', network: 'BNB Chain (BEP20)', apiStatus: 'MetaMask Connected', fee: 'Swap: 0.25% | Gas: ~0.0008 BNB' }
+      Binance:     { USDC: 15420.50, ETH: 0.45, PEPE: 12500000,             status: 'Online', latency: '52ms',  type: 'CEX', network: 'Ethereum / BSC / Solana',    apiStatus: 'Terkoneksi',          fee: 'Spot: 0.1% | Penarikan: $1.0'            },
+      Bybit:       { USDC: 10200.00, SOL: 12.40, BONK: 5600000,             status: 'Online', latency: '84ms',  type: 'CEX', network: 'Ethereum / BSC / Solana',    apiStatus: 'Terkoneksi',          fee: 'Spot: 0.1% | Penarikan: $1.0'            },
+      'Gate.io':   { USDC:  4150.25, RENDER: 12.0, POPCAT: 85000,           status: 'Online', latency: '120ms', type: 'CEX', network: 'Ethereum / BSC / Solana',    apiStatus: 'Terkoneksi',          fee: 'Spot: 0.2% | Penarikan: $1.5'            },
+      OKX:         { USDC:  8750.00, SOL: 8.20, ETH: 0.30, BNB: 1.5,       status: 'Online', latency: '65ms',  type: 'CEX', network: 'Ethereum / BSC / Solana / TRON', apiStatus: 'Terkoneksi',        fee: 'Spot: 0.08% | Penarikan: $1.0'           },
+      Kraken:      { USDC:  6200.00, ETH: 0.80, BNB: 0.50,                  status: 'Online', latency: '98ms',  type: 'CEX', network: 'Ethereum / Bitcoin / Solana', apiStatus: 'Terkoneksi',          fee: 'Spot: 0.16% | Penarikan: $0.90'          },
+      KuCoin:      { USDC:  3800.00, SOL: 5.40, FLOKI: 1200000,             status: 'Online', latency: '110ms', type: 'CEX', network: 'Ethereum / BSC / KCC',       apiStatus: 'Terkoneksi',          fee: 'Spot: 0.1% | Penarikan: $1.2'            },
+      Coinbase:    { USDC: 12500.00, ETH: 1.20, RENDER: 8.0,                status: 'Online', latency: '75ms',  type: 'CEX', network: 'Ethereum / Base / Solana',   apiStatus: 'Terkoneksi',          fee: 'Spot: 0.6% (taker) | Penarikan: $0.50'  },
+      HTX:         { USDC:  2900.00, SOL: 3.10, PEPE: 8000000,              status: 'Online', latency: '140ms', type: 'CEX', network: 'Ethereum / BSC / TRON',      apiStatus: 'Terkoneksi',          fee: 'Spot: 0.2% | Penarikan: $1.5'            },
+      Raydium:     { USDC: 12850.10, SOL: 45.82, BONK: 15400000,            status: 'Online', latency: '8ms',   type: 'DEX', network: 'Solana (SPL)',              apiStatus: 'Phantom Connected',   fee: 'Swap: 0.25% | Gas: ~0.00005 SOL'         },
+      Uniswap:     { USDC:  3450.00, ETH: 1.15, W: 500000,                  status: 'Online', latency: '15ms',  type: 'DEX', network: 'Ethereum / Arbitrum / Base', apiStatus: 'MetaMask Connected',  fee: 'Swap: 0.3% | Gas: ~0.002 ETH'            },
+      PancakeSwap: { USDC:  1820.75, BNB: 2.40, FLOKI: 2500000,             status: 'Online', latency: '22ms',  type: 'DEX', network: 'BNB Chain (BEP20)',          apiStatus: 'MetaMask Connected',  fee: 'Swap: 0.25% | Gas: ~0.0008 BNB'          },
+      Orca:        { USDC:  5200.00, SOL: 18.50, BONK: 6000000,             status: 'Online', latency: '6ms',   type: 'DEX', network: 'Solana (SPL)',              apiStatus: 'Phantom Connected',   fee: 'Swap: 0.3% | Gas: ~0.00003 SOL'          },
+      Curve:       { USDC:  9800.00, USDE: 4500, FDUSD: 3100, PYUSD: 2200, status: 'Online', latency: '18ms',  type: 'DEX', network: 'Ethereum / Arbitrum / Polygon', apiStatus: 'MetaMask Connected', fee: 'Swap: 0.04% | Gas: ~0.001 ETH'           },
+      SushiSwap:   { USDC:  2100.00, ETH: 0.60, RENDER: 5.0,                status: 'Online', latency: '20ms',  type: 'DEX', network: 'Ethereum / Arbitrum / BSC',  apiStatus: 'MetaMask Connected',  fee: 'Swap: 0.3% | Gas: ~0.0018 ETH'           },
+      dYdX:        { USDC:  7400.00, ETH: 0.90,                              status: 'Online', latency: '12ms',  type: 'DEX', network: 'StarkEx / Cosmos (dYdX Chain)', apiStatus: 'MetaMask Connected', fee: 'Taker: 0.05% | Maker: 0.0%'             },
+      Jupiter:     { USDC:  6600.00, SOL: 22.00, BONK: 9000000,             status: 'Online', latency: '5ms',   type: 'DEX', network: 'Solana (SPL)',              apiStatus: 'Phantom Connected',   fee: 'Swap: 0.2% | Gas: ~0.00004 SOL'          },
     };
   });
   const [agentStatus,       setAgentStatus]       = useState('running');
