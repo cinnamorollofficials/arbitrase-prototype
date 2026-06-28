@@ -532,3 +532,33 @@ h1, h2, h3, h4 {
     padding: 12px 16px;
   }
 }
+
+/* Compact Table Mode */
+.compact-table th {
+  padding: 6px 12px !important;
+  font-size: 11px !important;
+}
+
+.compact-table td {
+  padding: 6px 12px !important;
+  font-size: 11px !important;
+  height: 38px !important; /* Shorter row heights */
+}
+
+.compact-table .badge {
+  font-size: 8px !important;
+  padding: 1px 4px !important;
+}
+
+.compact-table button {
+  padding: 2px 6px !important;
+  font-size: 10px !important;
+}
+
+.compact-table td div {
+  font-size: 11px !important;
+}
+
+.compact-table td span {
+  font-size: 11px !important;
+}

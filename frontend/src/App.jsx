@@ -219,6 +219,7 @@ function App() {
   const [capital,             setCapital]             = useUrlState('capital', 10000);
   const [activeSymbol,       setActiveSymbol]       = useUrlState('coin', 'USDT');
   const [activeTab,           setActiveTab]           = useUrlState('tab', 'prices');
+  const [isCompact,           setIsCompact]           = useUrlState('compact', 'false');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [transactions, setTransactions] = useState(() => {
     const saved = localStorage.getItem('arbitrage_transactions');
@@ -338,6 +339,8 @@ function App() {
     { symbol: 'USDE', name: 'Athena USDe', spread: 0.45, buyEx: 'Gate.io', sellEx: 'Bybit', category: 'STABLE' },
     { symbol: 'PYUSD', name: 'PayPal USD', spread: 0.28, buyEx: 'Bybit', sellEx: 'Gate.io', category: 'STABLE' }
   ], []);
+
+  const compactMode = isCompact === 'true';
 
   // AI Agent Log & Discovery Simulator
   useEffect(() => {
@@ -972,108 +975,142 @@ function App() {
         </div>
       )}
 
-      {/* View Toggle Tabs */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-        <button
-          onClick={() => setActiveTab('prices')}
-          className="tab-btn"
-          style={{
-            padding: '10px 20px',
-            fontSize: '13px',
-            fontWeight: '700',
-            backgroundColor: activeTab === 'prices' ? 'var(--md-sys-color-primary-container)' : 'var(--md-sys-color-surface-container-high)',
-            color: activeTab === 'prices' ? 'var(--md-sys-color-on-primary-container)' : 'var(--md-sys-color-on-surface-variant)',
-            borderRadius: 'var(--md-shape-corner-medium)',
-            border: activeTab === 'prices' ? '1px solid var(--md-sys-color-primary)' : '1px solid var(--md-sys-color-outline-variant)',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px'
-          }}
-        >
-          📊 Perbandingan Bursa (Real-time)
-        </button>
-        <button
-          onClick={() => setActiveTab('queue')}
-          className="tab-btn"
-          style={{
-            padding: '10px 20px',
-            fontSize: '13px',
-            fontWeight: '700',
-            backgroundColor: activeTab === 'queue' ? 'var(--md-sys-color-primary-container)' : 'var(--md-sys-color-surface-container-high)',
-            color: activeTab === 'queue' ? 'var(--md-sys-color-on-primary-container)' : 'var(--md-sys-color-on-surface-variant)',
-            borderRadius: 'var(--md-shape-corner-medium)',
-            border: activeTab === 'queue' ? '1px solid var(--md-sys-color-primary)' : '1px solid var(--md-sys-color-outline-variant)',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px'
-          }}
-        >
-          ⚙️ Antrean Transaksi ({transactions.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('agent')}
-          className="tab-btn"
-          style={{
-            padding: '10px 20px',
-            fontSize: '13px',
-            fontWeight: '700',
-            backgroundColor: activeTab === 'agent' ? 'var(--md-sys-color-primary-container)' : 'var(--md-sys-color-surface-container-high)',
-            color: activeTab === 'agent' ? 'var(--md-sys-color-on-primary-container)' : 'var(--md-sys-color-on-surface-variant)',
-            borderRadius: 'var(--md-shape-corner-medium)',
-            border: activeTab === 'agent' ? '1px solid var(--md-sys-color-primary)' : '1px solid var(--md-sys-color-outline-variant)',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px'
-          }}
-        >
-          🤖 Agen AI Scanner
-        </button>
-        <button
-          onClick={() => setActiveTab('balances')}
-          className="tab-btn"
-          style={{
-            padding: '10px 20px',
-            fontSize: '13px',
-            fontWeight: '700',
-            backgroundColor: activeTab === 'balances' ? 'var(--md-sys-color-primary-container)' : 'var(--md-sys-color-surface-container-high)',
-            color: activeTab === 'balances' ? 'var(--md-sys-color-on-primary-container)' : 'var(--md-sys-color-on-surface-variant)',
-            borderRadius: 'var(--md-shape-corner-medium)',
-            border: activeTab === 'balances' ? '1px solid var(--md-sys-color-primary)' : '1px solid var(--md-sys-color-outline-variant)',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px'
-          }}
-        >
-          🏦 Saldo & Dompet
-        </button>
-        <button
-          onClick={() => setActiveTab('portfolio')}
-          className="tab-btn"
-          style={{
-            padding: '10px 20px',
-            fontSize: '13px',
-            fontWeight: '700',
-            backgroundColor: activeTab === 'portfolio' ? 'var(--md-sys-color-primary-container)' : 'var(--md-sys-color-surface-container-high)',
-            color: activeTab === 'portfolio' ? 'var(--md-sys-color-on-primary-container)' : 'var(--md-sys-color-on-surface-variant)',
-            borderRadius: 'var(--md-shape-corner-medium)',
-            border: activeTab === 'portfolio' ? '1px solid var(--md-sys-color-primary)' : '1px solid var(--md-sys-color-outline-variant)',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px'
-          }}
-        >
-          🪙 Portofolio Koin
-        </button>
+      {/* View Toggle Tabs & Compact Selector */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <button
+            onClick={() => setActiveTab('prices')}
+            className="tab-btn"
+            style={{
+              padding: '10px 20px',
+              fontSize: '13px',
+              fontWeight: '700',
+              backgroundColor: activeTab === 'prices' ? 'var(--md-sys-color-primary-container)' : 'var(--md-sys-color-surface-container-high)',
+              color: activeTab === 'prices' ? 'var(--md-sys-color-on-primary-container)' : 'var(--md-sys-color-on-surface-variant)',
+              borderRadius: 'var(--md-shape-corner-medium)',
+              border: activeTab === 'prices' ? '1px solid var(--md-sys-color-primary)' : '1px solid var(--md-sys-color-outline-variant)',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            📊 Perbandingan Bursa (Real-time)
+          </button>
+          <button
+            onClick={() => setActiveTab('queue')}
+            className="tab-btn"
+            style={{
+              padding: '10px 20px',
+              fontSize: '13px',
+              fontWeight: '700',
+              backgroundColor: activeTab === 'queue' ? 'var(--md-sys-color-primary-container)' : 'var(--md-sys-color-surface-container-high)',
+              color: activeTab === 'queue' ? 'var(--md-sys-color-on-primary-container)' : 'var(--md-sys-color-on-surface-variant)',
+              borderRadius: 'var(--md-shape-corner-medium)',
+              border: activeTab === 'queue' ? '1px solid var(--md-sys-color-primary)' : '1px solid var(--md-sys-color-outline-variant)',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            ⚙️ Antrean Transaksi ({transactions.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('agent')}
+            className="tab-btn"
+            style={{
+              padding: '10px 20px',
+              fontSize: '13px',
+              fontWeight: '700',
+              backgroundColor: activeTab === 'agent' ? 'var(--md-sys-color-primary-container)' : 'var(--md-sys-color-surface-container-high)',
+              color: activeTab === 'agent' ? 'var(--md-sys-color-on-primary-container)' : 'var(--md-sys-color-on-surface-variant)',
+              borderRadius: 'var(--md-shape-corner-medium)',
+              border: activeTab === 'agent' ? '1px solid var(--md-sys-color-primary)' : '1px solid var(--md-sys-color-outline-variant)',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            🤖 Agen AI Scanner
+          </button>
+          <button
+            onClick={() => setActiveTab('balances')}
+            className="tab-btn"
+            style={{
+              padding: '10px 20px',
+              fontSize: '13px',
+              fontWeight: '700',
+              backgroundColor: activeTab === 'balances' ? 'var(--md-sys-color-primary-container)' : 'var(--md-sys-color-surface-container-high)',
+              color: activeTab === 'balances' ? 'var(--md-sys-color-on-primary-container)' : 'var(--md-sys-color-on-surface-variant)',
+              borderRadius: 'var(--md-shape-corner-medium)',
+              border: activeTab === 'balances' ? '1px solid var(--md-sys-color-primary)' : '1px solid var(--md-sys-color-outline-variant)',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            🏦 Saldo & Dompet
+          </button>
+          <button
+            onClick={() => setActiveTab('portfolio')}
+            className="tab-btn"
+            style={{
+              padding: '10px 20px',
+              fontSize: '13px',
+              fontWeight: '700',
+              backgroundColor: activeTab === 'portfolio' ? 'var(--md-sys-color-primary-container)' : 'var(--md-sys-color-surface-container-high)',
+              color: activeTab === 'portfolio' ? 'var(--md-sys-color-on-primary-container)' : 'var(--md-sys-color-on-surface-variant)',
+              borderRadius: 'var(--md-shape-corner-medium)',
+              border: activeTab === 'portfolio' ? '1px solid var(--md-sys-color-primary)' : '1px solid var(--md-sys-color-outline-variant)',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            🪙 Portofolio Koin
+          </button>
+        </div>
+
+        {/* Compact View Switch */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'var(--md-sys-color-surface-container-high)', padding: '6px 14px', borderRadius: 'var(--md-shape-corner-medium)', border: '1px solid var(--md-sys-color-outline-variant)' }}>
+          <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--md-sys-color-on-surface-variant)' }}>Mode Compact</span>
+          <button 
+            onClick={() => setIsCompact(compactMode ? 'false' : 'true')}
+            aria-label="Toggle mode compact"
+            style={{
+              width: '40px',
+              height: '22px',
+              borderRadius: '11px',
+              backgroundColor: compactMode ? 'var(--md-sys-color-primary)' : 'rgba(255,255,255,0.15)',
+              border: 'none',
+              cursor: 'pointer',
+              position: 'relative',
+              transition: 'background-color 0.2s ease',
+              padding: 0
+            }}
+          >
+            <div style={{
+              width: '14px',
+              height: '14px',
+              borderRadius: '50%',
+              backgroundColor: '#ffffff',
+              position: 'absolute',
+              top: '4px',
+              left: compactMode ? '22px' : '4px',
+              transition: 'left 0.2s ease',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
+            }} />
+          </button>
+        </div>
       </div>
 
       {/* Main Table Section */}
@@ -1106,7 +1143,7 @@ function App() {
           </div>
 
         {/* Table Content */}
-        <div className="table-wrapper">
+        <div className={`table-wrapper ${compactMode ? 'compact-table' : ''}`}>
           <table className="md3-table">
             <thead>
               <tr>
@@ -1305,7 +1342,7 @@ function App() {
                 <p style={{ fontSize: '12px', marginTop: '4px' }}>Silakan eksekusi rute arbitrase yang menguntungkan dari tab sebelah.</p>
               </div>
             ) : (
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+              <table className={compactMode ? 'compact-table' : ''} style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
                     <th style={{ padding: '12px 8px', color: 'var(--md-sys-color-on-surface-variant)' }}>ID Transaksi</th>
@@ -1339,7 +1376,7 @@ function App() {
                           </td>
                           <td style={{ padding: '12px 8px', fontWeight: '700' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-                              <CoinIcon symbol={tx.symbol} size={20} />
+                              <CoinIcon symbol={tx.symbol} size={compactMode ? 16 : 20} />
                               {tx.symbol}
                             </div>
                           </td>
@@ -1781,7 +1818,7 @@ function App() {
           </div>
           
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+            <table className={compactMode ? 'compact-table' : ''} style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', backgroundColor: 'rgba(255,255,255,0.02)' }}>
                   <th style={{ padding: '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700' }}>Bursa</th>
@@ -1810,7 +1847,7 @@ function App() {
                     {/* Bursa Name & Badge */}
                     <td style={{ padding: '16px 20px', fontWeight: '700' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <ExchangeIcon name={exName} size={28} />
+                        <ExchangeIcon name={exName} size={compactMode ? 20 : 28} />
                         <span>{exName}</span>
                         <span className={`badge ${info.type === 'CEX' ? 'badge-cex' : 'badge-dex'}`}>
                           {info.type}
@@ -1986,7 +2023,7 @@ function App() {
           </div>
 
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+            <table className={compactMode ? 'compact-table' : ''} style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', backgroundColor: 'rgba(255,255,255,0.02)' }}>
                   <th style={{ padding: '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700' }}>Koin</th>
@@ -2018,7 +2055,7 @@ function App() {
                       {/* Koin Name */}
                       <td style={{ padding: '16px 20px', fontWeight: '700' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <CoinIcon symbol={coin.symbol} size={28} />
+                           <CoinIcon symbol={coin.symbol} size={compactMode ? 20 : 28} />
                           <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <span>{coin.symbol}</span>
                             <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: 'normal' }}>{coin.name}</span>
