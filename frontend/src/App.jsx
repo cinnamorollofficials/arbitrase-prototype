@@ -49,6 +49,15 @@ const formatRupiah = (usdVal, rate) => {
 
 const defaultSymbols = ['USDT', 'SOL', 'ETH', 'PEPE', 'BONK', 'WIF', 'FLOKI', 'SHIB', 'JUP', 'W', 'RENDER', 'POPCAT', 'MEW', 'ENA', 'ONDO'];
 
+const TX_STEPS = [
+  { label: 'Inisiasi', desc: 'Antrean Terbuka' },
+  { label: 'Cek Saldo', desc: 'Verifikasi Modal' },
+  { label: 'Eksekusi Beli', desc: 'Beli di Bursa Murah' },
+  { label: 'Kirim Aset', desc: 'Transfer Lintas Bursa' },
+  { label: 'Eksekusi Jual', desc: 'Jual di Bursa Mahal' },
+  { label: 'Selesai', desc: 'Profit Masuk Dompet' }
+];
+
 function App() {
   const [prices, setPrices] = useState([]);
   const [usdToIdrRate, setUsdToIdrRate] = useState(16500);
@@ -85,6 +94,7 @@ function App() {
     const saved = localStorage.getItem('arbitrage_transactions');
     return saved ? JSON.parse(saved) : [];
   });
+  const [expandedTxId, setExpandedTxId] = useState(null);
 
   const handleExecuteTransaction = () => {
     const newTx = {
@@ -97,14 +107,52 @@ function App() {
       grossProfit: netCalculation.gross,
       fees: netCalculation.fees,
       netProfit: netCalculation.net,
-      status: 'Dalam Antrean'
+      status: 'Dalam Antrean',
+      stepIndex: 0
     };
 
     const updated = [newTx, ...transactions];
     setTransactions(updated);
     localStorage.setItem('arbitrage_transactions', JSON.stringify(updated));
     setShowConfirmModal(false);
+    
+    // Auto-focus and open the new transaction pipeline
+    setExpandedTxId(newTx.id);
+    setActiveTab('queue');
   };
+
+  // Background transaction pipeline simulator
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTransactions((prevTxs) => {
+        let changed = false;
+        const updated = prevTxs.map((tx) => {
+          const currentStep = tx.stepIndex !== undefined ? tx.stepIndex : 0;
+          if (currentStep < 5) {
+            changed = true;
+            const nextStep = currentStep + 1;
+            let newStatus = 'Diproses';
+            if (nextStep === 5) {
+              newStatus = 'Selesai';
+            }
+            return {
+              ...tx,
+              stepIndex: nextStep,
+              status: newStatus
+            };
+          }
+          return tx;
+        });
+        if (changed) {
+          localStorage.setItem('arbitrage_transactions', JSON.stringify(updated));
+          return updated;
+        }
+        return prevTxs;
+      });
+    }, 4000); // Progress every 4 seconds
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Fetch prices from backend
   const fetchPrices = async (symbol = activeSymbol, silent = false) => {
@@ -741,62 +789,204 @@ function App() {
                   </tr>
                 </thead>
                 <tbody>
-                  {transactions.map(tx => (
-                    <tr key={tx.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                      <td style={{ padding: '12px 8px', fontWeight: '700', fontFamily: 'monospace' }}>{tx.id}</td>
-                      <td style={{ padding: '12px 8px', color: 'var(--md-sys-color-on-surface-variant)' }}>
-                        {new Date(tx.timestamp).toLocaleString('id-ID')}
-                      </td>
-                      <td style={{ padding: '12px 8px', fontWeight: '700' }}>{tx.symbol}</td>
-                      <td style={{ padding: '12px 8px' }}>
-                        <span style={{ fontWeight: '600' }}>{tx.buyEx}</span> 
-                        <span style={{ margin: '0 4px', color: 'var(--md-sys-color-outline)' }}>➔</span> 
-                        <span style={{ fontWeight: '600' }}>{tx.sellEx}</span>
-                      </td>
-                      <td style={{ padding: '12px 8px', fontWeight: '600' }}>
-                        ${tx.capital.toLocaleString()} USDC
-                      </td>
-                      <td style={{ padding: '12px 8px', fontWeight: '700', color: tx.netProfit > 0 ? 'var(--color-profit-green)' : 'var(--md-sys-color-error)' }}>
-                        {tx.netProfit >= 0 ? '+' : ''}${tx.netProfit.toFixed(2)}
-                        <div style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '400', marginTop: '1px' }}>
-                          {formatRupiah(tx.netProfit, usdToIdrRate)}
-                        </div>
-                      </td>
-                      <td style={{ padding: '12px 8px' }}>
-                        <span style={{
-                          padding: '3px 8px',
-                          borderRadius: 'var(--md-shape-corner-full)',
-                          fontSize: '11px',
-                          fontWeight: '700',
-                          backgroundColor: 'rgba(52, 211, 153, 0.15)',
-                          color: 'var(--color-profit-green)',
-                          border: '1px solid rgba(52, 211, 153, 0.3)',
-                          display: 'inline-block'
-                        }}>
-                          {tx.status}
-                        </span>
-                      </td>
-                      <td style={{ padding: '12px 8px', textAlign: 'center' }}>
-                        <button
-                          onClick={() => {
-                            const updated = transactions.filter(t => t.id !== tx.id);
-                            setTransactions(updated);
-                            localStorage.setItem('arbitrage_transactions', JSON.stringify(updated));
-                          }}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            color: 'var(--md-sys-color-error)',
+                  {transactions.map(tx => {
+                    const isExpanded = expandedTxId === tx.id;
+                    const currentStep = tx.stepIndex !== undefined ? tx.stepIndex : 0;
+                    return (
+                      <React.Fragment key={tx.id}>
+                        <tr 
+                          onClick={() => setExpandedTxId(isExpanded ? null : tx.id)}
+                          style={{ 
+                            borderBottom: '1px solid rgba(255,255,255,0.04)', 
                             cursor: 'pointer',
-                            fontSize: '16px',
-                            padding: '4px 8px'
+                            backgroundColor: isExpanded ? 'rgba(255, 255, 255, 0.02)' : 'transparent',
+                            transition: 'all 0.2s ease'
                           }}
                         >
-                          ✕
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                          <td style={{ padding: '12px 8px', fontWeight: '700', fontFamily: 'monospace' }}>{tx.id}</td>
+                          <td style={{ padding: '12px 8px', color: 'var(--md-sys-color-on-surface-variant)' }}>
+                            {new Date(tx.timestamp).toLocaleString('id-ID')}
+                          </td>
+                          <td style={{ padding: '12px 8px', fontWeight: '700' }}>{tx.symbol}</td>
+                          <td style={{ padding: '12px 8px' }}>
+                            <span style={{ fontWeight: '600' }}>{tx.buyEx}</span> 
+                            <span style={{ margin: '0 4px', color: 'var(--md-sys-color-outline)' }}>➔</span> 
+                            <span style={{ fontWeight: '600' }}>{tx.sellEx}</span>
+                          </td>
+                          <td style={{ padding: '12px 8px', fontWeight: '600' }}>
+                            ${tx.capital.toLocaleString()} USDC
+                          </td>
+                          <td style={{ padding: '12px 8px', fontWeight: '700', color: tx.netProfit > 0 ? 'var(--color-profit-green)' : 'var(--md-sys-color-error)' }}>
+                            {tx.netProfit >= 0 ? '+' : ''}${tx.netProfit.toFixed(2)}
+                            <div style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '400', marginTop: '1px' }}>
+                              {formatRupiah(tx.netProfit, usdToIdrRate)}
+                            </div>
+                          </td>
+                          <td style={{ padding: '12px 8px' }}>
+                            <span style={{
+                              padding: '4px 10px',
+                              borderRadius: 'var(--md-shape-corner-full)',
+                              fontSize: '11px',
+                              fontWeight: '700',
+                              backgroundColor: tx.status === 'Selesai' ? 'rgba(52, 211, 153, 0.15)' : 'rgba(0, 176, 255, 0.15)',
+                              color: tx.status === 'Selesai' ? 'var(--color-profit-green)' : 'var(--md-sys-color-primary)',
+                              border: tx.status === 'Selesai' ? '1px solid rgba(52, 211, 153, 0.3)' : '1px solid rgba(0, 176, 255, 0.3)',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px'
+                            }}>
+                              <span className={`status-indicator ${tx.status !== 'Selesai' ? 'loading' : ''}`} style={{ width: '6px', height: '6px' }}></span>
+                              {tx.status}
+                            </span>
+                          </td>
+                          <td style={{ padding: '12px 8px', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+                            <button
+                              onClick={() => {
+                                const updated = transactions.filter(t => t.id !== tx.id);
+                                setTransactions(updated);
+                                localStorage.setItem('arbitrage_transactions', JSON.stringify(updated));
+                              }}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: 'var(--md-sys-color-error)',
+                                cursor: 'pointer',
+                                fontSize: '16px',
+                                padding: '4px 8px'
+                              }}
+                              title="Hapus dari antrean"
+                            >
+                              ✕
+                            </button>
+                          </td>
+                        </tr>
+
+                        {/* Collapsible Pipeline Detail Sub-row */}
+                        {isExpanded && (
+                          <tr style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)' }} onClick={(e) => e.stopPropagation()}>
+                            <td colSpan={8} style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                <div style={{ fontWeight: '700', fontSize: '13px', color: 'var(--md-sys-color-primary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <span>🚀 Pipeline Alur Eksekusi ({tx.id})</span>
+                                  {tx.status !== 'Selesai' && (
+                                    <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '400' }}>
+                                      Proses berjalan secara otomatis...
+                                    </span>
+                                  )}
+                                </div>
+                                
+                                {/* Stepper Graphics */}
+                                <div style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  position: 'relative',
+                                  marginTop: '16px',
+                                  padding: '0 20px',
+                                  minHeight: '80px',
+                                  overflowX: 'auto'
+                                }}>
+                                  {/* Line behind bubbles */}
+                                  <div style={{
+                                    position: 'absolute',
+                                    top: '13px',
+                                    left: '50px',
+                                    right: '50px',
+                                    height: '3px',
+                                    background: 'rgba(255,255,255,0.08)',
+                                    zIndex: 1
+                                  }} />
+                                  
+                                  {/* Green completed line */}
+                                  <div style={{
+                                    position: 'absolute',
+                                    top: '13px',
+                                    left: '50px',
+                                    width: `${(currentStep / 5) * 88}%`,
+                                    height: '3px',
+                                    background: 'var(--color-profit-green)',
+                                    transition: 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+                                    zIndex: 2
+                                  }} />
+
+                                  {TX_STEPS.map((step, idx) => {
+                                    const isCompleted = idx < currentStep;
+                                    const isActive = idx === currentStep;
+                                    
+                                    let bubbleBg = 'var(--md-sys-color-surface-container-high)';
+                                    let bubbleBorder = '1px solid rgba(255,255,255,0.1)';
+                                    let textColor = 'var(--md-sys-color-on-surface-variant)';
+
+                                    if (isCompleted) {
+                                      bubbleBg = 'var(--color-profit-green)';
+                                      bubbleBorder = '1px solid var(--color-profit-green)';
+                                      textColor = '#ffffff';
+                                    } else if (isActive) {
+                                      bubbleBg = 'var(--md-sys-color-primary-container)';
+                                      bubbleBorder = '2px solid var(--md-sys-color-primary)';
+                                      textColor = 'var(--md-sys-color-primary)';
+                                    }
+
+                                    return (
+                                      <div key={idx} style={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        zIndex: 3,
+                                        width: '80px',
+                                        textAlign: 'center',
+                                        flexShrink: 0
+                                      }}>
+                                        {/* Step Circle */}
+                                        <div style={{
+                                          width: '28px',
+                                          height: '28px',
+                                          borderRadius: '50%',
+                                          background: bubbleBg,
+                                          border: bubbleBorder,
+                                          color: textColor,
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          fontWeight: '700',
+                                          fontSize: '11px',
+                                          transition: 'all 0.3s ease',
+                                          boxShadow: isActive ? '0 0 12px rgba(0, 176, 255, 0.4)' : 'none'
+                                        }}>
+                                          {isCompleted ? '✓' : idx + 1}
+                                        </div>
+                                        
+                                        {/* Step Label */}
+                                        <div style={{
+                                          fontSize: '11px',
+                                          fontWeight: isActive ? '800' : '600',
+                                          color: isActive ? 'var(--md-sys-color-primary)' : isCompleted ? '#ffffff' : 'var(--md-sys-color-on-surface-variant)',
+                                          marginTop: '10px',
+                                          lineHeight: '1.2'
+                                        }}>
+                                          {step.label}
+                                        </div>
+                                        
+                                        {/* Step Description */}
+                                        <div style={{
+                                          fontSize: '9px',
+                                          color: 'var(--md-sys-color-on-surface-variant)',
+                                          marginTop: '3px',
+                                          lineHeight: '1.1'
+                                        }}>
+                                          {step.desc}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
                 </tbody>
               </table>
             )}
