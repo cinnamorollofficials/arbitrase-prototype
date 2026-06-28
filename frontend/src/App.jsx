@@ -35,8 +35,38 @@ const getHeaderGradient = (symbol) => {
   }
 };
 
+const formatRupiah = (usdVal, rate) => {
+  if (usdVal === null || usdVal === undefined || isNaN(usdVal)) return '';
+  const idrVal = usdVal * rate;
+  if (idrVal < 0.01) {
+    return 'Rp ' + idrVal.toLocaleString('id-ID', { minimumFractionDigits: 4, maximumFractionDigits: 6 });
+  } else if (idrVal < 10) {
+    return 'Rp ' + idrVal.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+  } else {
+    return 'Rp ' + idrVal.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  }
+};
+
 function App() {
   const [prices, setPrices] = useState([]);
+  const [usdToIdrRate, setUsdToIdrRate] = useState(16500);
+
+  useEffect(() => {
+    const fetchExchangeRate = async () => {
+      try {
+        const res = await fetch('https://open.er-api.com/v6/latest/USD');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.rates && data.rates.IDR) {
+            setUsdToIdrRate(data.rates.IDR);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch USD/IDR rate:', err);
+      }
+    };
+    fetchExchangeRate();
+  }, []);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
@@ -275,7 +305,10 @@ function App() {
           <div className="md3-card summary-card">
             <div className="summary-label">Harga Rata-Rata (Last)</div>
             <div className="summary-value">${stats.average.toFixed(5)}</div>
-            <div className="summary-subtext">Dari bursa yang berhasil terhubung</div>
+            <div style={{ fontSize: '13px', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '2px', fontWeight: '500' }}>
+              {formatRupiah(stats.average, usdToIdrRate)}
+            </div>
+            <div className="summary-subtext" style={{ marginTop: '8px' }}>Dari bursa yang berhasil terhubung</div>
             <div className="countdown-line" style={{ width: `${(refreshCountdown / 10) * 100}%` }}></div>
           </div>
 
@@ -286,7 +319,7 @@ function App() {
               {stats.spreadPct > 0 ? `+${stats.spreadPct.toFixed(3)}%` : `${stats.spreadPct.toFixed(3)}%`}
             </div>
             <div className="summary-subtext">
-              Selisih nominal: ${stats.spreadUsd.toFixed(5)}
+              Selisih nominal: ${stats.spreadUsd.toFixed(5)} ({formatRupiah(stats.spreadUsd, usdToIdrRate)})
             </div>
             {stats.spreadPct > 0.05 && (
               <span className="badge badge-dex" style={{ position: 'absolute', top: '16px', right: '16px', fontSize: '10px' }}>
@@ -333,19 +366,19 @@ function App() {
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span>Profit Kotor (Gross):</span>
                     <span style={{ color: netCalculation.gross > 0 ? 'var(--color-profit-green)' : 'inherit', fontWeight: '600' }}>
-                      {netCalculation.gross >= 0 ? '+' : ''}${netCalculation.gross.toFixed(2)}
+                      {netCalculation.gross >= 0 ? '+' : ''}${netCalculation.gross.toFixed(2)} ({formatRupiah(netCalculation.gross, usdToIdrRate)})
                     </span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span>Estimasi Biaya (Fee):</span>
                     <span style={{ color: 'var(--md-sys-color-error)', fontWeight: '600' }}>
-                      -${netCalculation.fees.toFixed(2)}
+                      -${netCalculation.fees.toFixed(2)} ({formatRupiah(netCalculation.fees, usdToIdrRate)})
                     </span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: '700', marginTop: '2px', borderTop: '1px dashed rgba(255,255,255,0.08)', paddingTop: '3px' }}>
                     <span>Net Profit/Loss:</span>
                     <span style={{ color: netCalculation.net > 0 ? 'var(--color-profit-green)' : 'var(--md-sys-color-error)' }}>
-                      {netCalculation.net >= 0 ? '+' : ''}${netCalculation.net.toFixed(2)}
+                      {netCalculation.net >= 0 ? '+' : ''}${netCalculation.net.toFixed(2)} ({formatRupiah(netCalculation.net, usdToIdrRate)})
                     </span>
                   </div>
                 </div>
@@ -458,9 +491,14 @@ function App() {
                       {/* Ask Price (Buy Price) */}
                       <td>
                         {item.status === 'success' && item.ask !== null ? (
-                          <span className="price-tag" style={{ color: isLowestAsk ? 'var(--color-profit-green)' : 'inherit' }}>
-                            ${item.ask.toFixed(5)}
-                          </span>
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span className="price-tag" style={{ color: isLowestAsk ? 'var(--color-profit-green)' : 'inherit', fontWeight: '700' }}>
+                              ${item.ask.toFixed(5)}
+                            </span>
+                            <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '1px' }}>
+                              {formatRupiah(item.ask, usdToIdrRate)}
+                            </span>
+                          </div>
                         ) : (
                           <span style={{ color: 'var(--md-sys-color-error)', fontStyle: 'italic' }}>
                             Error
@@ -471,9 +509,14 @@ function App() {
                       {/* Bid Price (Sell Price) */}
                       <td>
                         {item.status === 'success' && item.bid !== null ? (
-                          <span className="price-tag" style={{ color: isHighestBid ? 'var(--color-loss-red)' : 'inherit' }}>
-                            ${item.bid.toFixed(5)}
-                          </span>
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span className="price-tag" style={{ color: isHighestBid ? 'var(--color-loss-red)' : 'inherit', fontWeight: '700' }}>
+                              ${item.bid.toFixed(5)}
+                            </span>
+                            <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '1px' }}>
+                              {formatRupiah(item.bid, usdToIdrRate)}
+                            </span>
+                          </div>
                         ) : (
                           <span style={{ color: 'var(--md-sys-color-error)', fontStyle: 'italic' }}>
                             Error
