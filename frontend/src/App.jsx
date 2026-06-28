@@ -245,6 +245,37 @@ function App() {
     });
   }, [prices, filter]);
 
+  // Compute Arbitrage Stats
+  const stats = useMemo(() => {
+    // Only calculate using successful prices
+    const activePrices = prices.filter(p => p.status === 'success' && p.price !== null && p.bid !== null && p.ask !== null);
+    if (activePrices.length < 2) return { average: 0, lowestAsk: null, highestBid: null, spreadPct: 0, spreadUsd: 0 };
+
+    let lowestAsk = activePrices[0];
+    let highestBid = activePrices[0];
+    let sum = 0;
+
+    activePrices.forEach(p => {
+      sum += p.price;
+      if (p.ask < lowestAsk.ask) lowestAsk = p;
+      if (p.bid > highestBid.bid) highestBid = p;
+    });
+
+    const average = sum / activePrices.length;
+    
+    // Arbitrage spread = Highest Sell Price (Bid) - Lowest Buy Price (Ask)
+    const spreadUsd = highestBid.bid - lowestAsk.ask;
+    const spreadPct = (spreadUsd / lowestAsk.ask) * 100;
+
+    return {
+      average,
+      lowestAsk,
+      highestBid,
+      spreadPct,
+      spreadUsd
+    };
+  }, [prices]);
+
   // Sorted prices list
   const sortedPrices = useMemo(() => {
     let sortablePrices = [...filteredPrices];
@@ -294,37 +325,6 @@ function App() {
     }
     return sortablePrices;
   }, [filteredPrices, sortConfig, stats.average]);
-
-  // Compute Arbitrage Stats
-  const stats = useMemo(() => {
-    // Only calculate using successful prices
-    const activePrices = prices.filter(p => p.status === 'success' && p.price !== null && p.bid !== null && p.ask !== null);
-    if (activePrices.length < 2) return { average: 0, lowestAsk: null, highestBid: null, spreadPct: 0, spreadUsd: 0 };
-
-    let lowestAsk = activePrices[0];
-    let highestBid = activePrices[0];
-    let sum = 0;
-
-    activePrices.forEach(p => {
-      sum += p.price;
-      if (p.ask < lowestAsk.ask) lowestAsk = p;
-      if (p.bid > highestBid.bid) highestBid = p;
-    });
-
-    const average = sum / activePrices.length;
-    
-    // Arbitrage spread = Highest Sell Price (Bid) - Lowest Buy Price (Ask)
-    const spreadUsd = highestBid.bid - lowestAsk.ask;
-    const spreadPct = (spreadUsd / lowestAsk.ask) * 100;
-
-    return {
-      average,
-      lowestAsk,
-      highestBid,
-      spreadPct,
-      spreadUsd
-    };
-  }, [prices]);
 
   // Compute Net Profit after fee deductions
   const netCalculation = useMemo(() => {
