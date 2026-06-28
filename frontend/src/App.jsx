@@ -3074,6 +3074,30 @@ function App() {
               Apakah Anda yakin ingin mengeksekusi rute arbitrase ini? Transaksi akan secara otomatis dikirim ke antrean sistem.
             </p>
 
+            {/* Real-time Countdown Timer */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '-4px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)' }}>
+                <span>Harga real-time diperbarui dalam:</span>
+                <span style={{ fontWeight: 'bold', color: refreshCountdown <= 3 ? 'var(--md-sys-color-error)' : 'var(--md-sys-color-primary)' }}>
+                  {refreshCountdown} detik
+                </span>
+              </div>
+              <div style={{
+                width: '100%',
+                height: '4px',
+                backgroundColor: 'rgba(255,255,255,0.06)',
+                borderRadius: '2px',
+                overflow: 'hidden'
+              }}>
+                <div style={{
+                  width: `${(refreshCountdown / 10) * 100}%`,
+                  height: '100%',
+                  backgroundColor: refreshCountdown <= 3 ? 'var(--md-sys-color-error)' : 'var(--md-sys-color-primary)',
+                  transition: 'width 1s linear, background-color 0.3s ease'
+                }}></div>
+              </div>
+            </div>
+
             {/* Details Box */}
             <div style={{
               backgroundColor: 'rgba(255, 255, 255, 0.03)',
