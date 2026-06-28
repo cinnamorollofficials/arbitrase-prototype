@@ -20,6 +20,16 @@ const getHeaderGradient = (symbol) => {
       return 'linear-gradient(135deg, #00B0FF, #00E5FF)';
     case 'W':
       return 'linear-gradient(135deg, #9C27B0, #E040FB)';
+    case 'RENDER':
+      return 'linear-gradient(135deg, #FF007A, #FF7BB8)';
+    case 'POPCAT':
+      return 'linear-gradient(135deg, #78909C, #B0BEC5)';
+    case 'MEW':
+      return 'linear-gradient(135deg, #00ACC1, #80DEEA)';
+    case 'ENA':
+      return 'linear-gradient(135deg, #212121, #757575)';
+    case 'ONDO':
+      return 'linear-gradient(135deg, #26A69A, #80CBC4)';
     default:
       return 'linear-gradient(135deg, #a2c9ff, #dcbce2)';
   }
@@ -34,7 +44,7 @@ function App() {
   const [refreshCountdown, setRefreshCountdown] = useState(10);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [capital, setCapital] = useState(10000); // Default capital $10,000 USD
-  const [activeSymbol, setActiveSymbol] = useState('USDT'); // Active asset: USDT, SOL, ETH, PEPE, BONK, WIF, FLOKI, SHIB, JUP, W
+  const [activeSymbol, setActiveSymbol] = useState('USDT'); // Active asset: USDT, SOL, ETH, PEPE, BONK, WIF, FLOKI, SHIB, JUP, W, RENDER, POPCAT, MEW, ENA, ONDO
 
   // Fetch prices from backend
   const fetchPrices = async (symbol = activeSymbol, silent = false) => {
@@ -194,7 +204,7 @@ function App() {
 
         {/* Asset Selector Dropdown/Segmented Buttons */}
         <div className="asset-selector-container" style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--md-sys-color-surface-container-high)', padding: '4px', borderRadius: 'var(--md-shape-corner-full)', border: '1px solid var(--md-sys-color-outline-variant)', overflowX: 'auto', maxWidth: '100%', whiteSpace: 'nowrap' }}>
-          {['USDT', 'SOL', 'ETH', 'PEPE', 'BONK', 'WIF', 'FLOKI', 'SHIB', 'JUP', 'W'].map(sym => (
+          {['USDT', 'SOL', 'ETH', 'PEPE', 'BONK', 'WIF', 'FLOKI', 'SHIB', 'JUP', 'W', 'RENDER', 'POPCAT', 'MEW', 'ENA', 'ONDO'].map(sym => (
             <button
               key={sym}
               onClick={() => handleAssetChange(sym)}

@@ -30,7 +30,12 @@ const COIN_IDS = {
   FLOKI: 'floki',
   SHIB: 'shiba-inu',
   JUP: 'jupiter-exchange-solana',
-  W: 'wormhole'
+  W: 'wormhole',
+  RENDER: 'render-token',
+  POPCAT: 'popcat',
+  MEW: 'cat-in-a-dogs-world',
+  ENA: 'ethena',
+  ONDO: 'ondo'
 };
 
 const ASSET_TOKENS = {
@@ -73,6 +78,21 @@ const ASSET_TOKENS = {
   },
   W: {
     solana: '85VBFQZC9TZkfaptBWjvUw7YbZjy52A6mjtPGjstQAmQ'
+  },
+  RENDER: {
+    solana: 'rndrizKT3MK1iimdxRdWabcF7Zg7AR5T4nud4EkHBof'
+  },
+  POPCAT: {
+    solana: '7GCihgDB8fe6KNjn2MYtkzZcRjQy3t9GHdC8uHYmW2hr'
+  },
+  MEW: {
+    solana: 'MEW1gQWJ3nEXg2qgERiKu7FAFj79PHvQVREQUzScPP5'
+  },
+  ENA: {
+    ethereum: '0x57e114B691Db790C35207b2e685D4A43181e6061'
+  },
+  ONDO: {
+    ethereum: '0xfaba6f8e4a5e8ab82f62fe7c39859fa577269be3'
   }
 };
 
@@ -278,7 +298,7 @@ async function getDexPrices(symbol) {
 app.get('/api/prices', async (req, res) => {
   const symbol = (req.query.symbol || 'USDT').toUpperCase();
   if (!COIN_IDS[symbol]) {
-    return res.status(400).json({ error: `Asset symbol '${symbol}' not supported. Choose between USDT, SOL, ETH, PEPE, BONK, WIF, FLOKI, SHIB, JUP, or W.` });
+    return res.status(400).json({ error: `Asset symbol '${symbol}' not supported. Choose between USDT, SOL, ETH, PEPE, BONK, WIF, FLOKI, SHIB, JUP, W, RENDER, POPCAT, MEW, ENA, or ONDO.` });
   }
 
   const now = Date.now();
