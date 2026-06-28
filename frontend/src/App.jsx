@@ -82,6 +82,39 @@ const COIN_ICONS = {
   FET: 'https://assets.coingecko.com/coins/images/5681/small/Fetch.png',
 };
 
+const COIN_META_LOOKUP = {
+  USDC: { name: 'USD Coin',        category: 'STABLE',      price: 1.0 },
+  USDT: { name: 'Tether',          category: 'STABLE',      price: 1.0 },
+  SOL:  { name: 'Solana',           category: 'FLUKTUATIF',  price: 145.20 },
+  ETH:  { name: 'Ethereum',         category: 'FLUKTUATIF',  price: 3450.00 },
+  BNB:  { name: 'Binance Coin',     category: 'FLUKTUATIF',  price: 580.00 },
+  PEPE: { name: 'Pepe',             category: 'MICIN',       price: 0.0000125 },
+  BONK: { name: 'Bonk',             category: 'MICIN',       price: 0.0000215 },
+  POPCAT:{ name: 'Popcat',          category: 'MICIN',       price: 0.85 },
+  RENDER:{ name: 'Render Token',    category: 'FLUKTUATIF',  price: 7.45 },
+  W:    { name: 'Wormhole',         category: 'FLUKTUATIF',  price: 0.35 },
+  FLOKI:{ name: 'Floki Inu',        category: 'MICIN',       price: 0.000175 },
+  NEIRO:{ name: 'Neiro Solana',     category: 'MICIN',       price: 0.00145 },
+  MOG:  { name: 'Mog Coin',         category: 'MICIN',       price: 0.0000018 },
+  GIGA: { name: 'GigaChad',         category: 'MICIN',       price: 0.042 },
+  TURBO:{ name: 'Turbo',            category: 'FLUKTUATIF',  price: 0.0052 },
+  FWOG: { name: 'Fwog',             category: 'MICIN',       price: 0.023 },
+  BRETT:{ name: 'Brett',            category: 'FLUKTUATIF',  price: 0.125 },
+  FDUSD:{ name: 'First Digital USD',category: 'STABLE',      price: 1.0 },
+  USDE: { name: 'Athena USDe',      category: 'STABLE',      price: 1.0 },
+  PYUSD:{ name: 'PayPal USD',       category: 'STABLE',      price: 1.0 },
+  LTC:  { name: 'Litecoin',         category: 'FLUKTUATIF',  price: 76.50 },
+  XRP:  { name: 'Ripple',           category: 'FLUKTUATIF',  price: 0.585 },
+  ADA:  { name: 'Cardano',          category: 'FLUKTUATIF',  price: 0.382 },
+  AVAX: { name: 'Avalanche',        category: 'FLUKTUATIF',  price: 28.40 },
+  DOT:  { name: 'Polkadot',         category: 'FLUKTUATIF',  price: 6.15 },
+  LINK: { name: 'Chainlink',        category: 'FLUKTUATIF',  price: 14.80 },
+  NEAR: { name: 'Near Protocol',    category: 'FLUKTUATIF',  price: 4.85 },
+  APT:  { name: 'Aptos',            category: 'FLUKTUATIF',  price: 8.20 },
+  SUI:  { name: 'Sui',              category: 'FLUKTUATIF',  price: 1.08 },
+  FET:  { name: 'Artificial Superintelligence Alliance', category: 'FLUKTUATIF', price: 1.35 },
+};
+
 const EXCHANGE_ICONS = {
   // CEX
   'Binance': 'https://assets.coingecko.com/markets/images/52/small/binance.jpg',
@@ -219,7 +252,8 @@ function App() {
   const [capital, setCapital] = useUrlState('capital', 10000);
   const [activeSymbol, setActiveSymbol] = useUrlState('coin', 'USDT');
   const [activeTab, setActiveTab] = useUrlState('tab', 'prices');
-  const [isCompact, setIsCompact] = useUrlState('compact', 'false');
+  const [isCompact,           setIsCompact]           = useUrlState('compact', 'false');
+  const [opportunities,       setOpportunities]       = useState([]);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [transactions, setTransactions] = useState(() => {
     const saved = localStorage.getItem('arbitrage_transactions');
@@ -272,37 +306,7 @@ function App() {
 
   const coinAssets = useMemo(() => {
     const coins = {};
-    const coinMeta = {
-      USDC: { name: 'USD Coin', category: 'STABLE', icon: COIN_ICONS.USDC, price: 1.0 },
-      SOL: { name: 'Solana', category: 'FLUKTUATIF', icon: COIN_ICONS.SOL, price: 145.20 },
-      ETH: { name: 'Ethereum', category: 'FLUKTUATIF', icon: COIN_ICONS.ETH, price: 3450.00 },
-      BNB: { name: 'Binance Coin', category: 'FLUKTUATIF', icon: COIN_ICONS.BNB, price: 580.00 },
-      PEPE: { name: 'Pepe', category: 'MICIN', icon: COIN_ICONS.PEPE, price: 0.0000125 },
-      BONK: { name: 'Bonk', category: 'MICIN', icon: COIN_ICONS.BONK, price: 0.0000215 },
-      POPCAT: { name: 'Popcat', category: 'MICIN', icon: COIN_ICONS.POPCAT, price: 0.85 },
-      RENDER: { name: 'Render Token', category: 'FLUKTUATIF', icon: COIN_ICONS.RENDER, price: 7.45 },
-      W: { name: 'Wormhole', category: 'FLUKTUATIF', icon: COIN_ICONS.W, price: 0.35 },
-      FLOKI: { name: 'Floki Inu', category: 'MICIN', icon: COIN_ICONS.FLOKI, price: 0.000175 },
-      NEIRO: { name: 'Neiro Solana', category: 'MICIN', icon: COIN_ICONS.NEIRO, price: 0.00145 },
-      MOG: { name: 'Mog Coin', category: 'MICIN', icon: COIN_ICONS.MOG, price: 0.0000018 },
-      GIGA: { name: 'GigaChad', category: 'MICIN', icon: COIN_ICONS.GIGA, price: 0.042 },
-      TURBO: { name: 'Turbo', category: 'FLUKTUATIF', icon: COIN_ICONS.TURBO, price: 0.0052 },
-      FWOG: { name: 'Fwog', category: 'MICIN', icon: COIN_ICONS.FWOG, price: 0.023 },
-      BRETT: { name: 'Brett', category: 'FLUKTUATIF', icon: COIN_ICONS.BRETT, price: 0.125 },
-      FDUSD: { name: 'First Digital USD', category: 'STABLE', icon: COIN_ICONS.FDUSD, price: 1.0 },
-      USDE: { name: 'Athena USDe', category: 'STABLE', icon: COIN_ICONS.USDE, price: 1.0 },
-      PYUSD: { name: 'PayPal USD', category: 'STABLE', icon: COIN_ICONS.PYUSD, price: 1.0 },
-      LTC: { name: 'Litecoin', category: 'FLUKTUATIF', icon: COIN_ICONS.LTC, price: 76.50 },
-      XRP: { name: 'Ripple', category: 'FLUKTUATIF', icon: COIN_ICONS.XRP, price: 0.585 },
-      ADA: { name: 'Cardano', category: 'FLUKTUATIF', icon: COIN_ICONS.ADA, price: 0.382 },
-      AVAX: { name: 'Avalanche', category: 'FLUKTUATIF', icon: COIN_ICONS.AVAX, price: 28.40 },
-      DOT: { name: 'Polkadot', category: 'FLUKTUATIF', icon: COIN_ICONS.DOT, price: 6.15 },
-      LINK: { name: 'Chainlink', category: 'FLUKTUATIF', icon: COIN_ICONS.LINK, price: 14.80 },
-      NEAR: { name: 'Near Protocol', category: 'FLUKTUATIF', icon: COIN_ICONS.NEAR, price: 4.85 },
-      APT: { name: 'Aptos', category: 'FLUKTUATIF', icon: COIN_ICONS.APT, price: 8.20 },
-      SUI: { name: 'Sui', category: 'FLUKTUATIF', icon: COIN_ICONS.SUI, price: 1.08 },
-      FET: { name: 'Artificial Superintelligence Alliance', category: 'FLUKTUATIF', icon: COIN_ICONS.FET, price: 1.35 },
-    };
+    const coinMeta = COIN_META_LOOKUP;
 
     Object.entries(exchangeBalances).forEach(([exName, info]) => {
       Object.entries(info).forEach(([key, val]) => {
@@ -595,6 +599,17 @@ function App() {
           return spreadB - spreadA;
         });
         setSymbolsList(sorted);
+      }
+
+      // Fetch all profitable opportunities across all tokens
+      try {
+        const oppResponse = await fetch('http://localhost:5001/api/opportunities');
+        if (oppResponse.ok) {
+          const oppJson = await oppResponse.json();
+          setOpportunities(oppJson.opportunities || []);
+        }
+      } catch (oppErr) {
+        console.error('Error fetching opportunities:', oppErr);
       }
     } catch (err) {
       console.error('Error fetching prices:', err);
@@ -1212,163 +1227,269 @@ function App() {
 
           {/* Table Content */}
           <div className={`table-wrapper ${compactMode ? 'compact-table' : ''}`}>
-            <table className="md3-table">
-              <thead>
-                <tr>
-                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('name')}>
-                    Bursa / Exchange {getSortIndicator('name')}
-                  </th>
-                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('type')}>
-                    Jenis {getSortIndicator('type')}
-                  </th>
-                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('pair')}>
-                    Pasangan {getSortIndicator('pair')}
-                  </th>
-                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('ask')}>
-                    Beli (Ask) {getSortIndicator('ask')}
-                  </th>
-                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('bid')}>
-                    Jual (Bid) {getSortIndicator('bid')}
-                  </th>
-                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('deviation')}>
-                    Deviasi Rata-Rata (Last) {getSortIndicator('deviation')}
-                  </th>
-                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('status')}>
-                    Status {getSortIndicator('status')}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading && prices.length === 0 ? (
-                  // Table Loading Skeletons
-                  [1, 2, 3, 4, 5].map(i => (
-                    <tr key={i}>
-                      <td><div className="skeleton skeleton-text" style={{ width: '120px', height: '18px' }}></div></td>
-                      <td><div className="skeleton skeleton-text" style={{ width: '60px', height: '18px' }}></div></td>
-                      <td><div className="skeleton skeleton-text" style={{ width: '70px', height: '18px' }}></div></td>
-                      <td><div className="skeleton skeleton-text" style={{ width: '80px', height: '18px' }}></div></td>
-                      <td><div className="skeleton skeleton-text" style={{ width: '80px', height: '18px' }}></div></td>
-                      <td><div className="skeleton skeleton-text" style={{ width: '60px', height: '18px' }}></div></td>
-                      <td><div className="skeleton skeleton-text" style={{ width: '80px', height: '18px' }}></div></td>
-                    </tr>
-                  ))
-                ) : sortedPrices.length === 0 ? (
-                  <tr>
-                    <td colSpan="7" style={{ textAlign: 'center', padding: '30px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '500' }}>
-                      🔍 Tidak ada peluang arbitrase yang menghasilkan profit untuk koin {activeSymbol} saat ini.
-                    </td>
+            {filter === 'PROFITABLE' ? (
+              <table className="md3-table">
+                <thead>
+                  <tr style={{ backgroundColor: 'rgba(255,255,255,0.02)' }}>
+                    <th style={{ padding: compactMode ? '8px 12px' : '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700' }}>Aset Koin</th>
+                    <th style={{ padding: compactMode ? '8px 12px' : '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700' }}>Kategori</th>
+                    <th style={{ padding: compactMode ? '8px 12px' : '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700' }}>Beli di Bursa Murah</th>
+                    <th style={{ padding: compactMode ? '8px 12px' : '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700' }}>Jual di Bursa Mahal</th>
+                    <th style={{ padding: compactMode ? '8px 12px' : '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700', textAlign: 'right' }}>Spread Kotor</th>
+                    <th style={{ padding: compactMode ? '8px 12px' : '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700', textAlign: 'right' }}>Estimasi Net Profit</th>
+                    <th style={{ padding: compactMode ? '8px 12px' : '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700', textAlign: 'center' }}>Aksi</th>
                   </tr>
-                ) : (
-                  sortedPrices.map((item) => {
-                    const isLowestAsk = stats.lowestAsk && stats.lowestAsk.name === item.name;
-                    const isHighestBid = stats.highestBid && stats.highestBid.name === item.name;
-
-                    // Calculate deviation of last price from average
-                    let deviation = 0;
-                    if (item.price && stats.average) {
-                      deviation = ((item.price - stats.average) / stats.average) * 100;
-                    }
-
-                    return (
-                      <tr
-                        key={item.name}
-                        style={{
-                          backgroundColor: isLowestAsk
-                            ? 'rgba(52, 211, 153, 0.03)'
-                            : isHighestBid
-                              ? 'rgba(248, 113, 113, 0.03)'
-                              : 'transparent'
-                        }}
-                      >
-                        {/* Exchange Name */}
-                        <td style={{ fontWeight: '600', display: 'flex', alignItems: 'center' }}>
-                          {item.name}
-                          {item.source === 'coingecko' && (
-                            <span className="badge badge-source">via CG</span>
-                          )}
-                        </td>
-
-                        {/* Type Badge */}
-                        <td>
-                          <span className={`badge ${item.type === 'CEX' ? 'badge-cex' : 'badge-dex'}`}>
-                            {item.type}
-                          </span>
-                        </td>
-
-                        {/* Trading Pair */}
-                        <td style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
-                          {item.pair}
-                        </td>
-
-                        {/* Ask Price (Buy Price) */}
-                        <td>
-                          {item.status === 'success' && item.ask !== null ? (
-                            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                              <span className="price-tag" style={{ color: isLowestAsk ? 'var(--color-profit-green)' : 'inherit', fontWeight: '700' }}>
-                                ${item.ask.toFixed(5)}
-                              </span>
-                              <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '1px' }}>
-                                {formatRupiah(item.ask, usdToIdrRate)}
-                              </span>
+                </thead>
+                <tbody>
+                  {opportunities.length === 0 ? (
+                    <tr>
+                      <td colSpan="7" style={{ textAlign: 'center', padding: '40px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '500' }}>
+                        <span style={{ fontSize: '24px', display: 'block', marginBottom: '8px' }}>🔍</span>
+                        Tidak ada peluang arbitrase yang menghasilkan profit dari seluruh koin saat ini.
+                      </td>
+                    </tr>
+                  ) : (
+                    opportunities.map(opp => {
+                      const coinInfo = COIN_META_LOOKUP[opp.symbol] || { name: opp.symbol, category: 'FLUKTUATIF' };
+                      const netProfit = (capital * (opp.spread / 100)) - (capital * 0.002); // gross - approx 0.2% buy/sell fees
+                      
+                      return (
+                        <tr key={opp.symbol} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', transition: 'background-color 0.2s ease' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.02)'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                          {/* Coin symbol & icon */}
+                          <td style={{ padding: compactMode ? '8px 12px' : '16px 20px', fontWeight: '700' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <CoinIcon symbol={opp.symbol} size={compactMode ? 20 : 28} />
+                              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span>{opp.symbol}</span>
+                                <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: 'normal' }}>{coinInfo.name}</span>
+                              </div>
                             </div>
-                          ) : (
-                            <span style={{ color: 'var(--md-sys-color-error)', fontStyle: 'italic' }}>
-                              Error
+                          </td>
+                          {/* Category badge */}
+                          <td style={{ padding: compactMode ? '8px 12px' : '16px 20px' }}>
+                            <span style={{ 
+                              fontSize: '9px', 
+                              padding: '2px 6px', 
+                              borderRadius: '4px',
+                              fontWeight: '700',
+                              backgroundColor: coinInfo.category === 'MICIN' ? 'rgba(244,63,94,0.15)' : coinInfo.category === 'STABLE' ? 'rgba(16,185,129,0.15)' : 'rgba(59,130,246,0.15)',
+                              color: coinInfo.category === 'MICIN' ? '#f43f5e' : coinInfo.category === 'STABLE' ? '#10b981' : '#3b82f6'
+                            }}>
+                              {coinInfo.category}
                             </span>
-                          )}
-                        </td>
-
-                        {/* Bid Price (Sell Price) */}
-                        <td>
-                          {item.status === 'success' && item.bid !== null ? (
+                          </td>
+                          {/* Buy route */}
+                          <td style={{ padding: compactMode ? '8px 12px' : '16px 20px' }}>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                              <span className="price-tag" style={{ color: isHighestBid ? 'var(--color-loss-red)' : 'inherit', fontWeight: '700' }}>
-                                ${item.bid.toFixed(5)}
-                              </span>
-                              <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '1px' }}>
-                                {formatRupiah(item.bid, usdToIdrRate)}
-                              </span>
+                              <span style={{ fontWeight: '700', color: 'var(--md-sys-color-on-surface)' }}>{opp.buyEx}</span>
+                              <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)' }}>${opp.buyPrice.toFixed(5)}</span>
                             </div>
-                          ) : (
-                            <span style={{ color: 'var(--md-sys-color-error)', fontStyle: 'italic' }}>
-                              Error
-                            </span>
-                          )}
-                        </td>
-
-                        {/* Average Deviation */}
-                        <td>
-                          {item.status === 'success' && item.price !== null ? (
-                            <span className={`deviation-tag ${deviation >= 0 ? 'positive' : 'negative'}`}>
-                              {deviation >= 0 ? '+' : ''}{deviation.toFixed(4)}%
-                            </span>
-                          ) : (
-                            '-'
-                          )}
-                        </td>
-
-                        {/* Action / Indicators */}
-                        <td>
-                          {item.status === 'success' ? (
-                            isLowestAsk ? (
-                              <span className="price-badge lowest">Beli Terendah (Ask)</span>
-                            ) : isHighestBid ? (
-                              <span className="price-badge highest">Jual Tertinggi (Bid)</span>
-                            ) : (
-                              <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>Stabil</span>
-                            )
-                          ) : (
-                            <span style={{ color: 'var(--md-sys-color-error)', fontSize: '12px' }} title={item.message}>
-                              Offline
-                            </span>
-                          )}
-                        </td>
+                          </td>
+                          {/* Sell route */}
+                          <td style={{ padding: compactMode ? '8px 12px' : '16px 20px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                              <span style={{ fontWeight: '700', color: 'var(--md-sys-color-on-surface)' }}>{opp.sellEx}</span>
+                              <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)' }}>${opp.sellPrice.toFixed(5)}</span>
+                            </div>
+                          </td>
+                          {/* Spread */}
+                          <td style={{ padding: compactMode ? '8px 12px' : '16px 20px', textAlign: 'right', fontWeight: '800', color: 'var(--color-profit-green)', fontSize: '14px' }}>
+                            +{opp.spread.toFixed(2)}%
+                          </td>
+                          {/* Net profit estimate */}
+                          <td style={{ padding: compactMode ? '8px 12px' : '16px 20px', textAlign: 'right', fontWeight: '800', color: netProfit > 0 ? 'var(--color-profit-green)' : 'var(--md-sys-color-error)', fontSize: '14px' }}>
+                            {netProfit >= 0 ? '+' : ''}${netProfit.toFixed(2)}
+                            <div style={{ fontSize: '11px', fontWeight: 'normal', color: 'var(--md-sys-color-on-surface-variant)' }}>
+                              {formatRupiah(netProfit, usdToIdrRate)}
+                            </div>
+                          </td>
+                          {/* Action button */}
+                          <td style={{ padding: compactMode ? '8px 12px' : '16px 20px', textAlign: 'center' }}>
+                            <button
+                              onClick={() => {
+                                handleAssetChange(opp.symbol);
+                                setTimeout(() => setShowConfirmModal(true), 250);
+                              }}
+                              className="tab-btn"
+                              style={{
+                                backgroundColor: 'var(--md-sys-color-primary)',
+                                color: 'var(--md-sys-color-on-primary)',
+                                fontWeight: '700',
+                                border: 'none',
+                                cursor: 'pointer',
+                                padding: '6px 14px',
+                                borderRadius: 'var(--md-shape-corner-medium)',
+                                transition: 'all 0.2s ease'
+                              }}
+                            >
+                              Eksekusi
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            ) : (
+              <table className="md3-table">
+                <thead>
+                  <tr>
+                    <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('name')}>
+                      Bursa / Exchange {getSortIndicator('name')}
+                    </th>
+                    <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('type')}>
+                      Jenis {getSortIndicator('type')}
+                    </th>
+                    <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('pair')}>
+                      Pasangan {getSortIndicator('pair')}
+                    </th>
+                    <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('ask')}>
+                      Beli (Ask) {getSortIndicator('ask')}
+                    </th>
+                    <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('bid')}>
+                      Jual (Bid) {getSortIndicator('bid')}
+                    </th>
+                    <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('deviation')}>
+                      Deviasi Rata-Rata (Last) {getSortIndicator('deviation')}
+                    </th>
+                    <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('status')}>
+                      Status {getSortIndicator('status')}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading && prices.length === 0 ? (
+                    // Table Loading Skeletons
+                    [1, 2, 3, 4, 5].map(i => (
+                      <tr key={i}>
+                        <td><div className="skeleton skeleton-text" style={{ width: '120px', height: '18px' }}></div></td>
+                        <td><div className="skeleton skeleton-text" style={{ width: '60px', height: '18px' }}></div></td>
+                        <td><div className="skeleton skeleton-text" style={{ width: '70px', height: '18px' }}></div></td>
+                        <td><div className="skeleton skeleton-text" style={{ width: '80px', height: '18px' }}></div></td>
+                        <td><div className="skeleton skeleton-text" style={{ width: '80px', height: '18px' }}></div></td>
+                        <td><div className="skeleton skeleton-text" style={{ width: '60px', height: '18px' }}></div></td>
+                        <td><div className="skeleton skeleton-text" style={{ width: '80px', height: '18px' }}></div></td>
                       </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
+                    ))
+                  ) : sortedPrices.length === 0 ? (
+                    <tr>
+                      <td colSpan="7" style={{ textAlign: 'center', padding: '30px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '500' }}>
+                        🔍 Tidak ada peluang arbitrase yang menghasilkan profit untuk koin {activeSymbol} saat ini.
+                      </td>
+                    </tr>
+                  ) : (
+                    sortedPrices.map((item) => {
+                      const isLowestAsk = stats.lowestAsk && stats.lowestAsk.name === item.name;
+                      const isHighestBid = stats.highestBid && stats.highestBid.name === item.name;
+
+                      // Calculate deviation of last price from average
+                      let deviation = 0;
+                      if (item.price && stats.average) {
+                        deviation = ((item.price - stats.average) / stats.average) * 100;
+                      }
+
+                      return (
+                        <tr
+                          key={item.name}
+                          style={{
+                            backgroundColor: isLowestAsk
+                              ? 'rgba(52, 211, 153, 0.03)'
+                              : isHighestBid
+                                ? 'rgba(248, 113, 113, 0.03)'
+                                : 'transparent'
+                          }}
+                        >
+                          {/* Exchange Name */}
+                          <td style={{ fontWeight: '600', display: 'flex', alignItems: 'center' }}>
+                            {item.name}
+                            {item.source === 'coingecko' && (
+                              <span className="badge badge-source">via CG</span>
+                            )}
+                          </td>
+
+                          {/* Type Badge */}
+                          <td>
+                            <span className={`badge ${item.type === 'CEX' ? 'badge-cex' : 'badge-dex'}`}>
+                              {item.type}
+                            </span>
+                          </td>
+
+                          {/* Trading Pair */}
+                          <td style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
+                            {item.pair}
+                          </td>
+
+                          {/* Ask Price (Buy Price) */}
+                          <td>
+                            {item.status === 'success' && item.ask !== null ? (
+                              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span className="price-tag" style={{ color: isLowestAsk ? 'var(--color-profit-green)' : 'inherit', fontWeight: '700' }}>
+                                  ${item.ask.toFixed(5)}
+                                </span>
+                                <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '1px' }}>
+                                  {formatRupiah(item.ask, usdToIdrRate)}
+                                </span>
+                              </div>
+                            ) : (
+                              <span style={{ color: 'var(--md-sys-color-error)', fontStyle: 'italic' }}>
+                                Error
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Bid Price (Sell Price) */}
+                          <td>
+                            {item.status === 'success' && item.bid !== null ? (
+                              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span className="price-tag" style={{ color: isHighestBid ? 'var(--color-loss-red)' : 'inherit', fontWeight: '700' }}>
+                                  ${item.bid.toFixed(5)}
+                                </span>
+                                <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '1px' }}>
+                                  {formatRupiah(item.bid, usdToIdrRate)}
+                                </span>
+                              </div>
+                            ) : (
+                              <span style={{ color: 'var(--md-sys-color-error)', fontStyle: 'italic' }}>
+                                Error
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Average Deviation */}
+                          <td>
+                            {item.status === 'success' && item.price !== null ? (
+                              <span className={`deviation-tag ${deviation >= 0 ? 'positive' : 'negative'}`}>
+                                {deviation >= 0 ? '+' : ''}{deviation.toFixed(4)}%
+                              </span>
+                            ) : (
+                              '-'
+                            )}
+                          </td>
+
+                          {/* Action / Indicators */}
+                          <td>
+                            {item.status === 'success' ? (
+                              isLowestAsk ? (
+                                <span className="price-badge lowest">Beli Terendah (Ask)</span>
+                              ) : isHighestBid ? (
+                                <span className="price-badge highest">Jual Tertinggi (Bid)</span>
+                              ) : (
+                                <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>Stabil</span>
+                              )
+                            ) : (
+                              <span style={{ color: 'var(--md-sys-color-error)', fontSize: '12px' }} title={item.message}>
+                                Offline
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       )}

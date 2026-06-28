@@ -493,6 +493,46 @@ app.get('/api/prices', async (req, res) => {
   }
 });
 
+// Endpoint for all profitable arbitrage opportunities across all tokens
+app.get('/api/opportunities', (req, res) => {
+  const opportunities = [];
+  
+  Object.keys(COIN_IDS).forEach(symbol => {
+    const cached = priceCache[symbol];
+    if (!cached || !cached.data) return;
+    
+    const activePrices = cached.data.filter(p => p.status === 'success' && p.price !== null && p.bid !== null && p.ask !== null);
+    if (activePrices.length < 2) return;
+    
+    let lowestAsk = null;
+    let highestBid = null;
+    
+    activePrices.forEach(p => {
+      if (lowestAsk === null || p.ask < lowestAsk.ask) lowestAsk = p;
+      if (highestBid === null || p.bid > highestBid.bid) highestBid = p;
+    });
+    
+    if (lowestAsk && highestBid) {
+      const spreadPct = ((highestBid.bid - lowestAsk.ask) / lowestAsk.ask) * 100;
+      if (spreadPct > 0) {
+        opportunities.push({
+          symbol,
+          spread: spreadPct,
+          buyEx: lowestAsk.name,
+          sellEx: highestBid.name,
+          buyPrice: lowestAsk.ask,
+          sellPrice: highestBid.bid
+        });
+      }
+    }
+  });
+  
+  // Sort by highest spread first
+  opportunities.sort((a, b) => b.spread - a.spread);
+  
+  res.json({ opportunities });
+});
+
 // Background polling loop to stagger CEX/DEX fetches for all coins
 let currentPollIndex = 0;
 const symbolsToPoll = Object.keys(COIN_IDS);
