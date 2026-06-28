@@ -101,12 +101,12 @@ function App() {
     const saved = localStorage.getItem('arbitrage_balances');
     if (saved) return JSON.parse(saved);
     return {
-      Binance: { USDC: 15420.50, ETH: 0.45, PEPE: 12500000, status: 'Online', latency: '52ms', type: 'CEX', network: 'Ethereum/BSC/Solana', apiStatus: 'Terkoneksi' },
-      Bybit: { USDC: 10200.00, SOL: 12.40, BONK: 5600000, status: 'Online', latency: '84ms', type: 'CEX', network: 'Ethereum/BSC/Solana', apiStatus: 'Terkoneksi' },
-      'Gate.io': { USDC: 4150.25, RENDER: 12.0, POPCAT: 85000, status: 'Online', latency: '120ms', type: 'CEX', network: 'Ethereum/BSC/Solana', apiStatus: 'Terkoneksi' },
-      Raydium: { USDC: 12850.10, SOL: 45.82, BONK: 15400000, status: 'Online', latency: '8ms', type: 'DEX', network: 'Solana (SPL)', apiStatus: 'Phantom Connected' },
-      Uniswap: { USDC: 3450.00, ETH: 1.15, W: 500000, status: 'Online', latency: '15ms', type: 'DEX', network: 'Ethereum/Arbitrum', apiStatus: 'MetaMask Connected' },
-      PancakeSwap: { USDC: 1820.75, BNB: 2.40, FLOKI: 2500000, status: 'Online', latency: '22ms', type: 'DEX', network: 'BNB Chain (BEP20)', apiStatus: 'MetaMask Connected' }
+      Binance: { USDC: 15420.50, ETH: 0.45, PEPE: 12500000, status: 'Online', latency: '52ms', type: 'CEX', network: 'Ethereum/BSC/Solana', apiStatus: 'Terkoneksi', fee: 'Spot: 0.1% | Penarikan: $1.0' },
+      Bybit: { USDC: 10200.00, SOL: 12.40, BONK: 5600000, status: 'Online', latency: '84ms', type: 'CEX', network: 'Ethereum/BSC/Solana', apiStatus: 'Terkoneksi', fee: 'Spot: 0.1% | Penarikan: $1.0' },
+      'Gate.io': { USDC: 4150.25, RENDER: 12.0, POPCAT: 85000, status: 'Online', latency: '120ms', type: 'CEX', network: 'Ethereum/BSC/Solana', apiStatus: 'Terkoneksi', fee: 'Spot: 0.2% | Penarikan: $1.5' },
+      Raydium: { USDC: 12850.10, SOL: 45.82, BONK: 15400000, status: 'Online', latency: '8ms', type: 'DEX', network: 'Solana (SPL)', apiStatus: 'Phantom Connected', fee: 'Swap: 0.25% | Gas: ~0.00005 SOL' },
+      Uniswap: { USDC: 3450.00, ETH: 1.15, W: 500000, status: 'Online', latency: '15ms', type: 'DEX', network: 'Ethereum/Arbitrum', apiStatus: 'MetaMask Connected', fee: 'Swap: 0.3% | Gas: ~0.002 ETH' },
+      PancakeSwap: { USDC: 1820.75, BNB: 2.40, FLOKI: 2500000, status: 'Online', latency: '22ms', type: 'DEX', network: 'BNB Chain (BEP20)', apiStatus: 'MetaMask Connected', fee: 'Swap: 0.25% | Gas: ~0.0008 BNB' }
     };
   });
   const [agentStatus, setAgentStatus] = useState('running');
@@ -1571,6 +1571,10 @@ function App() {
                   <span>Status API:</span>
                   <span style={{ color: 'var(--md-sys-color-primary)', fontWeight: '600' }}>{info.apiStatus}</span>
                 </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Biaya (Fee):</span>
+                  <span style={{ color: 'var(--color-profit-green)', fontWeight: '600' }}>{info.fee || 'Spot: 0.1%'}</span>
+                </div>
               </div>
 
               <div style={{ height: '1px', backgroundColor: 'rgba(255,255,255,0.06)' }} />
@@ -1640,7 +1644,7 @@ function App() {
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', textAlign: 'left' }}>
                           {Object.entries(info).map(([asset, val]) => {
-                            if (['USDC', 'status', 'latency', 'type', 'network', 'apiStatus'].includes(asset)) return null;
+                            if (['USDC', 'status', 'latency', 'type', 'network', 'apiStatus', 'fee'].includes(asset)) return null;
                             
                             let tokenPriceInUsd = 1.0;
                             if (asset === 'SOL') tokenPriceInUsd = 145.20;
