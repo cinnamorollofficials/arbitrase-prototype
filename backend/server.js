@@ -1,0 +1,353 @@
+import express from 'express';
+import cors from 'cors';
+import axios from 'axios';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const app = express();
+const PORT = process.env.PORT || 5001;
+
+app.use(cors());
+app.use(express.json());
+
+// Multi-asset caches
+const priceCache = {};
+const CACHE_DURATION_MS = 5000; // 5 seconds cache
+
+// CoinGecko fallback caches
+const coingeckoCache = {};
+const coingeckoPromises = {};
+const COINGECKO_CACHE_DURATION_MS = 60000; // 60 seconds cache
+
+const COIN_IDS = {
+  USDT: 'tether',
+  SOL: 'solana',
+  ETH: 'ethereum'
+};
+
+const ASSET_TOKENS = {
+  USDT: {
+    ethereum: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
+    bsc: '0x55d398326f99059fF775485246999027B3197955',
+    solana: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB'
+  },
+  SOL: {
+    ethereum: '0xD31a59c85AE9D859DF43b129759d57aCbc5bA2C9', // Wormhole SOL
+    bsc: '0x570A5D2D357e626e520922129845d4c82c20f1bA', // BSC SOL
+    solana: 'So11111111111111111111111111111111111111112' // Solana Native
+  },
+  ETH: {
+    ethereum: '0xC02aaA39b223FE8D0A0e5C4F27ead9083C756Cc2', // WETH
+    bsc: '0x2170Ed0880ac9A755fd29B2688956BD959F933F8', // BSC WETH
+    solana: '2F51aWtKGu85681M56Hm56RE5gJ642aCX456EXc8P9' // Solana wrapped ETH
+  }
+};
+
+// Fetch helper with timeout
+async function fetchWithTimeout(url, options = {}, timeout = 3000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  try {
+    const response = await axios.get(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    clearTimeout(id);
+    return response.data;
+  } catch (error) {
+    clearTimeout(id);
+    throw error;
+  }
+}
+
+// Fetch tickers from CoinGecko dynamically for a coin
+async function getCoinGeckoTickers(symbol) {
+  const coinId = COIN_IDS[symbol];
+  if (!coinId) return [];
+
+  const now = Date.now();
+  const cached = coingeckoCache[symbol];
+  if (cached && (now - cached.time < COINGECKO_CACHE_DURATION_MS)) {
+    return cached.data;
+  }
+
+  if (coingeckoPromises[symbol]) {
+    return coingeckoPromises[symbol];
+  }
+
+  coingeckoPromises[symbol] = (async () => {
+    try {
+      // Fetch pages 1 and 2 to get most major exchanges
+      const [p1, p2] = await Promise.all([
+        axios.get(`https://api.coingecko.com/api/v3/coins/${coinId}/tickers?page=1`),
+        axios.get(`https://api.coingecko.com/api/v3/coins/${coinId}/tickers?page=2`)
+      ]);
+      
+      const tickers = [...(p1.data.tickers || []), ...(p2.data.tickers || [])];
+      coingeckoCache[symbol] = { data: tickers, time: Date.now() };
+      return tickers;
+    } catch (err) {
+      console.error(`CoinGecko fallback fetch failed for ${symbol}:`, err.message);
+      return cached ? cached.data : []; // Return stale cache if failed
+    } finally {
+      delete coingeckoPromises[symbol];
+    }
+  })();
+
+  return coingeckoPromises[symbol];
+}
+
+function getPriceFromTickers(tickers, exchangeKey, symbol) {
+  const matching = tickers.filter(t => {
+    const market = t.market.name.toLowerCase();
+    const base = t.base.toUpperCase();
+    const target = t.target.toUpperCase();
+    
+    const matchesExchange = market.includes(exchangeKey.toLowerCase());
+    
+    if (symbol === 'USDT') {
+      const matchesPair = 
+        (base === 'USDT' && (target === 'USD' || target === 'USDC')) ||
+        (base === 'USDC' && target === 'USDT');
+      return matchesExchange && matchesPair;
+    } else {
+      const matchesPair = 
+        (base === symbol.toUpperCase() && (target === 'USDT' || target === 'USD' || target === 'USDC')) ||
+        ((base === 'USDT' || base === 'USDC') && target === symbol.toUpperCase());
+      return matchesExchange && matchesPair;
+    }
+  });
+
+  if (matching.length === 0) return null;
+
+  // Sort by volume
+  matching.sort((a, b) => b.volume - a.volume);
+  const primary = matching[0];
+
+  const base = primary.base.toUpperCase();
+  const last = base === symbol.toUpperCase() 
+    ? parseFloat(primary.last) 
+    : 1 / parseFloat(primary.last);
+    
+  const spreadPct = primary.bid_ask_spread_percentage || 0.02;
+  const spread = last * (spreadPct / 100);
+  const bid = last - (spread / 2);
+  const ask = last + (spread / 2);
+
+  return { price: last, bid, ask };
+}
+
+// CEX Fetcher with Fallback
+async function getCexPrice(name, symbol, url, parser, coingeckoKey) {
+  try {
+    const data = await fetchWithTimeout(url, {}, 4000);
+    const parsed = parser(data);
+    if (!parsed || !parsed.price || isNaN(parsed.price)) throw new Error('Invalid price parsed');
+    return { name, type: 'CEX', pair: symbol === 'USDT' ? 'USDT/USDC' : `${symbol}/USDT`, ...parsed, status: 'success', source: 'direct' };
+  } catch (err) {
+    // Fallback to CoinGecko
+    try {
+      const tickers = await getCoinGeckoTickers(symbol);
+      const parsed = getPriceFromTickers(tickers, coingeckoKey || name, symbol);
+      if (parsed && parsed.price && !isNaN(parsed.price)) {
+        return { name, type: 'CEX', pair: symbol === 'USDT' ? 'USDT/USDC' : `${symbol}/USDT`, ...parsed, status: 'success', source: 'coingecko' };
+      }
+    } catch (fallbackErr) {
+      console.error(`Fallback for ${name} failed:`, fallbackErr.message);
+    }
+    return { name, type: 'CEX', pair: symbol === 'USDT' ? 'USDT/USDC' : `${symbol}/USDT`, price: null, bid: null, ask: null, status: 'error', message: err.message };
+  }
+}
+
+// DEX Fetcher using DexScreener dynamic token queries
+async function getDexPrices(symbol) {
+  const tokens = ASSET_TOKENS[symbol];
+  if (!tokens) return [];
+
+  const targets = [
+    { name: 'Uniswap V3', chain: 'ethereum', dexId: 'uniswap' },
+    { name: 'PancakeSwap V3', chain: 'bsc', dexId: 'pancakeswap' },
+    { name: 'Raydium', chain: 'solana', dexId: 'raydium' },
+    { name: 'Orca', chain: 'solana', dexId: 'orca' }
+  ];
+
+  try {
+    // Fetch individually to prevent top-30 cap drowning
+    const [resEth, resBsc, resSol] = await Promise.all([
+      fetchWithTimeout(`https://api.dexscreener.com/latest/dex/tokens/${tokens.ethereum}`, {}, 4000).catch(() => ({ pairs: [] })),
+      fetchWithTimeout(`https://api.dexscreener.com/latest/dex/tokens/${tokens.bsc}`, {}, 4000).catch(() => ({ pairs: [] })),
+      fetchWithTimeout(`https://api.dexscreener.com/latest/dex/tokens/${tokens.solana}`, {}, 4000).catch(() => ({ pairs: [] }))
+    ]);
+
+    const ethPairs = resEth.pairs || [];
+    const bscPairs = resBsc.pairs || [];
+    const solPairs = resSol.pairs || [];
+
+    const groupPairs = {
+      ethereum: ethPairs,
+      bsc: bscPairs,
+      solana: solPairs
+    };
+
+    return targets.map(t => {
+      try {
+        const chainPairs = groupPairs[t.chain] || [];
+        const match = chainPairs.filter(p => 
+          p.chainId === t.chain && 
+          p.dexId.toLowerCase().includes(t.dexId) &&
+          (
+            symbol === 'USDT' 
+              ? (p.baseToken.symbol === 'USDC' || p.quoteToken.symbol === 'USDC')
+              : (p.baseToken.symbol === 'USDT' || p.quoteToken.symbol === 'USDT')
+          )
+        );
+
+        if (match.length === 0) throw new Error('No matching pool found');
+        match.sort((a, b) => (b.liquidity?.usd || 0) - (a.liquidity?.usd || 0));
+        const best = match[0];
+
+        let price = null;
+        if (symbol === 'USDT') {
+          if (best.baseToken.symbol === 'USDT' && best.quoteToken.symbol === 'USDC') {
+            price = parseFloat(best.priceUsd) || parseFloat(best.priceNative);
+          } else {
+            price = 1 / parseFloat(best.priceNative);
+          }
+        } else {
+          // For SOL and ETH: we want the price of SOL/ETH in USDT
+          if (best.baseToken.symbol.toUpperCase() === symbol && best.quoteToken.symbol === 'USDT') {
+            price = parseFloat(best.priceNative);
+          } else if (best.baseToken.symbol === 'USDT' && best.quoteToken.symbol.toUpperCase() === symbol) {
+            price = 1 / parseFloat(best.priceNative);
+          } else {
+            price = parseFloat(best.priceUsd);
+          }
+        }
+
+        if (!price || isNaN(price)) throw new Error('Invalid price parsed');
+
+        // Estimate Bid and Ask for DEX (0.01% fee tier = 0.0001, plus small slippage = 0.02% total spread)
+        const bid = price * 0.9999;
+        const ask = price * 1.0001;
+
+        return { name: t.name, type: 'DEX', pair: symbol === 'USDT' ? 'USDT/USDC' : `${symbol}/USDT`, price, bid, ask, status: 'success', source: 'dexscreener' };
+      } catch (err) {
+        return { name: t.name, type: 'DEX', pair: symbol === 'USDT' ? 'USDT/USDC' : `${symbol}/USDT`, price: null, bid: null, ask: null, status: 'error', message: err.message };
+      }
+    });
+
+  } catch (err) {
+    return targets.map(t => ({ name: t.name, type: 'DEX', pair: symbol === 'USDT' ? 'USDT/USDC' : `${symbol}/USDT`, price: null, bid: null, ask: null, status: 'error', message: err.message }));
+  }
+}
+
+// Main prices endpoint
+app.get('/api/prices', async (req, res) => {
+  const symbol = (req.query.symbol || 'USDT').toUpperCase();
+  if (!COIN_IDS[symbol]) {
+    return res.status(400).json({ error: `Asset symbol '${symbol}' not supported. Choose between USDT, SOL, or ETH.` });
+  }
+
+  const now = Date.now();
+  const cached = priceCache[symbol];
+  if (cached && (now - cached.time < CACHE_DURATION_MS)) {
+    return res.json({ cached: true, timestamp: cached.time, data: cached.data });
+  }
+
+  try {
+    const results = await Promise.all([
+      // Binance Tickers
+      getCexPrice('Binance', symbol, `https://api.binance.com/api/v3/ticker/price?symbol=${symbol === 'USDT' ? 'USDCUSDT' : `${symbol}USDT`}`, 
+        d => {
+          const p = parseFloat(symbol === 'USDT' ? 1 / parseFloat(d.price) : d.price);
+          return { price: p, bid: p * 0.9999, ask: p * 1.0001 };
+        }, 'binance'),
+      
+      // OKX Tickers
+      getCexPrice('OKX', symbol, `https://www.okx.com/api/v5/market/ticker?instId=${symbol === 'USDT' ? 'USDT-USDC' : `${symbol}-USDT`}`, 
+        d => {
+          const p = parseFloat(symbol === 'USDT' ? parseFloat(d.data[0].last) : d.data[0].last);
+          return { price: p, bid: parseFloat(d.data[0].bidPx), ask: parseFloat(d.data[0].askPx) };
+        }, 'okx'),
+      
+      // Bybit Tickers
+      getCexPrice('Bybit', symbol, `https://api.bytick.com/v5/market/tickers?category=spot&symbol=${symbol === 'USDT' ? 'USDCUSDT' : `${symbol}USDT`}`, 
+        d => {
+          const list = d.result.list[0];
+          if (symbol === 'USDT') {
+            const last = parseFloat(list.lastPrice);
+            return { price: 1 / last, bid: 1 / parseFloat(list.ask1Price), ask: 1 / parseFloat(list.bid1Price) };
+          } else {
+            return { price: parseFloat(list.lastPrice), bid: parseFloat(list.bid1Price), ask: parseFloat(list.ask1Price) };
+          }
+        }, 'bybit'),
+      
+      // Coinbase Tickers
+      getCexPrice('Coinbase', symbol, `https://api.coinbase.com/v2/prices/${symbol === 'USDT' ? 'USDT-USD' : `${symbol}-USD`}/spot`, 
+        d => {
+          const p = parseFloat(d.data.amount);
+          return { price: p, bid: p * 0.9999, ask: p * 1.0001 };
+        }, 'coinbase'),
+      
+      // Kraken Tickers
+      getCexPrice('Kraken', symbol, `https://api.kraken.com/0/public/Ticker?pair=${symbol === 'USDT' ? 'USDTUSD' : `${symbol}USD`}`, 
+        d => {
+          const pairKey = Object.keys(d.result)[0];
+          const tick = d.result[pairKey];
+          return { price: parseFloat(tick.c[0]), bid: parseFloat(tick.b[0]), ask: parseFloat(tick.a[0]) };
+        }, 'kraken'),
+      
+      // Gate.io Tickers
+      getCexPrice('Gate.io', symbol, `https://api.gateio.ws/api/v4/spot/tickers?currency_pair=${symbol === 'USDT' ? 'USDC_USDT' : `${symbol}_USDT`}`, 
+        d => {
+          const last = parseFloat(d[0].last);
+          if (symbol === 'USDT') {
+            return { price: 1 / last, bid: 1 / parseFloat(d[0].lowest_ask), ask: 1 / parseFloat(d[0].highest_bid) };
+          } else {
+            return { price: last, bid: parseFloat(d[0].highest_bid), ask: parseFloat(d[0].lowest_ask) };
+          }
+        }, 'gate'),
+      
+      // Bitget Tickers
+      getCexPrice('Bitget', symbol, `https://api.bitget.com/api/v2/spot/market/tickers?symbol=${symbol === 'USDT' ? 'USDTUSDC' : `${symbol}USDT`}`, 
+        d => {
+          const p = parseFloat(symbol === 'USDT' ? parseFloat(d.data[0].lastPr) : d.data[0].lastPr);
+          return { price: p, bid: parseFloat(d.data[0].bidPr || p * 0.9999), ask: parseFloat(d.data[0].askPr || p * 1.0001) };
+        }, 'bitget'),
+      
+      // MEXC Tickers
+      getCexPrice('MEXC', symbol, `https://api.mexc.com/api/v3/ticker/price?symbol=${symbol === 'USDT' ? 'USDCUSDT' : `${symbol}USDT`}`, 
+        d => {
+          const p = parseFloat(symbol === 'USDT' ? 1 / parseFloat(d.price) : d.price);
+          return { price: p, bid: p * 0.9999, ask: p * 1.0001 };
+        }, 'mexc'),
+      
+      getDexPrices(symbol)
+    ]);
+
+    const flatData = [];
+    results.forEach(res => {
+      if (Array.isArray(res)) {
+        flatData.push(...res);
+      } else {
+        flatData.push(res);
+      }
+    });
+
+    priceCache[symbol] = { data: flatData, time: now };
+
+    res.json({ cached: false, timestamp: now, data: flatData });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch prices', message: error.message });
+  }
+});
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', time: new Date() });
+});
+
+app.listen(PORT, () => {
+  console.log(`Backend server running on http://localhost:${PORT}`);
+});
