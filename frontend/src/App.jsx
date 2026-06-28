@@ -16,6 +16,10 @@ const getHeaderGradient = (symbol) => {
       return 'linear-gradient(135deg, #FFB300, #FFE082)';
     case 'SHIB':
       return 'linear-gradient(135deg, #FF5722, #FFAB91)';
+    case 'JUP':
+      return 'linear-gradient(135deg, #00B0FF, #00E5FF)';
+    case 'W':
+      return 'linear-gradient(135deg, #9C27B0, #E040FB)';
     default:
       return 'linear-gradient(135deg, #a2c9ff, #dcbce2)';
   }
@@ -30,7 +34,7 @@ function App() {
   const [refreshCountdown, setRefreshCountdown] = useState(10);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [capital, setCapital] = useState(10000); // Default capital $10,000 USD
-  const [activeSymbol, setActiveSymbol] = useState('USDT'); // Active asset: USDT, SOL, ETH, PEPE, BONK, WIF, FLOKI, SHIB
+  const [activeSymbol, setActiveSymbol] = useState('USDT'); // Active asset: USDT, SOL, ETH, PEPE, BONK, WIF, FLOKI, SHIB, JUP, W
 
   // Fetch prices from backend
   const fetchPrices = async (symbol = activeSymbol, silent = false) => {
@@ -190,7 +194,7 @@ function App() {
 
         {/* Asset Selector Dropdown/Segmented Buttons */}
         <div className="asset-selector-container" style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--md-sys-color-surface-container-high)', padding: '4px', borderRadius: 'var(--md-shape-corner-full)', border: '1px solid var(--md-sys-color-outline-variant)', overflowX: 'auto', maxWidth: '100%', whiteSpace: 'nowrap' }}>
-          {['USDT', 'SOL', 'ETH', 'PEPE', 'BONK', 'WIF', 'FLOKI', 'SHIB'].map(sym => (
+          {['USDT', 'SOL', 'ETH', 'PEPE', 'BONK', 'WIF', 'FLOKI', 'SHIB', 'JUP', 'W'].map(sym => (
             <button
               key={sym}
               onClick={() => handleAssetChange(sym)}

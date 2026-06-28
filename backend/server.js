@@ -28,7 +28,9 @@ const COIN_IDS = {
   BONK: 'bonk',
   WIF: 'dogwifhat',
   FLOKI: 'floki',
-  SHIB: 'shiba-inu'
+  SHIB: 'shiba-inu',
+  JUP: 'jupiter-exchange-solana',
+  W: 'wormhole'
 };
 
 const ASSET_TOKENS = {
@@ -65,6 +67,12 @@ const ASSET_TOKENS = {
   SHIB: {
     ethereum: '0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE',
     bsc: '0x2859e4544c4bb03966803b044a91563df010cd7e'
+  },
+  JUP: {
+    solana: 'JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbgKedZNsDv'
+  },
+  W: {
+    solana: '85VBFQZC9TZkfaptBWjvUw7YbZjy52A6mjtPGjstQAmQ'
   }
 };
 
@@ -270,7 +278,7 @@ async function getDexPrices(symbol) {
 app.get('/api/prices', async (req, res) => {
   const symbol = (req.query.symbol || 'USDT').toUpperCase();
   if (!COIN_IDS[symbol]) {
-    return res.status(400).json({ error: `Asset symbol '${symbol}' not supported. Choose between USDT, SOL, ETH, PEPE, BONK, WIF, FLOKI, or SHIB.` });
+    return res.status(400).json({ error: `Asset symbol '${symbol}' not supported. Choose between USDT, SOL, ETH, PEPE, BONK, WIF, FLOKI, SHIB, JUP, or W.` });
   }
 
   const now = Date.now();
