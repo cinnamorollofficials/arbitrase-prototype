@@ -367,6 +367,10 @@ function App() {
   const [loadingExchange, setLoadingExchange] = useState(false);
   const [showExchangeModal, setShowExchangeModal] = useState(false);
   const [searchQuery, setSearchQuery] = useUrlState('q', '');
+  const [searchQueryQueue, setSearchQueryQueue] = useState('');
+  const [searchQueryBalances, setSearchQueryBalances] = useState('');
+  const [searchQueryPortfolio, setSearchQueryPortfolio] = useState('');
+  const [searchQueryModalTokens, setSearchQueryModalTokens] = useState('');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [transactions, setTransactions] = useState(() => {
     const saved = localStorage.getItem('arbitrage_transactions');
@@ -1780,34 +1784,72 @@ function App() {
         <div className="md3-card table-card">
           <div className="table-header-section" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
             <div>
-              <h2 className="table-title">Antrean Eksekusi Transaksi</h2>
+              <h2 className="table-title" style={{ margin: 0 }}>Antrean Eksekusi Transaksi</h2>
               <p style={{ fontSize: '12px', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '2px' }}>
                 Daftar eksekusi arbitrase yang telah Anda setujui dan dikirim ke antrean sistem.
               </p>
             </div>
-            {transactions.length > 0 && (
-              <button
-                onClick={() => {
-                  if (confirm('Apakah Anda yakin ingin menghapus semua transaksi di antrean?')) {
-                    setTransactions([]);
-                    localStorage.removeItem('arbitrage_transactions');
-                  }
-                }}
-                className="tab-btn"
-                style={{
-                  backgroundColor: 'var(--md-sys-color-error-container)',
-                  color: 'var(--md-sys-color-on-error-container)',
-                  fontSize: '12px',
-                  fontWeight: '700',
-                  border: 'none',
-                  borderRadius: 'var(--md-shape-corner-full)',
-                  padding: '6px 14px',
-                  cursor: 'pointer'
-                }}
-              >
-                Hapus Semua
-              </button>
-            )}
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              {/* Search Box */}
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <input
+                  type="text"
+                  placeholder="Cari transaksi..."
+                  value={searchQueryQueue}
+                  onChange={(e) => setSearchQueryQueue(e.target.value)}
+                  style={{
+                    padding: '8px 12px 8px 32px',
+                    fontSize: '12px',
+                    backgroundColor: 'rgba(255,255,255,0.06)',
+                    border: '1px solid var(--md-sys-color-outline-variant)',
+                    borderRadius: 'var(--md-shape-corner-medium)',
+                    color: '#ffffff',
+                    outline: 'none',
+                    width: '180px',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.width = '240px';
+                    e.target.style.borderColor = 'var(--md-sys-color-primary)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.width = '180px';
+                    e.target.style.borderColor = 'var(--md-sys-color-outline-variant)';
+                  }}
+                />
+                <svg 
+                  style={{ position: 'absolute', left: '10px', width: '14px', height: '14px', fill: 'var(--md-sys-color-on-surface-variant)', pointerEvents: 'none' }} 
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                </svg>
+              </div>
+
+              {transactions.length > 0 && (
+                <button
+                  onClick={() => {
+                    if (confirm('Apakah Anda yakin ingin menghapus semua transaksi di antrean?')) {
+                      setTransactions([]);
+                      localStorage.removeItem('arbitrage_transactions');
+                    }
+                  }}
+                  className="tab-btn"
+                  style={{
+                    backgroundColor: 'var(--md-sys-color-error-container)',
+                    color: 'var(--md-sys-color-on-error-container)',
+                    fontSize: '12px',
+                    fontWeight: '700',
+                    border: 'none',
+                    borderRadius: 'var(--md-shape-corner-full)',
+                    padding: '6px 14px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Hapus Semua
+                </button>
+              )}
+            </div>
           </div>
 
           <div style={{ overflowX: 'auto', marginTop: '16px' }}>
@@ -1832,7 +1874,17 @@ function App() {
                   </tr>
                 </thead>
                 <tbody>
-                  {transactions.map(tx => {
+                  {transactions
+                    .filter(tx => {
+                      const q = searchQueryQueue.toLowerCase().trim();
+                      if (!q) return true;
+                      return tx.id.toLowerCase().includes(q) ||
+                             tx.symbol.toLowerCase().includes(q) ||
+                             tx.buyExchange.toLowerCase().includes(q) ||
+                             tx.sellExchange.toLowerCase().includes(q) ||
+                             tx.status.toLowerCase().includes(q);
+                    })
+                    .map(tx => {
                     const isExpanded = expandedTxId === tx.id;
                     const currentStep = tx.stepIndex !== undefined ? tx.stepIndex : 0;
                     return (
@@ -2286,11 +2338,48 @@ function App() {
 
       {activeTab === 'balances' && (
         <div className="md3-card table-card" style={{ padding: '0px', overflow: 'hidden', animation: 'fadeIn 0.3s ease' }}>
-          <div className="table-header-section" style={{ padding: '20px' }}>
-            <h2 className="table-title">Daftar Bursa & Saldo Dompet</h2>
-            <p style={{ fontSize: '12px', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '4px', marginBottom: 0 }}>
-              Informasi saldo modal, jaringan, latensi, dan fee transaksi yang terintegrasi secara otonom.
-            </p>
+          <div className="table-header-section" style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+            <div>
+              <h2 className="table-title" style={{ margin: 0 }}>Daftar Bursa & Saldo Dompet</h2>
+              <p style={{ fontSize: '12px', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '4px', marginBottom: 0 }}>
+                Informasi saldo modal, jaringan, latensi, dan fee transaksi yang terintegrasi secara otonom.
+              </p>
+            </div>
+
+            {/* Search Box */}
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <input
+                type="text"
+                placeholder="Cari bursa/jaringan..."
+                value={searchQueryBalances}
+                onChange={(e) => setSearchQueryBalances(e.target.value)}
+                style={{
+                  padding: '8px 12px 8px 32px',
+                  fontSize: '12px',
+                  backgroundColor: 'rgba(255,255,255,0.06)',
+                  border: '1px solid var(--md-sys-color-outline-variant)',
+                  borderRadius: 'var(--md-shape-corner-medium)',
+                  color: '#ffffff',
+                  outline: 'none',
+                  width: '180px',
+                  transition: 'all 0.2s ease'
+                }}
+                onFocus={(e) => {
+                  e.target.style.width = '240px';
+                  e.target.style.borderColor = 'var(--md-sys-color-primary)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.width = '180px';
+                  e.target.style.borderColor = 'var(--md-sys-color-outline-variant)';
+                }}
+              />
+              <svg 
+                style={{ position: 'absolute', left: '10px', width: '14px', height: '14px', fill: 'var(--md-sys-color-on-surface-variant)', pointerEvents: 'none' }} 
+                viewBox="0 0 24 24"
+              >
+                <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+              </svg>
+            </div>
           </div>
 
           <div style={{ overflowX: 'auto' }}>
@@ -2306,8 +2395,16 @@ function App() {
                 </tr>
               </thead>
               <tbody>
-                {Object.entries(exchangeBalances).map(([exName, info]) => (
-                  <tr
+                {Object.entries(exchangeBalances)
+                  .filter(([exName, info]) => {
+                    const q = searchQueryBalances.toLowerCase().trim();
+                    if (!q) return true;
+                    return exName.toLowerCase().includes(q) || 
+                           (info.network && info.network.toLowerCase().includes(q)) ||
+                           (info.type && info.type.toLowerCase().includes(q));
+                  })
+                  .map(([exName, info]) => (
+                    <tr
                     key={exName}
                     style={{
                       borderBottom: '1px solid rgba(255,255,255,0.05)',
@@ -2491,11 +2588,48 @@ function App() {
       {/* Portofolio Koin Tab */}
       {activeTab === 'portfolio' && (
         <div className="md3-card table-card" style={{ padding: '0px', overflow: 'hidden', animation: 'fadeIn 0.3s ease' }}>
-          <div className="table-header-section" style={{ padding: '20px' }}>
-            <h2 className="table-title">Daftar Aset Koin & Estimasi Portofolio</h2>
-            <p style={{ fontSize: '12px', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '4px', marginBottom: 0 }}>
-              Nilai total kepemilikan koin dari seluruh bursa yang terintegrasi beserta alokasi distribusinya.
-            </p>
+          <div className="table-header-section" style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+            <div>
+              <h2 className="table-title" style={{ margin: 0 }}>Daftar Aset Koin & Estimasi Portofolio</h2>
+              <p style={{ fontSize: '12px', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '4px', marginBottom: 0 }}>
+                Nilai total kepemilikan koin dari seluruh bursa yang terintegrasi beserta alokasi distribusinya.
+              </p>
+            </div>
+
+            {/* Search Box */}
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <input
+                type="text"
+                placeholder="Cari koin/kategori..."
+                value={searchQueryPortfolio}
+                onChange={(e) => setSearchQueryPortfolio(e.target.value)}
+                style={{
+                  padding: '8px 12px 8px 32px',
+                  fontSize: '12px',
+                  backgroundColor: 'rgba(255,255,255,0.06)',
+                  border: '1px solid var(--md-sys-color-outline-variant)',
+                  borderRadius: 'var(--md-shape-corner-medium)',
+                  color: '#ffffff',
+                  outline: 'none',
+                  width: '180px',
+                  transition: 'all 0.2s ease'
+                }}
+                onFocus={(e) => {
+                  e.target.style.width = '240px';
+                  e.target.style.borderColor = 'var(--md-sys-color-primary)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.width = '180px';
+                  e.target.style.borderColor = 'var(--md-sys-color-outline-variant)';
+                }}
+              />
+              <svg 
+                style={{ position: 'absolute', left: '10px', width: '14px', height: '14px', fill: 'var(--md-sys-color-on-surface-variant)', pointerEvents: 'none' }} 
+                viewBox="0 0 24 24"
+              >
+                <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+              </svg>
+            </div>
           </div>
 
           <div style={{ overflowX: 'auto' }}>
@@ -2510,7 +2644,15 @@ function App() {
                 </tr>
               </thead>
               <tbody>
-                {coinAssets.map((coin) => {
+                {coinAssets
+                  .filter(coin => {
+                    const q = searchQueryPortfolio.toLowerCase().trim();
+                    if (!q) return true;
+                    return coin.symbol.toLowerCase().includes(q) || 
+                           coin.name.toLowerCase().includes(q) ||
+                           (coin.category && coin.category.toLowerCase().includes(q));
+                  })
+                  .map((coin) => {
                   const totalValUsd = coin.total * coin.price;
                   const hoverKey = `coin-${coin.symbol}`;
 
@@ -2750,9 +2892,47 @@ function App() {
             </div>
 
             {/* Supported Tokens (Listed in App) */}
-            <h3 style={{ fontSize: '16px', marginBottom: '12px', borderLeft: '3px solid var(--md-sys-color-primary)', paddingLeft: '8px' }}>
-              Token Terdaftar di Aplikasi ({exchangeDetails.tokens?.length || 0})
-            </h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '12px' }}>
+              <h3 style={{ fontSize: '16px', margin: 0, borderLeft: '3px solid var(--md-sys-color-primary)', paddingLeft: '8px' }}>
+                Token Terdaftar di Aplikasi ({exchangeDetails.tokens?.length || 0})
+              </h3>
+              
+              {/* Search Box */}
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <input
+                  type="text"
+                  placeholder="Cari token..."
+                  value={searchQueryModalTokens}
+                  onChange={(e) => setSearchQueryModalTokens(e.target.value)}
+                  style={{
+                    padding: '6px 10px 6px 28px',
+                    fontSize: '11px',
+                    backgroundColor: 'rgba(255,255,255,0.06)',
+                    border: '1px solid var(--md-sys-color-outline-variant)',
+                    borderRadius: 'var(--md-shape-corner-medium)',
+                    color: '#ffffff',
+                    outline: 'none',
+                    width: '140px',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.width = '180px';
+                    e.target.style.borderColor = 'var(--md-sys-color-primary)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.width = '140px';
+                    e.target.style.borderColor = 'var(--md-sys-color-outline-variant)';
+                  }}
+                />
+                <svg 
+                  style={{ position: 'absolute', left: '8px', width: '12px', height: '12px', fill: 'var(--md-sys-color-on-surface-variant)', pointerEvents: 'none' }} 
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                </svg>
+              </div>
+            </div>
+
             {loadingExchange ? (
               <div style={{ padding: '20px 0', color: 'var(--md-sys-color-on-surface-variant)' }}>Memuat data token...</div>
             ) : !exchangeDetails.tokens || exchangeDetails.tokens.length === 0 ? (
@@ -2770,8 +2950,16 @@ function App() {
                     </tr>
                   </thead>
                   <tbody>
-                    {exchangeDetails.tokens?.map(token => {
-                      const coinInfo = COIN_META_LOOKUP[token.symbol] || { name: token.symbol };
+                    {exchangeDetails.tokens
+                      ?.filter(token => {
+                        const q = searchQueryModalTokens.toLowerCase().trim();
+                        if (!q) return true;
+                        const coinInfo = COIN_META_LOOKUP[token.symbol] || { name: token.symbol };
+                        return token.symbol.toLowerCase().includes(q) || 
+                               coinInfo.name.toLowerCase().includes(q);
+                      })
+                      ?.map(token => {
+                        const coinInfo = COIN_META_LOOKUP[token.symbol] || { name: token.symbol };
                       return (
                         <tr key={token.symbol} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                           <td style={{ padding: compactMode ? '8px 12px' : '12px 16px', fontWeight: '700' }}>
