@@ -95,6 +95,20 @@ function App() {
     return saved ? JSON.parse(saved) : [];
   });
   const [expandedTxId, setExpandedTxId] = useState(null);
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortIndicator = (key) => {
+    if (sortConfig.key !== key) return ' ↕';
+    return sortConfig.direction === 'asc' ? ' ▲' : ' ▼';
+  };
 
   const handleExecuteTransaction = () => {
     const newTx = {
@@ -230,6 +244,56 @@ function App() {
       return true;
     });
   }, [prices, filter]);
+
+  // Sorted prices list
+  const sortedPrices = useMemo(() => {
+    let sortablePrices = [...filteredPrices];
+    if (sortConfig.key !== null) {
+      sortablePrices.sort((a, b) => {
+        let valA, valB;
+        
+        switch (sortConfig.key) {
+          case 'name':
+            valA = a.name;
+            valB = b.name;
+            break;
+          case 'type':
+            valA = a.type;
+            valB = b.type;
+            break;
+          case 'pair':
+            valA = a.pair;
+            valB = b.pair;
+            break;
+          case 'ask':
+            valA = a.status === 'success' && a.ask !== null ? a.ask : (sortConfig.direction === 'asc' ? Infinity : -Infinity);
+            valB = b.status === 'success' && b.ask !== null ? b.ask : (sortConfig.direction === 'asc' ? Infinity : -Infinity);
+            break;
+          case 'bid':
+            valA = a.status === 'success' && a.bid !== null ? a.bid : (sortConfig.direction === 'asc' ? -Infinity : Infinity);
+            valB = b.status === 'success' && b.bid !== null ? b.bid : (sortConfig.direction === 'asc' ? -Infinity : Infinity);
+            break;
+          case 'deviation':
+            const devA = a.price && stats.average ? ((a.price - stats.average) / stats.average) * 100 : 0;
+            const devB = b.price && stats.average ? ((b.price - stats.average) / stats.average) * 100 : 0;
+            valA = a.status === 'success' ? devA : (sortConfig.direction === 'asc' ? Infinity : -Infinity);
+            valB = b.status === 'success' ? devB : (sortConfig.direction === 'asc' ? Infinity : -Infinity);
+            break;
+          case 'status':
+            valA = a.status;
+            valB = b.status;
+            break;
+          default:
+            return 0;
+        }
+
+        if (valA < valB) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (valA > valB) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+    return sortablePrices;
+  }, [filteredPrices, sortConfig, stats.average]);
 
   // Compute Arbitrage Stats
   const stats = useMemo(() => {
@@ -594,13 +658,27 @@ function App() {
           <table className="md3-table">
             <thead>
               <tr>
-                <th>Bursa / Exchange</th>
-                <th>Jenis</th>
-                <th>Pasangan</th>
-                <th>Beli (Ask)</th>
-                <th>Jual (Bid)</th>
-                <th>Deviasi Rata-Rata (Last)</th>
-                <th>Status</th>
+                <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('name')}>
+                  Bursa / Exchange {getSortIndicator('name')}
+                </th>
+                <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('type')}>
+                  Jenis {getSortIndicator('type')}
+                </th>
+                <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('pair')}>
+                  Pasangan {getSortIndicator('pair')}
+                </th>
+                <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('ask')}>
+                  Beli (Ask) {getSortIndicator('ask')}
+                </th>
+                <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('bid')}>
+                  Jual (Bid) {getSortIndicator('bid')}
+                </th>
+                <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('deviation')}>
+                  Deviasi Rata-Rata (Last) {getSortIndicator('deviation')}
+                </th>
+                <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('status')}>
+                  Status {getSortIndicator('status')}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -618,7 +696,7 @@ function App() {
                   </tr>
                 ))
               ) : (
-                filteredPrices.map((item) => {
+                sortedPrices.map((item) => {
                   const isLowestAsk = stats.lowestAsk && stats.lowestAsk.name === item.name;
                   const isHighestBid = stats.highestBid && stats.highestBid.name === item.name;
                   
