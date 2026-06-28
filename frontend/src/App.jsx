@@ -96,6 +96,7 @@ function App() {
   });
   const [expandedTxId, setExpandedTxId] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [hoveredExchange, setHoveredExchange] = useState(null);
   const [exchangeBalances, setExchangeBalances] = useState(() => {
     const saved = localStorage.getItem('arbitrage_balances');
     if (saved) return JSON.parse(saved);
@@ -1531,7 +1532,16 @@ function App() {
       {activeTab === 'balances' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px', animation: 'fadeIn 0.3s ease' }}>
           {Object.entries(exchangeBalances).map(([exName, info]) => (
-            <div key={exName} className="md3-card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div 
+              key={exName} 
+              className="md3-card" 
+              style={{ 
+                padding: '20px', 
+                display: 'flex', 
+                flexDirection: 'column', 
+                gap: '14px'
+              }}
+            >
               
               {/* Card Header */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1567,52 +1577,121 @@ function App() {
 
               {/* Wallet Balances list */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--md-sys-color-on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <span style={{ 
+                  fontSize: '11px', 
+                  fontWeight: '700', 
+                  color: 'var(--md-sys-color-on-surface-variant)', 
+                  textTransform: 'uppercase', 
+                  letterSpacing: '0.5px'
+                }}>
                   Aset & Saldo
                 </span>
                 
-                {/* USDC balance */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {/* USDC balance - Left Title & Right Amount */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+                  {/* Left Side: Title + Tooltip Info Icon */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontWeight: '600', fontSize: '13px', color: 'var(--md-sys-color-on-surface-variant)' }}>USDC Balance</span>
+                    
+                    {/* Tooltip Info Trigger Icon */}
+                    <span 
+                      style={{ 
+                        position: 'relative', 
+                        display: 'inline-flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center',
+                        cursor: 'help',
+                        color: 'var(--md-sys-color-primary)',
+                        backgroundColor: 'rgba(0, 176, 255, 0.1)',
+                        borderRadius: '50%',
+                        width: '16px',
+                        height: '16px',
+                        fontSize: '10px',
+                        fontWeight: '700',
+                        userSelect: 'none'
+                      }}
+                      onMouseEnter={() => setHoveredExchange(exName)}
+                      onMouseLeave={() => setHoveredExchange(null)}
+                    >
+                      i
+                      
+                      {/* Floating Tooltip Box */}
+                      <div style={{
+                        position: 'absolute',
+                        bottom: '100%',
+                        left: '50%',
+                        transform: hoveredExchange === exName ? 'translateX(-50%) translateY(-8px)' : 'translateX(-50%) translateY(4px)',
+                        opacity: hoveredExchange === exName ? 1 : 0,
+                        visibility: hoveredExchange === exName ? 'visible' : 'hidden',
+                        transition: 'all 0.2s ease',
+                        backgroundColor: '#1b1d26',
+                        border: '1px solid rgba(255, 255, 255, 0.12)',
+                        borderRadius: 'var(--md-shape-corner-medium)',
+                        padding: '12px',
+                        width: '250px',
+                        zIndex: 1000,
+                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+                        pointerEvents: 'none',
+                        textTransform: 'none',
+                        letterSpacing: 'normal'
+                      }}>
+                        <div style={{ fontWeight: '700', fontSize: '11px', color: 'var(--md-sys-color-primary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '4px', textAlign: 'left' }}>
+                          Detail Saldo Koin
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', textAlign: 'left' }}>
+                          {Object.entries(info).map(([asset, val]) => {
+                            if (['USDC', 'status', 'latency', 'type', 'network', 'apiStatus'].includes(asset)) return null;
+                            
+                            let tokenPriceInUsd = 1.0;
+                            if (asset === 'SOL') tokenPriceInUsd = 145.20;
+                            else if (asset === 'ETH') tokenPriceInUsd = 3450.00;
+                            else if (asset === 'BNB') tokenPriceInUsd = 580.00;
+                            else if (asset === 'PEPE') tokenPriceInUsd = 0.0000125;
+                            else if (asset === 'BONK') tokenPriceInUsd = 0.0000215;
+                            else if (asset === 'POPCAT') tokenPriceInUsd = 0.85;
+                            else if (asset === 'RENDER') tokenPriceInUsd = 7.45;
+                            else if (asset === 'W') tokenPriceInUsd = 0.35;
+                            else if (asset === 'FLOKI') tokenPriceInUsd = 0.000175;
+
+                            const valueInUsd = val * tokenPriceInUsd;
+
+                            return (
+                              <div key={asset} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#ffffff', marginTop: '2px' }}>
+                                <span style={{ fontWeight: '700' }}>
+                                  {val.toLocaleString('id-ID')} {asset}
+                                </span>
+                                <span style={{ color: 'var(--md-sys-color-on-surface-variant)', fontSize: '10px' }}>
+                                  {formatRupiah(valueInUsd, usdToIdrRate)}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        
+                        {/* Tooltip triangle indicator */}
+                        <div style={{
+                          position: 'absolute',
+                          top: '100%',
+                          left: '50%',
+                          transform: 'translateX(-50%)',
+                          width: 0,
+                          height: 0,
+                          borderLeft: '6px solid transparent',
+                          borderRight: '6px solid transparent',
+                          borderTop: '6px solid #1b1d26'
+                        }} />
+                      </div>
+                    </span>
+                  </div>
+                  
+                  {/* Right Side: Total Balance Amount */}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', textAlign: 'right' }}>
                     <span style={{ fontWeight: '700', fontSize: '14px' }}>{info.USDC.toLocaleString('id-ID', { minimumFractionDigits: 2 })} USDC</span>
                     <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)' }}>
                       {formatRupiah(info.USDC, usdToIdrRate)}
                     </span>
                   </div>
-                  <span style={{ fontSize: '18px' }}>💵</span>
                 </div>
-
-                {/* Additional assets */}
-                {Object.entries(info).map(([asset, val]) => {
-                  if (['USDC', 'status', 'latency', 'type', 'network', 'apiStatus'].includes(asset)) return null;
-                  
-                  let tokenPriceInUsd = 1.0;
-                  if (asset === 'SOL') tokenPriceInUsd = 145.20;
-                  else if (asset === 'ETH') tokenPriceInUsd = 3450.00;
-                  else if (asset === 'BNB') tokenPriceInUsd = 580.00;
-                  else if (asset === 'PEPE') tokenPriceInUsd = 0.0000125;
-                  else if (asset === 'BONK') tokenPriceInUsd = 0.0000215;
-                  else if (asset === 'POPCAT') tokenPriceInUsd = 0.85;
-                  else if (asset === 'RENDER') tokenPriceInUsd = 7.45;
-                  else if (asset === 'W') tokenPriceInUsd = 0.35;
-                  else if (asset === 'FLOKI') tokenPriceInUsd = 0.000175;
-
-                  const valueInUsd = val * tokenPriceInUsd;
-
-                  return (
-                    <div key={asset} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontWeight: '700', fontSize: '13px' }}>
-                          {val.toLocaleString('id-ID')} {asset}
-                        </span>
-                        <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)' }}>
-                          ${valueInUsd.toLocaleString('id-ID', { maximumFractionDigits: 2 })} ≈ {formatRupiah(valueInUsd, usdToIdrRate)}
-                        </span>
-                      </div>
-                      <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--md-sys-color-on-surface-variant)' }}>🪙</span>
-                    </div>
-                  );
-                })}
               </div>
 
               {/* Action buttons */}
