@@ -1389,6 +1389,7 @@ function App() {
             }}
           >
             Portofolio Koin
+          </button>
         </div>
       </div>
 
