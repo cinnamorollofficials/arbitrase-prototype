@@ -23,7 +23,12 @@ const COINGECKO_CACHE_DURATION_MS = 60000; // 60 seconds cache
 const COIN_IDS = {
   USDT: 'tether',
   SOL: 'solana',
-  ETH: 'ethereum'
+  ETH: 'ethereum',
+  PEPE: 'pepe',
+  BONK: 'bonk',
+  WIF: 'dogwifhat',
+  FLOKI: 'floki',
+  SHIB: 'shiba-inu'
 };
 
 const ASSET_TOKENS = {
@@ -41,6 +46,25 @@ const ASSET_TOKENS = {
     ethereum: '0xC02aaA39b223FE8D0A0e5C4F27ead9083C756Cc2', // WETH
     bsc: '0x2170Ed0880ac9A755fd29B2688956BD959F933F8', // BSC WETH
     solana: '2F51aWtKGu85681M56Hm56RE5gJ642aCX456EXc8P9' // Solana wrapped ETH
+  },
+  PEPE: {
+    ethereum: '0x6982508145454Ce325dDbE47a25d4ec3d2311933',
+    bsc: '0x2572815684D48CE5e72333B8352EE52d6Ec4C2Ed'
+  },
+  BONK: {
+    solana: 'DezXAZ8z7PnrnRJjz3wX4mPtkoc27DPCNXR1356waDg',
+    ethereum: '0x11506b0d99043dE73C856149D2678f13e003180D'
+  },
+  WIF: {
+    solana: 'EKpQGSJtjMFqKZ9KQGWjhczjqHJtV7RF623eX38mndt'
+  },
+  FLOKI: {
+    ethereum: '0xcf0c122c6b73c15b6257db47662007f6e47d110c',
+    bsc: '0xfb5b838b6cffffb42b1185ff051f4041d8e11bce'
+  },
+  SHIB: {
+    ethereum: '0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE',
+    bsc: '0x2859e4544c4bb03966803b044a91563df010cd7e'
   }
 };
 
@@ -173,11 +197,11 @@ async function getDexPrices(symbol) {
   ];
 
   try {
-    // Fetch individually to prevent top-30 cap drowning
+    // Fetch individually to prevent top-30 cap drowning, skipping missing chains for specific tokens
     const [resEth, resBsc, resSol] = await Promise.all([
-      fetchWithTimeout(`https://api.dexscreener.com/latest/dex/tokens/${tokens.ethereum}`, {}, 4000).catch(() => ({ pairs: [] })),
-      fetchWithTimeout(`https://api.dexscreener.com/latest/dex/tokens/${tokens.bsc}`, {}, 4000).catch(() => ({ pairs: [] })),
-      fetchWithTimeout(`https://api.dexscreener.com/latest/dex/tokens/${tokens.solana}`, {}, 4000).catch(() => ({ pairs: [] }))
+      tokens.ethereum ? fetchWithTimeout(`https://api.dexscreener.com/latest/dex/tokens/${tokens.ethereum}`, {}, 4000).catch(() => ({ pairs: [] })) : { pairs: [] },
+      tokens.bsc ? fetchWithTimeout(`https://api.dexscreener.com/latest/dex/tokens/${tokens.bsc}`, {}, 4000).catch(() => ({ pairs: [] })) : { pairs: [] },
+      tokens.solana ? fetchWithTimeout(`https://api.dexscreener.com/latest/dex/tokens/${tokens.solana}`, {}, 4000).catch(() => ({ pairs: [] })) : { pairs: [] }
     ]);
 
     const ethPairs = resEth.pairs || [];
@@ -246,7 +270,7 @@ async function getDexPrices(symbol) {
 app.get('/api/prices', async (req, res) => {
   const symbol = (req.query.symbol || 'USDT').toUpperCase();
   if (!COIN_IDS[symbol]) {
-    return res.status(400).json({ error: `Asset symbol '${symbol}' not supported. Choose between USDT, SOL, or ETH.` });
+    return res.status(400).json({ error: `Asset symbol '${symbol}' not supported. Choose between USDT, SOL, ETH, PEPE, BONK, WIF, FLOKI, or SHIB.` });
   }
 
   const now = Date.now();
