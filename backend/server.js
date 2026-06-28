@@ -14,6 +14,9 @@ app.use(express.json());
 // Multi-asset caches
 const priceCache = {};
 const CACHE_DURATION_MS = 5000; // 5 seconds cache
+const spreadCache = {
+  USDT: 0, SOL: 0, ETH: 0, PEPE: 0, BONK: 0, WIF: 0, FLOKI: 0, SHIB: 0, JUP: 0, W: 0, RENDER: 0, POPCAT: 0, MEW: 0, ENA: 0, ONDO: 0
+};
 
 // CoinGecko fallback caches
 const coingeckoCache = {};
@@ -294,6 +297,119 @@ async function getDexPrices(symbol) {
   }
 }
 
+function getSpreadForData(data) {
+  const activePrices = data.filter(p => p.status === 'success' && p.price !== null && p.bid !== null && p.ask !== null);
+  if (activePrices.length < 2) return 0;
+  
+  let lowestAsk = null;
+  let highestBid = null;
+  
+  activePrices.forEach(p => {
+    if (lowestAsk === null || p.ask < lowestAsk.ask) lowestAsk = p;
+    if (highestBid === null || p.bid > highestBid.bid) highestBid = p;
+  });
+  
+  if (!lowestAsk || !highestBid) return 0;
+  
+  const spreadPct = ((highestBid.bid - lowestAsk.ask) / lowestAsk.ask) * 100;
+  return spreadPct;
+}
+
+async function getPricesForSymbol(symbol) {
+  const now = Date.now();
+  const cached = priceCache[symbol];
+  if (cached && (now - cached.time < CACHE_DURATION_MS)) {
+    return cached.data;
+  }
+
+  const results = await Promise.all([
+    // Binance Tickers
+    getCexPrice('Binance', symbol, `https://api.binance.com/api/v3/ticker/price?symbol=${symbol === 'USDT' ? 'USDCUSDT' : `${symbol}USDT`}`, 
+      d => {
+        const p = parseFloat(symbol === 'USDT' ? 1 / parseFloat(d.price) : d.price);
+        return { price: p, bid: p * 0.9999, ask: p * 1.0001 };
+      }, 'binance'),
+    
+    // OKX Tickers
+    getCexPrice('OKX', symbol, `https://www.okx.com/api/v5/market/ticker?instId=${symbol === 'USDT' ? 'USDT-USDC' : `${symbol}-USDT`}`, 
+      d => {
+        const p = parseFloat(symbol === 'USDT' ? parseFloat(d.data[0].last) : d.data[0].last);
+        return { price: p, bid: parseFloat(d.data[0].bidPx), ask: parseFloat(d.data[0].askPx) };
+      }, 'okx'),
+    
+    // Bybit Tickers
+    getCexPrice('Bybit', symbol, `https://api.bytick.com/v5/market/tickers?category=spot&symbol=${symbol === 'USDT' ? 'USDCUSDT' : `${symbol}USDT`}`, 
+      d => {
+        const list = d.result.list[0];
+        if (symbol === 'USDT') {
+          const last = parseFloat(list.lastPrice);
+          return { price: 1 / last, bid: 1 / parseFloat(list.ask1Price), ask: 1 / parseFloat(list.bid1Price) };
+        } else {
+          return { price: parseFloat(list.lastPrice), bid: parseFloat(list.bid1Price), ask: parseFloat(list.ask1Price) };
+        }
+      }, 'bybit'),
+    
+    // Coinbase Tickers
+    getCexPrice('Coinbase', symbol, `https://api.coinbase.com/v2/prices/${symbol === 'USDT' ? 'USDT-USD' : `${symbol}-USD`}/spot`, 
+      d => {
+        const p = parseFloat(d.data.amount);
+        return { price: p, bid: p * 0.9999, ask: p * 1.0001 };
+      }, 'coinbase'),
+    
+    // Kraken Tickers
+    getCexPrice('Kraken', symbol, `https://api.kraken.com/0/public/Ticker?pair=${symbol === 'USDT' ? 'USDTUSD' : `${symbol}USD`}`, 
+      d => {
+        const pairKey = Object.keys(d.result)[0];
+        const tick = d.result[pairKey];
+        return { price: parseFloat(tick.c[0]), bid: parseFloat(tick.b[0]), ask: parseFloat(tick.a[0]) };
+      }, 'kraken'),
+    
+    // Gate.io Tickers
+    getCexPrice('Gate.io', symbol, `https://api.gateio.ws/api/v4/spot/tickers?currency_pair=${symbol === 'USDT' ? 'USDC_USDT' : `${symbol}_USDT`}`, 
+      d => {
+        const last = parseFloat(d[0].last);
+        if (symbol === 'USDT') {
+          return { price: 1 / last, bid: 1 / parseFloat(d[0].lowest_ask), ask: 1 / parseFloat(d[0].highest_bid) };
+        } else {
+          return { price: last, bid: parseFloat(d[0].highest_bid), ask: parseFloat(d[0].lowest_ask) };
+        }
+      }, 'gate'),
+    
+    // Bitget Tickers
+    getCexPrice('Bitget', symbol, `https://api.bitget.com/api/v2/spot/market/tickers?symbol=${symbol === 'USDT' ? 'USDTUSDC' : `${symbol}USDT`}`, 
+      d => {
+        const p = parseFloat(symbol === 'USDT' ? parseFloat(d.data[0].lastPr) : d.data[0].lastPr);
+        return { price: p, bid: parseFloat(d.data[0].bidPr || p * 0.9999), ask: parseFloat(d.data[0].askPr || p * 1.0001) };
+      }, 'bitget'),
+    
+    // MEXC Tickers
+    getCexPrice('MEXC', symbol, `https://api.mexc.com/api/v3/ticker/price?symbol=${symbol === 'USDT' ? 'USDCUSDT' : `${symbol}USDT`}`, 
+      d => {
+        const p = parseFloat(symbol === 'USDT' ? 1 / parseFloat(d.price) : d.price);
+        return { price: p, bid: p * 0.9999, ask: p * 1.0001 };
+      }, 'mexc'),
+    
+    getDexPrices(symbol)
+  ]);
+
+  const flatData = [];
+  results.forEach(res => {
+    if (Array.isArray(res)) {
+      flatData.push(...res);
+    } else {
+      flatData.push(res);
+    }
+  });
+
+  priceCache[symbol] = { data: flatData, time: now };
+  
+  // Calculate and update spreadCache
+  const spread = getSpreadForData(flatData);
+  spreadCache[symbol] = spread;
+
+  return flatData;
+}
+
 // Main prices endpoint
 app.get('/api/prices', async (req, res) => {
   const symbol = (req.query.symbol || 'USDT').toUpperCase();
@@ -301,99 +417,35 @@ app.get('/api/prices', async (req, res) => {
     return res.status(400).json({ error: `Asset symbol '${symbol}' not supported. Choose between USDT, SOL, ETH, PEPE, BONK, WIF, FLOKI, SHIB, JUP, W, RENDER, POPCAT, MEW, ENA, or ONDO.` });
   }
 
-  const now = Date.now();
-  const cached = priceCache[symbol];
-  if (cached && (now - cached.time < CACHE_DURATION_MS)) {
-    return res.json({ cached: true, timestamp: cached.time, data: cached.data });
-  }
-
   try {
-    const results = await Promise.all([
-      // Binance Tickers
-      getCexPrice('Binance', symbol, `https://api.binance.com/api/v3/ticker/price?symbol=${symbol === 'USDT' ? 'USDCUSDT' : `${symbol}USDT`}`, 
-        d => {
-          const p = parseFloat(symbol === 'USDT' ? 1 / parseFloat(d.price) : d.price);
-          return { price: p, bid: p * 0.9999, ask: p * 1.0001 };
-        }, 'binance'),
-      
-      // OKX Tickers
-      getCexPrice('OKX', symbol, `https://www.okx.com/api/v5/market/ticker?instId=${symbol === 'USDT' ? 'USDT-USDC' : `${symbol}-USDT`}`, 
-        d => {
-          const p = parseFloat(symbol === 'USDT' ? parseFloat(d.data[0].last) : d.data[0].last);
-          return { price: p, bid: parseFloat(d.data[0].bidPx), ask: parseFloat(d.data[0].askPx) };
-        }, 'okx'),
-      
-      // Bybit Tickers
-      getCexPrice('Bybit', symbol, `https://api.bytick.com/v5/market/tickers?category=spot&symbol=${symbol === 'USDT' ? 'USDCUSDT' : `${symbol}USDT`}`, 
-        d => {
-          const list = d.result.list[0];
-          if (symbol === 'USDT') {
-            const last = parseFloat(list.lastPrice);
-            return { price: 1 / last, bid: 1 / parseFloat(list.ask1Price), ask: 1 / parseFloat(list.bid1Price) };
-          } else {
-            return { price: parseFloat(list.lastPrice), bid: parseFloat(list.bid1Price), ask: parseFloat(list.ask1Price) };
-          }
-        }, 'bybit'),
-      
-      // Coinbase Tickers
-      getCexPrice('Coinbase', symbol, `https://api.coinbase.com/v2/prices/${symbol === 'USDT' ? 'USDT-USD' : `${symbol}-USD`}/spot`, 
-        d => {
-          const p = parseFloat(d.data.amount);
-          return { price: p, bid: p * 0.9999, ask: p * 1.0001 };
-        }, 'coinbase'),
-      
-      // Kraken Tickers
-      getCexPrice('Kraken', symbol, `https://api.kraken.com/0/public/Ticker?pair=${symbol === 'USDT' ? 'USDTUSD' : `${symbol}USD`}`, 
-        d => {
-          const pairKey = Object.keys(d.result)[0];
-          const tick = d.result[pairKey];
-          return { price: parseFloat(tick.c[0]), bid: parseFloat(tick.b[0]), ask: parseFloat(tick.a[0]) };
-        }, 'kraken'),
-      
-      // Gate.io Tickers
-      getCexPrice('Gate.io', symbol, `https://api.gateio.ws/api/v4/spot/tickers?currency_pair=${symbol === 'USDT' ? 'USDC_USDT' : `${symbol}_USDT`}`, 
-        d => {
-          const last = parseFloat(d[0].last);
-          if (symbol === 'USDT') {
-            return { price: 1 / last, bid: 1 / parseFloat(d[0].lowest_ask), ask: 1 / parseFloat(d[0].highest_bid) };
-          } else {
-            return { price: last, bid: parseFloat(d[0].highest_bid), ask: parseFloat(d[0].lowest_ask) };
-          }
-        }, 'gate'),
-      
-      // Bitget Tickers
-      getCexPrice('Bitget', symbol, `https://api.bitget.com/api/v2/spot/market/tickers?symbol=${symbol === 'USDT' ? 'USDTUSDC' : `${symbol}USDT`}`, 
-        d => {
-          const p = parseFloat(symbol === 'USDT' ? parseFloat(d.data[0].lastPr) : d.data[0].lastPr);
-          return { price: p, bid: parseFloat(d.data[0].bidPr || p * 0.9999), ask: parseFloat(d.data[0].askPr || p * 1.0001) };
-        }, 'bitget'),
-      
-      // MEXC Tickers
-      getCexPrice('MEXC', symbol, `https://api.mexc.com/api/v3/ticker/price?symbol=${symbol === 'USDT' ? 'USDCUSDT' : `${symbol}USDT`}`, 
-        d => {
-          const p = parseFloat(symbol === 'USDT' ? 1 / parseFloat(d.price) : d.price);
-          return { price: p, bid: p * 0.9999, ask: p * 1.0001 };
-        }, 'mexc'),
-      
-      getDexPrices(symbol)
-    ]);
-
-    const flatData = [];
-    results.forEach(res => {
-      if (Array.isArray(res)) {
-        flatData.push(...res);
-      } else {
-        flatData.push(res);
-      }
+    const data = await getPricesForSymbol(symbol);
+    res.json({ 
+      cached: priceCache[symbol] ? (Date.now() - priceCache[symbol].time < CACHE_DURATION_MS) : false, 
+      timestamp: priceCache[symbol] ? priceCache[symbol].time : Date.now(), 
+      data,
+      spreads: spreadCache
     });
-
-    priceCache[symbol] = { data: flatData, time: now };
-
-    res.json({ cached: false, timestamp: now, data: flatData });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch prices', message: error.message });
   }
 });
+
+// Background polling loop to stagger CEX/DEX fetches for all coins
+let currentPollIndex = 0;
+const symbolsToPoll = Object.keys(COIN_IDS);
+
+async function pollNextSymbol() {
+  const symbol = symbolsToPoll[currentPollIndex];
+  try {
+    await getPricesForSymbol(symbol);
+  } catch (err) {
+    // Suppress error logs for background task
+  }
+  currentPollIndex = (currentPollIndex + 1) % symbolsToPoll.length;
+  setTimeout(pollNextSymbol, 3500); // Poll one symbol every 3.5 seconds
+}
+// Start background polling after 5 seconds
+setTimeout(pollNextSymbol, 5000);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
