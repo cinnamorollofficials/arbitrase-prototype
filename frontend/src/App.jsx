@@ -83,36 +83,36 @@ const COIN_ICONS = {
 };
 
 const COIN_META_LOOKUP = {
-  USDC: { name: 'USD Coin',        category: 'STABLE',      price: 1.0 },
-  USDT: { name: 'Tether',          category: 'STABLE',      price: 1.0 },
-  SOL:  { name: 'Solana',           category: 'FLUKTUATIF',  price: 145.20 },
-  ETH:  { name: 'Ethereum',         category: 'FLUKTUATIF',  price: 3450.00 },
-  BNB:  { name: 'Binance Coin',     category: 'FLUKTUATIF',  price: 580.00 },
-  PEPE: { name: 'Pepe',             category: 'MICIN',       price: 0.0000125 },
-  BONK: { name: 'Bonk',             category: 'MICIN',       price: 0.0000215 },
-  POPCAT:{ name: 'Popcat',          category: 'MICIN',       price: 0.85 },
-  RENDER:{ name: 'Render Token',    category: 'FLUKTUATIF',  price: 7.45 },
-  W:    { name: 'Wormhole',         category: 'FLUKTUATIF',  price: 0.35 },
-  FLOKI:{ name: 'Floki Inu',        category: 'MICIN',       price: 0.000175 },
-  NEIRO:{ name: 'Neiro Solana',     category: 'MICIN',       price: 0.00145 },
-  MOG:  { name: 'Mog Coin',         category: 'MICIN',       price: 0.0000018 },
-  GIGA: { name: 'GigaChad',         category: 'MICIN',       price: 0.042 },
-  TURBO:{ name: 'Turbo',            category: 'FLUKTUATIF',  price: 0.0052 },
-  FWOG: { name: 'Fwog',             category: 'MICIN',       price: 0.023 },
-  BRETT:{ name: 'Brett',            category: 'FLUKTUATIF',  price: 0.125 },
-  FDUSD:{ name: 'First Digital USD',category: 'STABLE',      price: 1.0 },
-  USDE: { name: 'Athena USDe',      category: 'STABLE',      price: 1.0 },
-  PYUSD:{ name: 'PayPal USD',       category: 'STABLE',      price: 1.0 },
-  LTC:  { name: 'Litecoin',         category: 'FLUKTUATIF',  price: 76.50 },
-  XRP:  { name: 'Ripple',           category: 'FLUKTUATIF',  price: 0.585 },
-  ADA:  { name: 'Cardano',          category: 'FLUKTUATIF',  price: 0.382 },
-  AVAX: { name: 'Avalanche',        category: 'FLUKTUATIF',  price: 28.40 },
-  DOT:  { name: 'Polkadot',         category: 'FLUKTUATIF',  price: 6.15 },
-  LINK: { name: 'Chainlink',        category: 'FLUKTUATIF',  price: 14.80 },
-  NEAR: { name: 'Near Protocol',    category: 'FLUKTUATIF',  price: 4.85 },
-  APT:  { name: 'Aptos',            category: 'FLUKTUATIF',  price: 8.20 },
-  SUI:  { name: 'Sui',              category: 'FLUKTUATIF',  price: 1.08 },
-  FET:  { name: 'Artificial Superintelligence Alliance', category: 'FLUKTUATIF', price: 1.35 },
+  USDC: { name: 'USD Coin', category: 'STABLE', price: 1.0 },
+  USDT: { name: 'Tether', category: 'STABLE', price: 1.0 },
+  SOL: { name: 'Solana', category: 'FLUKTUATIF', price: 145.20 },
+  ETH: { name: 'Ethereum', category: 'FLUKTUATIF', price: 3450.00 },
+  BNB: { name: 'Binance Coin', category: 'FLUKTUATIF', price: 580.00 },
+  PEPE: { name: 'Pepe', category: 'MICIN', price: 0.0000125 },
+  BONK: { name: 'Bonk', category: 'MICIN', price: 0.0000215 },
+  POPCAT: { name: 'Popcat', category: 'MICIN', price: 0.85 },
+  RENDER: { name: 'Render Token', category: 'FLUKTUATIF', price: 7.45 },
+  W: { name: 'Wormhole', category: 'FLUKTUATIF', price: 0.35 },
+  FLOKI: { name: 'Floki Inu', category: 'MICIN', price: 0.000175 },
+  NEIRO: { name: 'Neiro Solana', category: 'MICIN', price: 0.00145 },
+  MOG: { name: 'Mog Coin', category: 'MICIN', price: 0.0000018 },
+  GIGA: { name: 'GigaChad', category: 'MICIN', price: 0.042 },
+  TURBO: { name: 'Turbo', category: 'FLUKTUATIF', price: 0.0052 },
+  FWOG: { name: 'Fwog', category: 'MICIN', price: 0.023 },
+  BRETT: { name: 'Brett', category: 'FLUKTUATIF', price: 0.125 },
+  FDUSD: { name: 'First Digital USD', category: 'STABLE', price: 1.0 },
+  USDE: { name: 'Athena USDe', category: 'STABLE', price: 1.0 },
+  PYUSD: { name: 'PayPal USD', category: 'STABLE', price: 1.0 },
+  LTC: { name: 'Litecoin', category: 'FLUKTUATIF', price: 76.50 },
+  XRP: { name: 'Ripple', category: 'FLUKTUATIF', price: 0.585 },
+  ADA: { name: 'Cardano', category: 'FLUKTUATIF', price: 0.382 },
+  AVAX: { name: 'Avalanche', category: 'FLUKTUATIF', price: 28.40 },
+  DOT: { name: 'Polkadot', category: 'FLUKTUATIF', price: 6.15 },
+  LINK: { name: 'Chainlink', category: 'FLUKTUATIF', price: 14.80 },
+  NEAR: { name: 'Near Protocol', category: 'FLUKTUATIF', price: 4.85 },
+  APT: { name: 'Aptos', category: 'FLUKTUATIF', price: 8.20 },
+  SUI: { name: 'Sui', category: 'FLUKTUATIF', price: 1.08 },
+  FET: { name: 'Artificial Superintelligence Alliance', category: 'FLUKTUATIF', price: 1.35 },
 };
 
 const EXCHANGE_ICONS = {
@@ -252,8 +252,8 @@ function App() {
   const [capital, setCapital] = useUrlState('capital', 10000);
   const [activeSymbol, setActiveSymbol] = useUrlState('coin', 'USDT');
   const [activeTab, setActiveTab] = useUrlState('tab', 'prices');
-  const [isCompact,           setIsCompact]           = useUrlState('compact', 'false');
-  const [opportunities,       setOpportunities]       = useState([]);
+  const [isCompact, setIsCompact] = useUrlState('compact', 'false');
+  const [opportunities, setOpportunities] = useState([]);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [transactions, setTransactions] = useState(() => {
     const saved = localStorage.getItem('arbitrage_transactions');
@@ -840,11 +840,11 @@ function App() {
               Update: {lastUpdated.toLocaleTimeString()}
             </span>
           )}
-          
+
           {/* Compact View Toggle Switch */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', borderLeft: '1px solid rgba(255,255,255,0.12)', paddingLeft: '12px' }}>
             <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--md-sys-color-on-surface-variant)', whiteSpace: 'nowrap' }}>Compact UI</span>
-            <button 
+            <button
               onClick={() => setIsCompact(compactMode ? 'false' : 'true')}
               aria-label="Toggle mode compact"
               style={{
@@ -1078,26 +1078,28 @@ function App() {
                 </div>
 
                 {/* Capital Input Field */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '4px 0' }}>
-                  <span style={{ fontSize: '12px', color: 'var(--md-sys-color-on-surface-variant)' }}>Modal:</span>
-                  <input
-                    type="number"
-                    value={capital}
-                    onChange={(e) => setCapital(Math.max(0, Number(e.target.value)))}
-                    style={{
-                      width: '90px',
-                      background: 'rgba(255,255,255,0.06)',
-                      border: '1px solid var(--md-sys-color-outline-variant)',
-                      borderRadius: 'var(--md-shape-corner-small)',
-                      color: '#ffffff',
-                      padding: '3px 6px',
-                      fontSize: '12px',
-                      fontWeight: '700',
-                      outline: 'none'
-                    }}
-                  />
-                  <span style={{ fontSize: '12px', color: 'var(--md-sys-color-on-surface-variant)' }}>USDC</span>
-                </div>
+                {!compactMode && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '4px 0' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--md-sys-color-on-surface-variant)' }}>Modal:</span>
+                    <input
+                      type="number"
+                      value={capital}
+                      onChange={(e) => setCapital(Math.max(0, Number(e.target.value)))}
+                      style={{
+                        width: '90px',
+                        background: 'rgba(255,255,255,0.06)',
+                        border: '1px solid var(--md-sys-color-outline-variant)',
+                        borderRadius: 'var(--md-shape-corner-small)',
+                        color: '#ffffff',
+                        padding: '3px 6px',
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        outline: 'none'
+                      }}
+                    />
+                    <span style={{ fontSize: '12px', color: 'var(--md-sys-color-on-surface-variant)' }}>USDC</span>
+                  </div>
+                )}
 
                 {/* Net Breakdown */}
                 {!compactMode && (
@@ -1173,7 +1175,7 @@ function App() {
               gap: '6px'
             }}
           >
-            📊 Perbandingan Bursa (Real-time)
+            Perbandingan Bursa (Real-time)
           </button>
           <button
             onClick={() => setActiveTab('queue')}
@@ -1193,7 +1195,7 @@ function App() {
               gap: '6px'
             }}
           >
-            ⚙️ Antrean Transaksi ({transactions.length})
+            Antrean Transaksi ({transactions.length})
           </button>
           <button
             onClick={() => setActiveTab('agent')}
@@ -1213,7 +1215,7 @@ function App() {
               gap: '6px'
             }}
           >
-            🤖 Agen AI Scanner
+            Agen AI Scanner
           </button>
           <button
             onClick={() => setActiveTab('balances')}
@@ -1233,7 +1235,7 @@ function App() {
               gap: '6px'
             }}
           >
-            🏦 Saldo & Dompet
+            Saldo & Dompet
           </button>
           <button
             onClick={() => setActiveTab('portfolio')}
@@ -1253,7 +1255,7 @@ function App() {
               gap: '6px'
             }}
           >
-            🪙 Portofolio Koin
+            Portofolio Koin
           </button>
         </div>
       </div>
@@ -1294,7 +1296,7 @@ function App() {
                 className={`tab-btn ${filter === 'PROFITABLE' ? 'active' : ''}`}
                 onClick={() => setFilter('PROFITABLE')}
               >
-                🔥 Paling Untung
+                Paling Untung
               </button>
             </div>
           </div>
@@ -1326,7 +1328,7 @@ function App() {
                     opportunities.map(opp => {
                       const coinInfo = COIN_META_LOOKUP[opp.symbol] || { name: opp.symbol, category: 'FLUKTUATIF' };
                       const netProfit = (capital * (opp.spread / 100)) - (capital * 0.002); // gross - approx 0.2% buy/sell fees
-                      
+
                       return (
                         <tr key={opp.symbol} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', transition: 'background-color 0.2s ease' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.02)'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
                           {/* Coin symbol & icon */}
@@ -1341,9 +1343,9 @@ function App() {
                           </td>
                           {/* Category badge */}
                           <td style={{ padding: compactMode ? '8px 12px' : '16px 20px' }}>
-                            <span style={{ 
-                              fontSize: '9px', 
-                              padding: '2px 6px', 
+                            <span style={{
+                              fontSize: '9px',
+                              padding: '2px 6px',
                               borderRadius: '4px',
                               fontWeight: '700',
                               backgroundColor: coinInfo.category === 'MICIN' ? 'rgba(244,63,94,0.15)' : coinInfo.category === 'STABLE' ? 'rgba(16,185,129,0.15)' : 'rgba(59,130,246,0.15)',
