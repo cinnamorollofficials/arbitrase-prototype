@@ -533,6 +533,35 @@ app.get('/api/opportunities', (req, res) => {
   res.json({ opportunities });
 });
 
+// Endpoint to get details for a specific exchange and its supported tokens from cache
+app.get('/api/exchanges/:exchangeName', (req, res) => {
+  const exchangeName = req.params.exchangeName;
+  const tokens = [];
+
+  Object.keys(COIN_IDS).forEach(symbol => {
+    const cached = priceCache[symbol];
+    if (!cached || !cached.data) return;
+    
+    // Find the record for this exchange (case-insensitive check or partial check)
+    const match = cached.data.find(p => p.name.toLowerCase() === exchangeName.toLowerCase());
+    if (match) {
+      tokens.push({
+        symbol,
+        price: match.price,
+        bid: match.bid,
+        ask: match.ask,
+        status: match.status,
+        message: match.message
+      });
+    }
+  });
+
+  res.json({
+    exchange: exchangeName,
+    tokens
+  });
+});
+
 // Background polling loop to stagger CEX/DEX fetches for all coins
 let currentPollIndex = 0;
 const symbolsToPoll = Object.keys(COIN_IDS);

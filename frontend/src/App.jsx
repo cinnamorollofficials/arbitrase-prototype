@@ -147,6 +147,26 @@ const SYMBOL_COLORS = {
   BRETT: '#5D4037', FDUSD: '#1565C0', USDE: '#37474F', PYUSD: '#1976D2',
 };
 
+const EXCHANGES_LIST = [
+  { name: 'Binance', type: 'CEX', local: false },
+  { name: 'Bybit', type: 'CEX', local: false },
+  { name: 'Gate.io', type: 'CEX', local: false },
+  { name: 'OKX', type: 'CEX', local: false },
+  { name: 'Kraken', type: 'CEX', local: false },
+  { name: 'KuCoin', type: 'CEX', local: false },
+  { name: 'Coinbase', type: 'CEX', local: false },
+  { name: 'HTX', type: 'CEX', local: false },
+  { name: 'Bitget', type: 'CEX', local: false },
+  { name: 'MEXC', type: 'CEX', local: false },
+  { name: 'Indodax', type: 'CEX', local: true },
+  { name: 'Tokocrypto', type: 'CEX', local: true },
+  { name: 'Reku', type: 'CEX', local: true },
+  { name: 'Uniswap V3 (Ethereum)', type: 'DEX', local: false },
+  { name: 'PancakeSwap V3 (BSC)', type: 'DEX', local: false },
+  { name: 'Raydium (Solana)', type: 'DEX', local: false },
+  { name: 'Orca (Solana)', type: 'DEX', local: false }
+];
+
 function CoinIcon({ symbol, size = 28, round = true }) {
   const [failed, setFailed] = React.useState(false);
   const src = COIN_ICONS[symbol];
@@ -254,6 +274,9 @@ function App() {
   const [activeTab, setActiveTab] = useUrlState('tab', 'prices');
   const [isCompact, setIsCompact] = useUrlState('compact', 'false');
   const [opportunities, setOpportunities] = useState([]);
+  const [selectedExchange, setSelectedExchange] = useUrlState('ex', 'Binance');
+  const [exchangeDetails, setExchangeDetails] = useState({ exchange: 'Binance', tokens: [] });
+  const [loadingExchange, setLoadingExchange] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [transactions, setTransactions] = useState(() => {
     const saved = localStorage.getItem('arbitrage_transactions');
@@ -639,6 +662,27 @@ function App() {
 
     return () => clearInterval(interval);
   }, [activeSymbol]);
+
+  const fetchExchangeDetails = async (name) => {
+    setLoadingExchange(true);
+    try {
+      const response = await fetch(`http://localhost:5001/api/exchanges/${encodeURIComponent(name)}`);
+      if (response.ok) {
+        const data = await response.json();
+        setExchangeDetails(data);
+      }
+    } catch (err) {
+      console.error('Error fetching exchange details:', err);
+    } finally {
+      setLoadingExchange(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'exchanges') {
+      fetchExchangeDetails(selectedExchange);
+    }
+  }, [selectedExchange, activeTab]);
 
   const handleAssetChange = (sym) => {
     setActiveSymbol(sym);
@@ -1257,6 +1301,26 @@ function App() {
           >
             Portofolio Koin
           </button>
+          <button
+            onClick={() => setActiveTab('exchanges')}
+            className="tab-btn"
+            style={{
+              padding: '10px 20px',
+              fontSize: '13px',
+              fontWeight: '700',
+              backgroundColor: activeTab === 'exchanges' ? 'var(--md-sys-color-primary-container)' : 'var(--md-sys-color-surface-container-high)',
+              color: activeTab === 'exchanges' ? 'var(--md-sys-color-on-primary-container)' : 'var(--md-sys-color-on-surface-variant)',
+              borderRadius: 'var(--md-shape-corner-medium)',
+              border: activeTab === 'exchanges' ? '1px solid var(--md-sys-color-primary)' : '1px solid var(--md-sys-color-outline-variant)',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            Info Bursa
+          </button>
         </div>
       </div>
 
@@ -1478,7 +1542,25 @@ function App() {
                         >
                           {/* Exchange Name */}
                           <td style={{ fontWeight: '600', display: 'flex', alignItems: 'center' }}>
-                            {item.name}
+                            <button
+                              onClick={() => {
+                                setSelectedExchange(item.name);
+                                setActiveTab('exchanges');
+                              }}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                padding: 0,
+                                margin: 0,
+                                font: 'inherit',
+                                color: 'var(--md-sys-color-primary)',
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                textDecoration: 'underline'
+                              }}
+                            >
+                              {item.name}
+                            </button>
                             {item.source === 'coingecko' && (
                               <span className="badge badge-source">via CG</span>
                             )}
@@ -2445,6 +2527,205 @@ function App() {
                 })}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Detail Bursa (Exchanges Detail) Tab */}
+      {activeTab === 'exchanges' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', animation: 'fadeIn 0.3s ease' }}>
+          {/* Selector Card */}
+          <div className="md3-card" style={{ padding: '20px' }}>
+            <h2 className="table-title" style={{ marginBottom: '12px' }}>Pilih Bursa / Exchange</h2>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {EXCHANGES_LIST.map((ex) => {
+                const isActive = selectedExchange.toLowerCase() === ex.name.toLowerCase();
+                const iconName = ex.name.split(' ')[0]; // fallback for DEX names like Uniswap
+                const iconSrc = EXCHANGE_ICONS[ex.name] || EXCHANGE_ICONS[iconName] || 'https://assets.coingecko.com/markets/images/default.png';
+
+                return (
+                  <button
+                    key={ex.name}
+                    onClick={() => setSelectedExchange(ex.name)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '8px 16px',
+                      fontSize: '12px',
+                      fontWeight: '700',
+                      borderRadius: 'var(--md-shape-corner-medium)',
+                      border: isActive ? '1px solid var(--md-sys-color-primary)' : '1px solid var(--md-sys-color-outline-variant)',
+                      backgroundColor: isActive ? 'var(--md-sys-color-primary-container)' : 'var(--md-sys-color-surface-container-high)',
+                      color: isActive ? 'var(--md-sys-color-on-primary-container)' : 'var(--md-sys-color-on-surface-variant)',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <img src={iconSrc} alt={ex.name} style={{ width: '16px', height: '16px', borderRadius: '50%', objectFit: 'cover' }} />
+                    {ex.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Details Dashboard Card */}
+          <div className="md3-card table-card" style={{ padding: '0px', overflow: 'hidden' }}>
+            {/* Header section */}
+            <div className="table-header-section" style={{ padding: '24px', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <img 
+                  src={EXCHANGE_ICONS[selectedExchange] || EXCHANGE_ICONS[selectedExchange.split(' ')[0]] || 'https://assets.coingecko.com/markets/images/default.png'} 
+                  alt={selectedExchange} 
+                  style={{ width: '48px', height: '48px', borderRadius: '12px', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.1)' }}
+                />
+                <div>
+                  <h2 className="table-title" style={{ fontSize: '20px' }}>{selectedExchange}</h2>
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '6px', flexWrap: 'wrap' }}>
+                    <span className={`badge ${EXCHANGES_LIST.find(e => e.name === selectedExchange)?.type === 'DEX' ? 'badge-dex' : 'badge-cex'}`}>
+                      {EXCHANGES_LIST.find(e => e.name === selectedExchange)?.type || 'CEX'}
+                    </span>
+                    {EXCHANGES_LIST.find(e => e.name === selectedExchange)?.local && (
+                      <span className="badge" style={{ backgroundColor: 'rgba(245,158,11,0.15)', color: '#f59e0b' }}>LOCAL INDO</span>
+                    )}
+                    <span className="badge" style={{ backgroundColor: 'rgba(16,185,129,0.15)', color: '#10b981' }}>API ACTIVE</span>
+                  </div>
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <span style={{ fontSize: '12px', color: 'var(--md-sys-color-on-surface-variant)', display: 'block' }}>Koneksi API</span>
+                <span style={{ fontSize: '14px', fontWeight: '800', color: 'var(--color-profit-green)' }}>ONLINE (100%)</span>
+              </div>
+            </div>
+
+            {/* List of supported tokens filtered to app list */}
+            {loadingExchange ? (
+              <div style={{ padding: '40px', textAlign: 'center', color: 'var(--md-sys-color-on-surface-variant)' }}>
+                <div className="skeleton skeleton-text" style={{ width: '100px', height: '18px', margin: '0 auto 12px' }}></div>
+                Mengekstrak data token terdaftar...
+              </div>
+            ) : !exchangeDetails.tokens || exchangeDetails.tokens.length === 0 ? (
+              <div style={{ padding: '40px', textAlign: 'center', color: 'var(--md-sys-color-on-surface-variant)' }}>
+                🔍 Bursa {selectedExchange} tidak memiliki pasangan aktif terdaftar di aplikasi ini saat ini.
+              </div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table className={compactMode ? 'compact-table' : ''} style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', backgroundColor: 'rgba(255,255,255,0.02)' }}>
+                      <th style={{ padding: '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700' }}>Token / Aset</th>
+                      <th style={{ padding: '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700' }}>Kategori</th>
+                      <th style={{ padding: '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700', textAlign: 'right' }}>Harga Terakhir (Last)</th>
+                      <th style={{ padding: '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700', textAlign: 'right' }}>Beli (Ask)</th>
+                      <th style={{ padding: '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700', textAlign: 'right' }}>Jual (Bid)</th>
+                      <th style={{ padding: '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700', textAlign: 'center' }}>Status API</th>
+                      <th style={{ padding: '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700', textAlign: 'center' }}>Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {exchangeDetails.tokens.map((token) => {
+                      const coinInfo = COIN_META_LOOKUP[token.symbol] || { name: token.symbol, category: 'FLUKTUATIF' };
+                      
+                      return (
+                        <tr key={token.symbol} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', transition: 'background-color 0.2s ease' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.02)'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                          {/* Token Symbol */}
+                          <td style={{ padding: '16px 20px', fontWeight: '700' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <CoinIcon symbol={token.symbol} size={compactMode ? 20 : 28} />
+                              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span>{token.symbol}</span>
+                                <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: 'normal' }}>{coinInfo.name}</span>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Category Badge */}
+                          <td style={{ padding: '16px 20px' }}>
+                            <span style={{ 
+                              fontSize: '9px', 
+                              padding: '2px 6px', 
+                              borderRadius: '4px',
+                              fontWeight: '700',
+                              backgroundColor: coinInfo.category === 'MICIN' ? 'rgba(244,63,94,0.15)' : coinInfo.category === 'STABLE' ? 'rgba(16,185,129,0.15)' : 'rgba(59,130,246,0.15)',
+                              color: coinInfo.category === 'MICIN' ? '#f43f5e' : coinInfo.category === 'STABLE' ? '#10b981' : '#3b82f6'
+                            }}>
+                              {coinInfo.category}
+                            </span>
+                          </td>
+
+                          {/* Last Price */}
+                          <td style={{ padding: '16px 20px', textAlign: 'right', fontWeight: '600' }}>
+                            {token.status === 'success' && token.price !== null ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                <span>${token.price >= 0.01 ? token.price.toLocaleString('id-ID', { minimumFractionDigits: 2 }) : token.price.toFixed(7)}</span>
+                                <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: 'normal' }}>
+                                  {formatRupiah(token.price, usdToIdrRate)}
+                                </span>
+                              </div>
+                            ) : '-'}
+                          </td>
+
+                          {/* Buy Price (Ask) */}
+                          <td style={{ padding: '16px 20px', textAlign: 'right', fontWeight: '600' }}>
+                            {token.status === 'success' && token.ask !== null ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                <span style={{ color: 'var(--color-profit-green)' }}>${token.ask >= 0.01 ? token.ask.toLocaleString('id-ID', { minimumFractionDigits: 2 }) : token.ask.toFixed(7)}</span>
+                                <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: 'normal' }}>
+                                  {formatRupiah(token.ask, usdToIdrRate)}
+                                </span>
+                              </div>
+                            ) : '-'}
+                          </td>
+
+                          {/* Sell Price (Bid) */}
+                          <td style={{ padding: '16px 20px', textAlign: 'right', fontWeight: '600' }}>
+                            {token.status === 'success' && token.bid !== null ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                <span style={{ color: 'var(--md-sys-color-primary)' }}>${token.bid >= 0.01 ? token.bid.toLocaleString('id-ID', { minimumFractionDigits: 2 }) : token.bid.toFixed(7)}</span>
+                                <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: 'normal' }}>
+                                  {formatRupiah(token.bid, usdToIdrRate)}
+                                </span>
+                              </div>
+                            ) : '-'}
+                          </td>
+
+                          {/* Status Badge */}
+                          <td style={{ padding: '16px 20px', textAlign: 'center' }}>
+                            <span className={`badge ${token.status === 'success' ? 'badge-cex' : 'badge-error'}`} style={{ backgroundColor: token.status === 'success' ? 'rgba(0,176,255,0.1)' : 'rgba(244,63,94,0.1)' }}>
+                              {token.status === 'success' ? 'ONLINE' : 'OFFLINE'}
+                            </span>
+                          </td>
+
+                          {/* Action Button */}
+                          <td style={{ padding: '16px 20px', textAlign: 'center' }}>
+                            <button
+                              onClick={() => {
+                                handleAssetChange(token.symbol);
+                                setActiveTab('prices');
+                              }}
+                              className="tab-btn"
+                              style={{
+                                padding: '6px 12px',
+                                fontSize: '11px',
+                                fontWeight: '700',
+                                backgroundColor: 'var(--md-sys-color-primary-container)',
+                                color: 'var(--md-sys-color-on-primary-container)',
+                                borderRadius: 'var(--md-shape-corner-small)',
+                                border: 'none',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              Buka Chart
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}
