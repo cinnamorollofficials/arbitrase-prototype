@@ -50,60 +50,60 @@ const formatRupiah = (usdVal, rate) => {
 const defaultSymbols = ['USDT', 'SOL', 'ETH', 'PEPE', 'BONK', 'WIF', 'FLOKI', 'SHIB', 'JUP', 'W', 'RENDER', 'POPCAT', 'MEW', 'ENA', 'ONDO', 'LTC', 'XRP', 'ADA', 'AVAX', 'DOT', 'LINK', 'NEAR', 'APT', 'SUI', 'FET'];
 
 const COIN_ICONS = {
-  USDC:   'https://assets.coingecko.com/coins/images/6319/small/usdc.png',
-  USDT:   'https://assets.coingecko.com/coins/images/325/small/Tether.png',
-  SOL:    'https://assets.coingecko.com/coins/images/4128/small/solana.png',
-  ETH:    'https://assets.coingecko.com/coins/images/279/small/ethereum.png',
-  BNB:    'https://assets.coingecko.com/coins/images/825/small/bnb-icon2_2x.png',
-  PEPE:   'https://assets.coingecko.com/coins/images/29850/small/pepe-token.jpeg',
-  BONK:   'https://assets.coingecko.com/coins/images/28600/small/bonk.jpg',
+  USDC: 'https://assets.coingecko.com/coins/images/6319/small/usdc.png',
+  USDT: 'https://assets.coingecko.com/coins/images/325/small/Tether.png',
+  SOL: 'https://assets.coingecko.com/coins/images/4128/small/solana.png',
+  ETH: 'https://assets.coingecko.com/coins/images/279/small/ethereum.png',
+  BNB: 'https://assets.coingecko.com/coins/images/825/small/bnb-icon2_2x.png',
+  PEPE: 'https://assets.coingecko.com/coins/images/29850/small/pepe-token.jpeg',
+  BONK: 'https://assets.coingecko.com/coins/images/28600/small/bonk.jpg',
   POPCAT: 'https://assets.coingecko.com/coins/images/36766/small/popcat.png',
   RENDER: 'https://assets.coingecko.com/coins/images/11636/small/rndr.png',
-  W:      'https://assets.coingecko.com/coins/images/35514/small/wormhole.png',
-  FLOKI:  'https://assets.coingecko.com/coins/images/16746/small/FLOKI.png',
-  NEIRO:  'https://assets.coingecko.com/coins/images/39392/small/NEIRO.png',
-  MOG:    'https://assets.coingecko.com/coins/images/31059/small/mog.png',
-  GIGA:   'https://assets.coingecko.com/coins/images/36477/small/gigachad.png',
-  TURBO:  'https://assets.coingecko.com/coins/images/29445/small/turbo.png',
-  FWOG:   'https://assets.coingecko.com/coins/images/39272/small/fwog.png',
-  BRETT:  'https://assets.coingecko.com/coins/images/36310/small/brett.png',
-  FDUSD:  'https://assets.coingecko.com/coins/images/31079/small/firstdigital.png',
-  USDE:   'https://assets.coingecko.com/coins/images/33613/small/USDE.png',
-  PYUSD:  'https://assets.coingecko.com/coins/images/31212/small/PYUSD.png',
-  LTC:    'https://assets.coingecko.com/coins/images/2/small/litecoin.png',
-  XRP:    'https://assets.coingecko.com/coins/images/44/small/xrp.png',
-  ADA:    'https://assets.coingecko.com/coins/images/975/small/cardano.png',
-  AVAX:   'https://assets.coingecko.com/coins/images/12559/small/Avalanche_Circle_RedWhite_Trans.png',
-  DOT:    'https://assets.coingecko.com/coins/images/12171/small/polkadot.png',
-  LINK:   'https://assets.coingecko.com/coins/images/877/small/chainlink-link.png',
-  NEAR:   'https://assets.coingecko.com/coins/images/10365/small/near.png',
-  APT:    'https://assets.coingecko.com/coins/images/26455/small/aptos_round.png',
-  SUI:    'https://assets.coingecko.com/coins/images/26375/small/sui_asset.png',
-  FET:    'https://assets.coingecko.com/coins/images/5681/small/Fetch.png',
+  W: 'https://assets.coingecko.com/coins/images/35514/small/wormhole.png',
+  FLOKI: 'https://assets.coingecko.com/coins/images/16746/small/FLOKI.png',
+  NEIRO: 'https://assets.coingecko.com/coins/images/39392/small/NEIRO.png',
+  MOG: 'https://assets.coingecko.com/coins/images/31059/small/mog.png',
+  GIGA: 'https://assets.coingecko.com/coins/images/36477/small/gigachad.png',
+  TURBO: 'https://assets.coingecko.com/coins/images/29445/small/turbo.png',
+  FWOG: 'https://assets.coingecko.com/coins/images/39272/small/fwog.png',
+  BRETT: 'https://assets.coingecko.com/coins/images/36310/small/brett.png',
+  FDUSD: 'https://assets.coingecko.com/coins/images/31079/small/firstdigital.png',
+  USDE: 'https://assets.coingecko.com/coins/images/33613/small/USDE.png',
+  PYUSD: 'https://assets.coingecko.com/coins/images/31212/small/PYUSD.png',
+  LTC: 'https://assets.coingecko.com/coins/images/2/small/litecoin.png',
+  XRP: 'https://assets.coingecko.com/coins/images/44/small/xrp.png',
+  ADA: 'https://assets.coingecko.com/coins/images/975/small/cardano.png',
+  AVAX: 'https://assets.coingecko.com/coins/images/12559/small/Avalanche_Circle_RedWhite_Trans.png',
+  DOT: 'https://assets.coingecko.com/coins/images/12171/small/polkadot.png',
+  LINK: 'https://assets.coingecko.com/coins/images/877/small/chainlink-link.png',
+  NEAR: 'https://assets.coingecko.com/coins/images/10365/small/near.png',
+  APT: 'https://assets.coingecko.com/coins/images/26455/small/aptos_round.png',
+  SUI: 'https://assets.coingecko.com/coins/images/26375/small/sui_asset.png',
+  FET: 'https://assets.coingecko.com/coins/images/5681/small/Fetch.png',
 };
 
 const EXCHANGE_ICONS = {
   // CEX
-  'Binance':     'https://assets.coingecko.com/markets/images/52/small/binance.jpg',
-  'Bybit':       'https://assets.coingecko.com/markets/images/698/small/bybit_spot.png',
-  'Gate.io':     'https://assets.coingecko.com/markets/images/60/small/gate_io_logo1.jpg',
-  'OKX':         'https://assets.coingecko.com/markets/images/96/small/WeChat_Image_20220117220452.png',
-  'Kraken':      'https://assets.coingecko.com/markets/images/29/small/kraken.jpg',
-  'KuCoin':      'https://assets.coingecko.com/markets/images/61/small/kucoin.png',
-  'Coinbase':    'https://assets.coingecko.com/markets/images/23/small/Coinbase_Coin_Primary.png',
-  'HTX':         'https://assets.coingecko.com/markets/images/25/small/huobi.jpg',
-  'Indodax':     'https://coin-images.coingecko.com/markets/images/3/large/logogram-Indodax-new-_JPG_format.jpg',
-  'Tokocrypto':  'https://coin-images.coingecko.com/markets/images/635/large/tokocrypto.png',
-  'Reku':        'https://coin-images.coingecko.com/markets/images/1029/large/reku.png',
+  'Binance': 'https://assets.coingecko.com/markets/images/52/small/binance.jpg',
+  'Bybit': 'https://assets.coingecko.com/markets/images/698/small/bybit_spot.png',
+  'Gate.io': 'https://assets.coingecko.com/markets/images/60/small/gate_io_logo1.jpg',
+  'OKX': 'https://assets.coingecko.com/markets/images/96/small/WeChat_Image_20220117220452.png',
+  'Kraken': 'https://assets.coingecko.com/markets/images/29/small/kraken.jpg',
+  'KuCoin': 'https://assets.coingecko.com/markets/images/61/small/kucoin.png',
+  'Coinbase': 'https://assets.coingecko.com/markets/images/23/small/Coinbase_Coin_Primary.png',
+  'HTX': 'https://assets.coingecko.com/markets/images/25/small/huobi.jpg',
+  'Indodax': 'https://coin-images.coingecko.com/markets/images/3/large/logogram-Indodax-new-_JPG_format.jpg',
+  'Tokocrypto': 'https://coin-images.coingecko.com/markets/images/635/large/tokocrypto.png',
+  'Reku': 'https://coin-images.coingecko.com/markets/images/1029/large/reku.png',
   // DEX
-  'Raydium':     'https://assets.coingecko.com/coins/images/13928/small/PSigc4ie_400x400.jpg',
-  'Uniswap':     'https://assets.coingecko.com/coins/images/12504/small/uniswap-uni.png',
+  'Raydium': 'https://assets.coingecko.com/coins/images/13928/small/PSigc4ie_400x400.jpg',
+  'Uniswap': 'https://assets.coingecko.com/coins/images/12504/small/uniswap-uni.png',
   'PancakeSwap': 'https://assets.coingecko.com/coins/images/12632/small/pancakeswap-cake-logo.png',
-  'Orca':        'https://assets.coingecko.com/coins/images/17687/small/sunset-orca-icon.png',
-  'Curve':       'https://assets.coingecko.com/coins/images/12124/small/Curve.png',
-  'SushiSwap':   'https://assets.coingecko.com/coins/images/12271/small/512x512_Logo_no_chop.png',
-  'dYdX':        'https://assets.coingecko.com/coins/images/17500/small/hjnIm9bV.jpg',
-  'Jupiter':     'https://assets.coingecko.com/coins/images/34188/small/jup.png',
+  'Orca': 'https://assets.coingecko.com/coins/images/17687/small/sunset-orca-icon.png',
+  'Curve': 'https://assets.coingecko.com/coins/images/12124/small/Curve.png',
+  'SushiSwap': 'https://assets.coingecko.com/coins/images/12271/small/512x512_Logo_no_chop.png',
+  'dYdX': 'https://assets.coingecko.com/coins/images/17500/small/hjnIm9bV.jpg',
+  'Jupiter': 'https://assets.coingecko.com/coins/images/34188/small/jup.png',
 };
 
 const SYMBOL_COLORS = {
@@ -213,13 +213,13 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
-  const [filter,             setFilter]             = useUrlState('filter', 'ALL');
+  const [filter, setFilter] = useUrlState('filter', 'ALL');
   const [refreshCountdown, setRefreshCountdown] = useState(10);
-  const [isRefreshing,       setIsRefreshing]       = useState(false);
-  const [capital,             setCapital]             = useUrlState('capital', 10000);
-  const [activeSymbol,       setActiveSymbol]       = useUrlState('coin', 'USDT');
-  const [activeTab,           setActiveTab]           = useUrlState('tab', 'prices');
-  const [isCompact,           setIsCompact]           = useUrlState('compact', 'false');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [capital, setCapital] = useUrlState('capital', 10000);
+  const [activeSymbol, setActiveSymbol] = useUrlState('coin', 'USDT');
+  const [activeTab, setActiveTab] = useUrlState('tab', 'prices');
+  const [isCompact, setIsCompact] = useUrlState('compact', 'false');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [transactions, setTransactions] = useState(() => {
     const saved = localStorage.getItem('arbitrage_transactions');
@@ -230,25 +230,25 @@ function App() {
   const [hoveredExchange, setHoveredExchange] = useState(null);
   const [exchangeBalances, setExchangeBalances] = useState(() => {
     const defaultBalances = {
-      Binance:     { USDC: 15420.50, ETH: 0.45, PEPE: 12500000,             status: 'Online', latency: '52ms',  type: 'CEX', network: 'Ethereum / BSC / Solana',    apiStatus: 'Terkoneksi',          fee: 'Spot: 0.1% | Penarikan: $1.0'            },
-      Bybit:       { USDC: 10200.00, SOL: 12.40, BONK: 5600000,             status: 'Online', latency: '84ms',  type: 'CEX', network: 'Ethereum / BSC / Solana',    apiStatus: 'Terkoneksi',          fee: 'Spot: 0.1% | Penarikan: $1.0'            },
-      'Gate.io':   { USDC:  4150.25, RENDER: 12.0, POPCAT: 85000,           status: 'Online', latency: '120ms', type: 'CEX', network: 'Ethereum / BSC / Solana',    apiStatus: 'Terkoneksi',          fee: 'Spot: 0.2% | Penarikan: $1.5'            },
-      OKX:         { USDC:  8750.00, SOL: 8.20, ETH: 0.30, BNB: 1.5,       status: 'Online', latency: '65ms',  type: 'CEX', network: 'Ethereum / BSC / Solana / TRON', apiStatus: 'Terkoneksi',        fee: 'Spot: 0.08% | Penarikan: $1.0'           },
-      Kraken:      { USDC:  6200.00, ETH: 0.80, BNB: 0.50,                  status: 'Online', latency: '98ms',  type: 'CEX', network: 'Ethereum / Bitcoin / Solana', apiStatus: 'Terkoneksi',          fee: 'Spot: 0.16% | Penarikan: $0.90'          },
-      KuCoin:      { USDC:  3800.00, SOL: 5.40, FLOKI: 1200000,             status: 'Online', latency: '110ms', type: 'CEX', network: 'Ethereum / BSC / KCC',       apiStatus: 'Terkoneksi',          fee: 'Spot: 0.1% | Penarikan: $1.2'            },
-      Coinbase:    { USDC: 12500.00, ETH: 1.20, RENDER: 8.0,                status: 'Online', latency: '75ms',  type: 'CEX', network: 'Ethereum / Base / Solana',   apiStatus: 'Terkoneksi',          fee: 'Spot: 0.6% (taker) | Penarikan: $0.50'  },
-      HTX:         { USDC:  2900.00, SOL: 3.10, PEPE: 8000000,              status: 'Online', latency: '140ms', type: 'CEX', network: 'Ethereum / BSC / TRON',      apiStatus: 'Terkoneksi',          fee: 'Spot: 0.2% | Penarikan: $1.5'            },
-      Indodax:     { USDC:  7500.00, SOL: 15.00, ETH: 0.50, BONK: 4500000,     status: 'Online', latency: '35ms',  type: 'CEX', network: 'Indonesian Rupiah / TRON / SOL', apiStatus: 'Terkoneksi (API)', fee: 'Spot: 0.21% | Penarikan: Rp 25.000'       },
-      Tokocrypto:  { USDC:  9200.00, SOL: 10.50, PEPE: 6000000,             status: 'Online', latency: '42ms',  type: 'CEX', network: 'Indonesian Rupiah / BSC / SOL',  apiStatus: 'Terkoneksi (API)', fee: 'Spot: 0.1% | Penarikan: Rp 10.000'        },
-      Reku:        { USDC:  4800.00, ETH: 0.65, POPCAT: 40000,               status: 'Online', latency: '48ms',  type: 'CEX', network: 'Indonesian Rupiah / ERC20 / SOL', apiStatus: 'Terkoneksi (API)', fee: 'Spot: 0.1% | Penarikan: Rp 6.500'         },
-      Raydium:     { USDC: 12850.10, SOL: 45.82, BONK: 15400000,            status: 'Online', latency: '8ms',   type: 'DEX', network: 'Solana (SPL)',              apiStatus: 'Phantom Connected',   fee: 'Swap: 0.25% | Gas: ~0.00005 SOL'         },
-      Uniswap:     { USDC:  3450.00, ETH: 1.15, W: 500000,                  status: 'Online', latency: '15ms',  type: 'DEX', network: 'Ethereum / Arbitrum / Base', apiStatus: 'MetaMask Connected',  fee: 'Swap: 0.3% | Gas: ~0.002 ETH'            },
-      PancakeSwap: { USDC:  1820.75, BNB: 2.40, FLOKI: 2500000,             status: 'Online', latency: '22ms',  type: 'DEX', network: 'BNB Chain (BEP20)',          apiStatus: 'MetaMask Connected',  fee: 'Swap: 0.25% | Gas: ~0.0008 BNB'          },
-      Orca:        { USDC:  5200.00, SOL: 18.50, BONK: 6000000,             status: 'Online', latency: '6ms',   type: 'DEX', network: 'Solana (SPL)',              apiStatus: 'Phantom Connected',   fee: 'Swap: 0.3% | Gas: ~0.00003 SOL'          },
-      Curve:       { USDC:  9800.00, USDE: 4500, FDUSD: 3100, PYUSD: 2200, status: 'Online', latency: '18ms',  type: 'DEX', network: 'Ethereum / Arbitrum / Polygon', apiStatus: 'MetaMask Connected', fee: 'Swap: 0.04% | Gas: ~0.001 ETH'           },
-      SushiSwap:   { USDC:  2100.00, ETH: 0.60, RENDER: 5.0,                status: 'Online', latency: '20ms',  type: 'DEX', network: 'Ethereum / Arbitrum / BSC',  apiStatus: 'MetaMask Connected',  fee: 'Swap: 0.3% | Gas: ~0.0018 ETH'           },
-      dYdX:        { USDC:  7400.00, ETH: 0.90,                              status: 'Online', latency: '12ms',  type: 'DEX', network: 'StarkEx / Cosmos (dYdX Chain)', apiStatus: 'MetaMask Connected', fee: 'Taker: 0.05% | Maker: 0.0%'             },
-      Jupiter:     { USDC:  6600.00, SOL: 22.00, BONK: 9000000,             status: 'Online', latency: '5ms',   type: 'DEX', network: 'Solana (SPL)',              apiStatus: 'Phantom Connected',   fee: 'Swap: 0.2% | Gas: ~0.00004 SOL'          },
+      Binance: { USDC: 15420.50, ETH: 0.45, PEPE: 12500000, status: 'Online', latency: '52ms', type: 'CEX', network: 'Ethereum / BSC / Solana', apiStatus: 'Terkoneksi', fee: 'Spot: 0.1% | Penarikan: $1.0' },
+      Bybit: { USDC: 10200.00, SOL: 12.40, BONK: 5600000, status: 'Online', latency: '84ms', type: 'CEX', network: 'Ethereum / BSC / Solana', apiStatus: 'Terkoneksi', fee: 'Spot: 0.1% | Penarikan: $1.0' },
+      'Gate.io': { USDC: 4150.25, RENDER: 12.0, POPCAT: 85000, status: 'Online', latency: '120ms', type: 'CEX', network: 'Ethereum / BSC / Solana', apiStatus: 'Terkoneksi', fee: 'Spot: 0.2% | Penarikan: $1.5' },
+      OKX: { USDC: 8750.00, SOL: 8.20, ETH: 0.30, BNB: 1.5, status: 'Online', latency: '65ms', type: 'CEX', network: 'Ethereum / BSC / Solana / TRON', apiStatus: 'Terkoneksi', fee: 'Spot: 0.08% | Penarikan: $1.0' },
+      Kraken: { USDC: 6200.00, ETH: 0.80, BNB: 0.50, status: 'Online', latency: '98ms', type: 'CEX', network: 'Ethereum / Bitcoin / Solana', apiStatus: 'Terkoneksi', fee: 'Spot: 0.16% | Penarikan: $0.90' },
+      KuCoin: { USDC: 3800.00, SOL: 5.40, FLOKI: 1200000, status: 'Online', latency: '110ms', type: 'CEX', network: 'Ethereum / BSC / KCC', apiStatus: 'Terkoneksi', fee: 'Spot: 0.1% | Penarikan: $1.2' },
+      Coinbase: { USDC: 12500.00, ETH: 1.20, RENDER: 8.0, status: 'Online', latency: '75ms', type: 'CEX', network: 'Ethereum / Base / Solana', apiStatus: 'Terkoneksi', fee: 'Spot: 0.6% (taker) | Penarikan: $0.50' },
+      HTX: { USDC: 2900.00, SOL: 3.10, PEPE: 8000000, status: 'Online', latency: '140ms', type: 'CEX', network: 'Ethereum / BSC / TRON', apiStatus: 'Terkoneksi', fee: 'Spot: 0.2% | Penarikan: $1.5' },
+      Indodax: { USDC: 7500.00, SOL: 15.00, ETH: 0.50, BONK: 4500000, status: 'Online', latency: '35ms', type: 'CEX', network: 'Indonesian Rupiah / TRON / SOL', apiStatus: 'Terkoneksi (API)', fee: 'Spot: 0.21% | Penarikan: Rp 25.000' },
+      Tokocrypto: { USDC: 9200.00, SOL: 10.50, PEPE: 6000000, status: 'Online', latency: '42ms', type: 'CEX', network: 'Indonesian Rupiah / BSC / SOL', apiStatus: 'Terkoneksi (API)', fee: 'Spot: 0.1% | Penarikan: Rp 10.000' },
+      Reku: { USDC: 4800.00, ETH: 0.65, POPCAT: 40000, status: 'Online', latency: '48ms', type: 'CEX', network: 'Indonesian Rupiah / ERC20 / SOL', apiStatus: 'Terkoneksi (API)', fee: 'Spot: 0.1% | Penarikan: Rp 6.500' },
+      Raydium: { USDC: 12850.10, SOL: 45.82, BONK: 15400000, status: 'Online', latency: '8ms', type: 'DEX', network: 'Solana (SPL)', apiStatus: 'Phantom Connected', fee: 'Swap: 0.25% | Gas: ~0.00005 SOL' },
+      Uniswap: { USDC: 3450.00, ETH: 1.15, W: 500000, status: 'Online', latency: '15ms', type: 'DEX', network: 'Ethereum / Arbitrum / Base', apiStatus: 'MetaMask Connected', fee: 'Swap: 0.3% | Gas: ~0.002 ETH' },
+      PancakeSwap: { USDC: 1820.75, BNB: 2.40, FLOKI: 2500000, status: 'Online', latency: '22ms', type: 'DEX', network: 'BNB Chain (BEP20)', apiStatus: 'MetaMask Connected', fee: 'Swap: 0.25% | Gas: ~0.0008 BNB' },
+      Orca: { USDC: 5200.00, SOL: 18.50, BONK: 6000000, status: 'Online', latency: '6ms', type: 'DEX', network: 'Solana (SPL)', apiStatus: 'Phantom Connected', fee: 'Swap: 0.3% | Gas: ~0.00003 SOL' },
+      Curve: { USDC: 9800.00, USDE: 4500, FDUSD: 3100, PYUSD: 2200, status: 'Online', latency: '18ms', type: 'DEX', network: 'Ethereum / Arbitrum / Polygon', apiStatus: 'MetaMask Connected', fee: 'Swap: 0.04% | Gas: ~0.001 ETH' },
+      SushiSwap: { USDC: 2100.00, ETH: 0.60, RENDER: 5.0, status: 'Online', latency: '20ms', type: 'DEX', network: 'Ethereum / Arbitrum / BSC', apiStatus: 'MetaMask Connected', fee: 'Swap: 0.3% | Gas: ~0.0018 ETH' },
+      dYdX: { USDC: 7400.00, ETH: 0.90, status: 'Online', latency: '12ms', type: 'DEX', network: 'StarkEx / Cosmos (dYdX Chain)', apiStatus: 'MetaMask Connected', fee: 'Taker: 0.05% | Maker: 0.0%' },
+      Jupiter: { USDC: 6600.00, SOL: 22.00, BONK: 9000000, status: 'Online', latency: '5ms', type: 'DEX', network: 'Solana (SPL)', apiStatus: 'Phantom Connected', fee: 'Swap: 0.2% | Gas: ~0.00004 SOL' },
     };
     const saved = localStorage.getItem('arbitrage_balances');
     if (saved) {
@@ -257,10 +257,10 @@ function App() {
     }
     return defaultBalances;
   });
-  const [agentStatus,       setAgentStatus]       = useState('running');
+  const [agentStatus, setAgentStatus] = useState('running');
   const [minSpreadCriteria, setMinSpreadCriteria] = useUrlState('spread', 1.5);
-  const [numAgents,         setNumAgents]         = useUrlState('agents', 1);
-  const [coinCategory,     setCoinCategory]     = useUrlState('cat', 'ALL');
+  const [numAgents, setNumAgents] = useUrlState('agents', 1);
+  const [coinCategory, setCoinCategory] = useUrlState('cat', 'ALL');
   const [agentLogs, setAgentLogs] = useState([
     `[${new Date().toLocaleTimeString()}] [SYSTEM] Memulai agen AI pemindai spreads...`,
     `[${new Date().toLocaleTimeString()}] [INFO] Kriteria: Min Spread > 1.50%`
@@ -273,41 +273,41 @@ function App() {
   const coinAssets = useMemo(() => {
     const coins = {};
     const coinMeta = {
-      USDC: { name: 'USD Coin',        category: 'STABLE',      icon: COIN_ICONS.USDC,   price: 1.0 },
-      SOL:  { name: 'Solana',           category: 'FLUKTUATIF',  icon: COIN_ICONS.SOL,    price: 145.20 },
-      ETH:  { name: 'Ethereum',         category: 'FLUKTUATIF',  icon: COIN_ICONS.ETH,    price: 3450.00 },
-      BNB:  { name: 'Binance Coin',     category: 'FLUKTUATIF',  icon: COIN_ICONS.BNB,    price: 580.00 },
-      PEPE: { name: 'Pepe',             category: 'MICIN',       icon: COIN_ICONS.PEPE,   price: 0.0000125 },
-      BONK: { name: 'Bonk',             category: 'MICIN',       icon: COIN_ICONS.BONK,   price: 0.0000215 },
-      POPCAT:{ name: 'Popcat',          category: 'MICIN',       icon: COIN_ICONS.POPCAT, price: 0.85 },
-      RENDER:{ name: 'Render Token',    category: 'FLUKTUATIF',  icon: COIN_ICONS.RENDER, price: 7.45 },
-      W:    { name: 'Wormhole',         category: 'FLUKTUATIF',  icon: COIN_ICONS.W,      price: 0.35 },
-      FLOKI:{ name: 'Floki Inu',        category: 'MICIN',       icon: COIN_ICONS.FLOKI,  price: 0.000175 },
-      NEIRO:{ name: 'Neiro Solana',     category: 'MICIN',       icon: COIN_ICONS.NEIRO,  price: 0.00145 },
-      MOG:  { name: 'Mog Coin',         category: 'MICIN',       icon: COIN_ICONS.MOG,    price: 0.0000018 },
-      GIGA: { name: 'GigaChad',         category: 'MICIN',       icon: COIN_ICONS.GIGA,   price: 0.042 },
-      TURBO:{ name: 'Turbo',            category: 'FLUKTUATIF',  icon: COIN_ICONS.TURBO,  price: 0.0052 },
-      FWOG: { name: 'Fwog',             category: 'MICIN',       icon: COIN_ICONS.FWOG,   price: 0.023 },
-      BRETT:{ name: 'Brett',            category: 'FLUKTUATIF',  icon: COIN_ICONS.BRETT,  price: 0.125 },
-      FDUSD:{ name: 'First Digital USD',category: 'STABLE',      icon: COIN_ICONS.FDUSD,  price: 1.0 },
-      USDE: { name: 'Athena USDe',      category: 'STABLE',      icon: COIN_ICONS.USDE,   price: 1.0 },
-      PYUSD:{ name: 'PayPal USD',       category: 'STABLE',      icon: COIN_ICONS.PYUSD,  price: 1.0 },
-      LTC:  { name: 'Litecoin',         category: 'FLUKTUATIF',  icon: COIN_ICONS.LTC,    price: 76.50 },
-      XRP:  { name: 'Ripple',           category: 'FLUKTUATIF',  icon: COIN_ICONS.XRP,    price: 0.585 },
-      ADA:  { name: 'Cardano',          category: 'FLUKTUATIF',  icon: COIN_ICONS.ADA,    price: 0.382 },
-      AVAX: { name: 'Avalanche',        category: 'FLUKTUATIF',  icon: COIN_ICONS.AVAX,   price: 28.40 },
-      DOT:  { name: 'Polkadot',         category: 'FLUKTUATIF',  icon: COIN_ICONS.DOT,    price: 6.15 },
-      LINK: { name: 'Chainlink',        category: 'FLUKTUATIF',  icon: COIN_ICONS.LINK,   price: 14.80 },
-      NEAR: { name: 'Near Protocol',    category: 'FLUKTUATIF',  icon: COIN_ICONS.NEAR,   price: 4.85 },
-      APT:  { name: 'Aptos',            category: 'FLUKTUATIF',  icon: COIN_ICONS.APT,    price: 8.20 },
-      SUI:  { name: 'Sui',              category: 'FLUKTUATIF',  icon: COIN_ICONS.SUI,    price: 1.08 },
-      FET:  { name: 'Artificial Superintelligence Alliance', category: 'FLUKTUATIF', icon: COIN_ICONS.FET, price: 1.35 },
+      USDC: { name: 'USD Coin', category: 'STABLE', icon: COIN_ICONS.USDC, price: 1.0 },
+      SOL: { name: 'Solana', category: 'FLUKTUATIF', icon: COIN_ICONS.SOL, price: 145.20 },
+      ETH: { name: 'Ethereum', category: 'FLUKTUATIF', icon: COIN_ICONS.ETH, price: 3450.00 },
+      BNB: { name: 'Binance Coin', category: 'FLUKTUATIF', icon: COIN_ICONS.BNB, price: 580.00 },
+      PEPE: { name: 'Pepe', category: 'MICIN', icon: COIN_ICONS.PEPE, price: 0.0000125 },
+      BONK: { name: 'Bonk', category: 'MICIN', icon: COIN_ICONS.BONK, price: 0.0000215 },
+      POPCAT: { name: 'Popcat', category: 'MICIN', icon: COIN_ICONS.POPCAT, price: 0.85 },
+      RENDER: { name: 'Render Token', category: 'FLUKTUATIF', icon: COIN_ICONS.RENDER, price: 7.45 },
+      W: { name: 'Wormhole', category: 'FLUKTUATIF', icon: COIN_ICONS.W, price: 0.35 },
+      FLOKI: { name: 'Floki Inu', category: 'MICIN', icon: COIN_ICONS.FLOKI, price: 0.000175 },
+      NEIRO: { name: 'Neiro Solana', category: 'MICIN', icon: COIN_ICONS.NEIRO, price: 0.00145 },
+      MOG: { name: 'Mog Coin', category: 'MICIN', icon: COIN_ICONS.MOG, price: 0.0000018 },
+      GIGA: { name: 'GigaChad', category: 'MICIN', icon: COIN_ICONS.GIGA, price: 0.042 },
+      TURBO: { name: 'Turbo', category: 'FLUKTUATIF', icon: COIN_ICONS.TURBO, price: 0.0052 },
+      FWOG: { name: 'Fwog', category: 'MICIN', icon: COIN_ICONS.FWOG, price: 0.023 },
+      BRETT: { name: 'Brett', category: 'FLUKTUATIF', icon: COIN_ICONS.BRETT, price: 0.125 },
+      FDUSD: { name: 'First Digital USD', category: 'STABLE', icon: COIN_ICONS.FDUSD, price: 1.0 },
+      USDE: { name: 'Athena USDe', category: 'STABLE', icon: COIN_ICONS.USDE, price: 1.0 },
+      PYUSD: { name: 'PayPal USD', category: 'STABLE', icon: COIN_ICONS.PYUSD, price: 1.0 },
+      LTC: { name: 'Litecoin', category: 'FLUKTUATIF', icon: COIN_ICONS.LTC, price: 76.50 },
+      XRP: { name: 'Ripple', category: 'FLUKTUATIF', icon: COIN_ICONS.XRP, price: 0.585 },
+      ADA: { name: 'Cardano', category: 'FLUKTUATIF', icon: COIN_ICONS.ADA, price: 0.382 },
+      AVAX: { name: 'Avalanche', category: 'FLUKTUATIF', icon: COIN_ICONS.AVAX, price: 28.40 },
+      DOT: { name: 'Polkadot', category: 'FLUKTUATIF', icon: COIN_ICONS.DOT, price: 6.15 },
+      LINK: { name: 'Chainlink', category: 'FLUKTUATIF', icon: COIN_ICONS.LINK, price: 14.80 },
+      NEAR: { name: 'Near Protocol', category: 'FLUKTUATIF', icon: COIN_ICONS.NEAR, price: 4.85 },
+      APT: { name: 'Aptos', category: 'FLUKTUATIF', icon: COIN_ICONS.APT, price: 8.20 },
+      SUI: { name: 'Sui', category: 'FLUKTUATIF', icon: COIN_ICONS.SUI, price: 1.08 },
+      FET: { name: 'Artificial Superintelligence Alliance', category: 'FLUKTUATIF', icon: COIN_ICONS.FET, price: 1.35 },
     };
 
     Object.entries(exchangeBalances).forEach(([exName, info]) => {
       Object.entries(info).forEach(([key, val]) => {
         if (['status', 'latency', 'type', 'network', 'apiStatus', 'fee'].includes(key)) return;
-        
+
         if (!coins[key]) {
           coins[key] = {
             symbol: key,
@@ -319,7 +319,7 @@ function App() {
             breakdown: []
           };
         }
-        
+
         if (val > 0) {
           coins[key].total += val;
           coins[key].breakdown.push({ exName, amount: val });
@@ -352,7 +352,7 @@ function App() {
     const interval = setInterval(() => {
       const time = new Date().toLocaleTimeString();
       const agentId = Math.floor(Math.random() * numAgents) + 1;
-      
+
       let logOptions = [];
       if (coinCategory === 'MICIN') {
         logOptions = [
@@ -388,12 +388,12 @@ function App() {
 
       const randomLog = logOptions[Math.floor(Math.random() * logOptions.length)];
       setAgentLogs(prev => [`[${time}] [AGENT #${agentId}] [SCAN] ${randomLog}`, ...prev.slice(0, 49)]);
-      
+
       if (logCounter > 0 && logCounter % 3 === 0) {
         const nextCoin = mockAvailableCoins.find(
-          c => !discoveredCoins.some(d => d.symbol === c.symbol) && 
-               c.spread >= minSpreadCriteria &&
-               (coinCategory === 'ALL' || c.category === coinCategory)
+          c => !discoveredCoins.some(d => d.symbol === c.symbol) &&
+            c.spread >= minSpreadCriteria &&
+            (coinCategory === 'ALL' || c.category === coinCategory)
         );
         if (nextCoin) {
           setDiscoveredCoins(prev => [
@@ -417,14 +417,14 @@ function App() {
     if (!symbolsList.includes(coin.symbol)) {
       const updatedSymbols = [...symbolsList, coin.symbol];
       setSymbolsList(updatedSymbols);
-      
+
       setSpreads(prev => ({
         ...prev,
         [coin.symbol]: coin.spread
       }));
 
       setDiscoveredCoins(prev => prev.map(c => c.symbol === coin.symbol ? { ...c, added: true } : c));
-      
+
       setAgentLogs(prev => [
         `[${new Date().toLocaleTimeString()}] [SYSTEM] Token ${coin.symbol} berhasil ditambahkan ke Daftar Utama!`,
         ...prev
@@ -448,7 +448,7 @@ function App() {
   const handleExecuteTransaction = () => {
     const buyExchange = stats.lowestAsk?.name;
     const sellExchange = stats.highestBid?.name;
-    
+
     if (buyExchange && sellExchange) {
       setExchangeBalances(prevBalances => {
         const updated = { ...prevBalances };
@@ -487,7 +487,7 @@ function App() {
     setTransactions(updated);
     localStorage.setItem('arbitrage_transactions', JSON.stringify(updated));
     setShowConfirmModal(false);
-    
+
     // Auto-focus and open the new transaction pipeline
     setExpandedTxId(newTx.id);
     setActiveTab('queue');
@@ -545,15 +545,15 @@ function App() {
         USDE: { price: 0.998, spread: 0.45 },
         PYUSD: { price: 1.001, spread: 0.28 }
       };
-      
+
       const config = mockRates[symbol] || { price: 0.05, spread: 2.0 };
       const p = config.price;
       const s = config.spread / 100;
 
       const mockData = [
         { name: 'Binance', type: 'CEX', pair: `${symbol}/USDT`, price: p, bid: p * 0.999, ask: p * 1.001, status: 'success', source: 'direct' },
-        { name: 'Bybit', type: 'CEX', pair: `${symbol}/USDT`, price: p * (1 - s/2), bid: p * (1 - s/2) * 0.999, ask: p * (1 - s/2) * 1.001, status: 'success', source: 'direct' },
-        { name: 'Gate.io', type: 'CEX', pair: `${symbol}/USDT`, price: p * (1 + s/2), bid: p * (1 + s/2) * 0.999, ask: p * (1 + s/2) * 1.001, status: 'success', source: 'direct' },
+        { name: 'Bybit', type: 'CEX', pair: `${symbol}/USDT`, price: p * (1 - s / 2), bid: p * (1 - s / 2) * 0.999, ask: p * (1 - s / 2) * 1.001, status: 'success', source: 'direct' },
+        { name: 'Gate.io', type: 'CEX', pair: `${symbol}/USDT`, price: p * (1 + s / 2), bid: p * (1 + s / 2) * 0.999, ask: p * (1 + s / 2) * 1.001, status: 'success', source: 'direct' },
         { name: 'Raydium', type: 'DEX', pair: `${symbol}/USDT`, price: p, bid: p * 0.999, ask: p * 1.001, status: 'success', source: 'dexscreener' }
       ];
 
@@ -573,7 +573,7 @@ function App() {
         throw new Error(`Server returned HTTP ${response.status}`);
       }
       const json = await response.json();
-      
+
       // Filter out any exchanges that failed to fetch price
       const validPrices = (json.data || []).map(item => ({
         ...item,
@@ -630,11 +630,12 @@ function App() {
     setPrices([]); // Show loading skeletons
   };
 
-  // Filtered prices list
   const filteredPrices = useMemo(() => {
+    const localExchanges = ['Indodax', 'Tokocrypto', 'Reku'];
     return prices.filter(p => {
       if (filter === 'CEX') return p.type === 'CEX';
       if (filter === 'DEX') return p.type === 'DEX';
+      if (filter === 'LOCAL') return localExchanges.includes(p.name);
       return true;
     });
   }, [prices, filter]);
@@ -656,7 +657,7 @@ function App() {
     });
 
     const average = sum / activePrices.length;
-    
+
     // Arbitrage spread = Highest Sell Price (Bid) - Lowest Buy Price (Ask)
     const spreadUsd = highestBid.bid - lowestAsk.ask;
     const spreadPct = (spreadUsd / lowestAsk.ask) * 100;
@@ -676,7 +677,7 @@ function App() {
     if (sortConfig.key !== null) {
       sortablePrices.sort((a, b) => {
         let valA, valB;
-        
+
         switch (sortConfig.key) {
           case 'name':
             valA = a.name;
@@ -723,13 +724,13 @@ function App() {
   // Compute Net Profit after fee deductions
   const netCalculation = useMemo(() => {
     if (!stats.lowestAsk || !stats.highestBid) return { gross: 0, fees: 0, net: 0, isCrossChain: false };
-    
+
     const gross = capital * (stats.spreadPct / 100);
-    
+
     // Determine if cross-chain
     const isDexA = stats.lowestAsk.type === 'DEX';
     const isDexB = stats.highestBid.type === 'DEX';
-    
+
     let isCrossChain = false;
     if (isDexA && isDexB) {
       const getChainName = (name) => {
@@ -747,7 +748,7 @@ function App() {
     const swapFee = capital * 0.0002; // 0.01% Pancake V3 + 0.01% Raydium V3 / typical CEX fee
     const bridgeFee = isCrossChain ? (capital * 0.0005) : 0; // 0.05% bridge fee
     const gasFee = isCrossChain ? 1.00 : 0.10; // $1 flat fee (BSC + Solana gas/bridge claims) vs $0.10 same-chain gas
-    
+
     const totalFees = swapFee + bridgeFee + gasFee;
     const net = gross - totalFees;
 
@@ -821,10 +822,10 @@ function App() {
                 <CoinIcon symbol={sym} size={16} />
                 {sym}
                 {spread > 0 && (
-                  <span style={{ 
-                    fontSize: '10px', 
-                    color: activeSymbol === sym ? 'var(--md-sys-color-primary)' : 'var(--color-profit-green)', 
-                    fontWeight: '800' 
+                  <span style={{
+                    fontSize: '10px',
+                    color: activeSymbol === sym ? 'var(--md-sys-color-primary)' : 'var(--color-profit-green)',
+                    fontWeight: '800'
                   }}>
                     +{spread.toFixed(2)}%
                   </span>
@@ -840,9 +841,9 @@ function App() {
         <div className="md3-card" style={{ borderColor: 'var(--md-sys-color-error)', backgroundColor: 'rgba(255, 180, 171, 0.05)', color: 'var(--md-sys-color-error)' }}>
           <div style={{ fontWeight: '700', marginBottom: '4px' }}>Koneksi Gagal</div>
           <p style={{ fontSize: '14px' }}>{error}</p>
-          <button 
-            onClick={handleManualRefresh} 
-            className="tab-btn" 
+          <button
+            onClick={handleManualRefresh}
+            className="tab-btn"
             style={{ marginTop: '12px', backgroundColor: 'var(--md-sys-color-error-container)', color: 'var(--md-sys-color-on-error-container)' }}
           >
             Coba Lagi
@@ -901,13 +902,13 @@ function App() {
                   <div className="rec-arrow">➔</div>
                   <div className="rec-node">{stats.highestBid.name}</div>
                 </div>
-                
+
                 {/* Capital Input Field */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '4px 0' }}>
                   <span style={{ fontSize: '12px', color: 'var(--md-sys-color-on-surface-variant)' }}>Modal:</span>
-                  <input 
-                    type="number" 
-                    value={capital} 
+                  <input
+                    type="number"
+                    value={capital}
                     onChange={(e) => setCapital(Math.max(0, Number(e.target.value)))}
                     style={{
                       width: '90px',
@@ -1083,7 +1084,7 @@ function App() {
         {/* Compact View Switch */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'var(--md-sys-color-surface-container-high)', padding: '6px 14px', borderRadius: 'var(--md-shape-corner-medium)', border: '1px solid var(--md-sys-color-outline-variant)' }}>
           <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--md-sys-color-on-surface-variant)' }}>Mode Compact</span>
-          <button 
+          <button
             onClick={() => setIsCompact(compactMode ? 'false' : 'true')}
             aria-label="Toggle mode compact"
             style={{
@@ -1118,186 +1119,192 @@ function App() {
         <div className="md3-card table-card">
           <div className="table-header-section">
             <h2 className="table-title">Perbandingan Order Book CEX & DEX</h2>
-            
+
             {/* Filter Tabs */}
             <div className="tabs-container">
-              <button 
+              <button
                 className={`tab-btn ${filter === 'ALL' ? 'active' : ''}`}
                 onClick={() => setFilter('ALL')}
               >
                 Semua
               </button>
-              <button 
+              <button
                 className={`tab-btn ${filter === 'CEX' ? 'active' : ''}`}
                 onClick={() => setFilter('CEX')}
               >
                 CEX Only
               </button>
-              <button 
+              <button
                 className={`tab-btn ${filter === 'DEX' ? 'active' : ''}`}
                 onClick={() => setFilter('DEX')}
               >
                 DEX Only
               </button>
+              <button
+                className={`tab-btn ${filter === 'LOCAL' ? 'active' : ''}`}
+                onClick={() => setFilter('LOCAL')}
+              >
+                Indonesia Only
+              </button>
             </div>
           </div>
 
-        {/* Table Content */}
-        <div className={`table-wrapper ${compactMode ? 'compact-table' : ''}`}>
-          <table className="md3-table">
-            <thead>
-              <tr>
-                <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('name')}>
-                  Bursa / Exchange {getSortIndicator('name')}
-                </th>
-                <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('type')}>
-                  Jenis {getSortIndicator('type')}
-                </th>
-                <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('pair')}>
-                  Pasangan {getSortIndicator('pair')}
-                </th>
-                <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('ask')}>
-                  Beli (Ask) {getSortIndicator('ask')}
-                </th>
-                <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('bid')}>
-                  Jual (Bid) {getSortIndicator('bid')}
-                </th>
-                <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('deviation')}>
-                  Deviasi Rata-Rata (Last) {getSortIndicator('deviation')}
-                </th>
-                <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('status')}>
-                  Status {getSortIndicator('status')}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading && prices.length === 0 ? (
-                // Table Loading Skeletons
-                [1, 2, 3, 4, 5].map(i => (
-                  <tr key={i}>
-                    <td><div className="skeleton skeleton-text" style={{ width: '120px', height: '18px' }}></div></td>
-                    <td><div className="skeleton skeleton-text" style={{ width: '60px', height: '18px' }}></div></td>
-                    <td><div className="skeleton skeleton-text" style={{ width: '70px', height: '18px' }}></div></td>
-                    <td><div className="skeleton skeleton-text" style={{ width: '80px', height: '18px' }}></div></td>
-                    <td><div className="skeleton skeleton-text" style={{ width: '80px', height: '18px' }}></div></td>
-                    <td><div className="skeleton skeleton-text" style={{ width: '60px', height: '18px' }}></div></td>
-                    <td><div className="skeleton skeleton-text" style={{ width: '80px', height: '18px' }}></div></td>
-                  </tr>
-                ))
-              ) : (
-                sortedPrices.map((item) => {
-                  const isLowestAsk = stats.lowestAsk && stats.lowestAsk.name === item.name;
-                  const isHighestBid = stats.highestBid && stats.highestBid.name === item.name;
-                  
-                  // Calculate deviation of last price from average
-                  let deviation = 0;
-                  if (item.price && stats.average) {
-                    deviation = ((item.price - stats.average) / stats.average) * 100;
-                  }
-
-                  return (
-                    <tr 
-                      key={item.name}
-                      style={{
-                        backgroundColor: isLowestAsk 
-                          ? 'rgba(52, 211, 153, 0.03)' 
-                          : isHighestBid 
-                            ? 'rgba(248, 113, 113, 0.03)' 
-                            : 'transparent'
-                      }}
-                    >
-                      {/* Exchange Name */}
-                      <td style={{ fontWeight: '600', display: 'flex', alignItems: 'center' }}>
-                        {item.name}
-                        {item.source === 'coingecko' && (
-                          <span className="badge badge-source">via CG</span>
-                        )}
-                      </td>
-                      
-                      {/* Type Badge */}
-                      <td>
-                        <span className={`badge ${item.type === 'CEX' ? 'badge-cex' : 'badge-dex'}`}>
-                          {item.type}
-                        </span>
-                      </td>
-
-                      {/* Trading Pair */}
-                      <td style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
-                        {item.pair}
-                      </td>
-
-                      {/* Ask Price (Buy Price) */}
-                      <td>
-                        {item.status === 'success' && item.ask !== null ? (
-                          <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span className="price-tag" style={{ color: isLowestAsk ? 'var(--color-profit-green)' : 'inherit', fontWeight: '700' }}>
-                              ${item.ask.toFixed(5)}
-                            </span>
-                            <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '1px' }}>
-                              {formatRupiah(item.ask, usdToIdrRate)}
-                            </span>
-                          </div>
-                        ) : (
-                          <span style={{ color: 'var(--md-sys-color-error)', fontStyle: 'italic' }}>
-                            Error
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Bid Price (Sell Price) */}
-                      <td>
-                        {item.status === 'success' && item.bid !== null ? (
-                          <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span className="price-tag" style={{ color: isHighestBid ? 'var(--color-loss-red)' : 'inherit', fontWeight: '700' }}>
-                              ${item.bid.toFixed(5)}
-                            </span>
-                            <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '1px' }}>
-                              {formatRupiah(item.bid, usdToIdrRate)}
-                            </span>
-                          </div>
-                        ) : (
-                          <span style={{ color: 'var(--md-sys-color-error)', fontStyle: 'italic' }}>
-                            Error
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Average Deviation */}
-                      <td>
-                        {item.status === 'success' && item.price !== null ? (
-                          <span className={`deviation-tag ${deviation >= 0 ? 'positive' : 'negative'}`}>
-                            {deviation >= 0 ? '+' : ''}{deviation.toFixed(4)}%
-                          </span>
-                        ) : (
-                          '-'
-                        )}
-                      </td>
-
-                      {/* Action / Indicators */}
-                      <td>
-                        {item.status === 'success' ? (
-                          isLowestAsk ? (
-                            <span className="price-badge lowest">Beli Terendah (Ask)</span>
-                          ) : isHighestBid ? (
-                            <span className="price-badge highest">Jual Tertinggi (Bid)</span>
-                          ) : (
-                            <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>Stabil</span>
-                          )
-                        ) : (
-                          <span style={{ color: 'var(--md-sys-color-error)', fontSize: '12px' }} title={item.message}>
-                            Offline
-                          </span>
-                        )}
-                      </td>
+          {/* Table Content */}
+          <div className={`table-wrapper ${compactMode ? 'compact-table' : ''}`}>
+            <table className="md3-table">
+              <thead>
+                <tr>
+                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('name')}>
+                    Bursa / Exchange {getSortIndicator('name')}
+                  </th>
+                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('type')}>
+                    Jenis {getSortIndicator('type')}
+                  </th>
+                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('pair')}>
+                    Pasangan {getSortIndicator('pair')}
+                  </th>
+                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('ask')}>
+                    Beli (Ask) {getSortIndicator('ask')}
+                  </th>
+                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('bid')}>
+                    Jual (Bid) {getSortIndicator('bid')}
+                  </th>
+                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('deviation')}>
+                    Deviasi Rata-Rata (Last) {getSortIndicator('deviation')}
+                  </th>
+                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('status')}>
+                    Status {getSortIndicator('status')}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading && prices.length === 0 ? (
+                  // Table Loading Skeletons
+                  [1, 2, 3, 4, 5].map(i => (
+                    <tr key={i}>
+                      <td><div className="skeleton skeleton-text" style={{ width: '120px', height: '18px' }}></div></td>
+                      <td><div className="skeleton skeleton-text" style={{ width: '60px', height: '18px' }}></div></td>
+                      <td><div className="skeleton skeleton-text" style={{ width: '70px', height: '18px' }}></div></td>
+                      <td><div className="skeleton skeleton-text" style={{ width: '80px', height: '18px' }}></div></td>
+                      <td><div className="skeleton skeleton-text" style={{ width: '80px', height: '18px' }}></div></td>
+                      <td><div className="skeleton skeleton-text" style={{ width: '60px', height: '18px' }}></div></td>
+                      <td><div className="skeleton skeleton-text" style={{ width: '80px', height: '18px' }}></div></td>
                     </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+                  ))
+                ) : (
+                  sortedPrices.map((item) => {
+                    const isLowestAsk = stats.lowestAsk && stats.lowestAsk.name === item.name;
+                    const isHighestBid = stats.highestBid && stats.highestBid.name === item.name;
+
+                    // Calculate deviation of last price from average
+                    let deviation = 0;
+                    if (item.price && stats.average) {
+                      deviation = ((item.price - stats.average) / stats.average) * 100;
+                    }
+
+                    return (
+                      <tr
+                        key={item.name}
+                        style={{
+                          backgroundColor: isLowestAsk
+                            ? 'rgba(52, 211, 153, 0.03)'
+                            : isHighestBid
+                              ? 'rgba(248, 113, 113, 0.03)'
+                              : 'transparent'
+                        }}
+                      >
+                        {/* Exchange Name */}
+                        <td style={{ fontWeight: '600', display: 'flex', alignItems: 'center' }}>
+                          {item.name}
+                          {item.source === 'coingecko' && (
+                            <span className="badge badge-source">via CG</span>
+                          )}
+                        </td>
+
+                        {/* Type Badge */}
+                        <td>
+                          <span className={`badge ${item.type === 'CEX' ? 'badge-cex' : 'badge-dex'}`}>
+                            {item.type}
+                          </span>
+                        </td>
+
+                        {/* Trading Pair */}
+                        <td style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
+                          {item.pair}
+                        </td>
+
+                        {/* Ask Price (Buy Price) */}
+                        <td>
+                          {item.status === 'success' && item.ask !== null ? (
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                              <span className="price-tag" style={{ color: isLowestAsk ? 'var(--color-profit-green)' : 'inherit', fontWeight: '700' }}>
+                                ${item.ask.toFixed(5)}
+                              </span>
+                              <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '1px' }}>
+                                {formatRupiah(item.ask, usdToIdrRate)}
+                              </span>
+                            </div>
+                          ) : (
+                            <span style={{ color: 'var(--md-sys-color-error)', fontStyle: 'italic' }}>
+                              Error
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Bid Price (Sell Price) */}
+                        <td>
+                          {item.status === 'success' && item.bid !== null ? (
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                              <span className="price-tag" style={{ color: isHighestBid ? 'var(--color-loss-red)' : 'inherit', fontWeight: '700' }}>
+                                ${item.bid.toFixed(5)}
+                              </span>
+                              <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '1px' }}>
+                                {formatRupiah(item.bid, usdToIdrRate)}
+                              </span>
+                            </div>
+                          ) : (
+                            <span style={{ color: 'var(--md-sys-color-error)', fontStyle: 'italic' }}>
+                              Error
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Average Deviation */}
+                        <td>
+                          {item.status === 'success' && item.price !== null ? (
+                            <span className={`deviation-tag ${deviation >= 0 ? 'positive' : 'negative'}`}>
+                              {deviation >= 0 ? '+' : ''}{deviation.toFixed(4)}%
+                            </span>
+                          ) : (
+                            '-'
+                          )}
+                        </td>
+
+                        {/* Action / Indicators */}
+                        <td>
+                          {item.status === 'success' ? (
+                            isLowestAsk ? (
+                              <span className="price-badge lowest">Beli Terendah (Ask)</span>
+                            ) : isHighestBid ? (
+                              <span className="price-badge highest">Jual Tertinggi (Bid)</span>
+                            ) : (
+                              <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>Stabil</span>
+                            )
+                          ) : (
+                            <span style={{ color: 'var(--md-sys-color-error)', fontSize: '12px' }} title={item.message}>
+                              Offline
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
-    )}
+      )}
 
       {/* Antrean Transaksi Tab Content */}
       {activeTab === 'queue' && (
@@ -1361,10 +1368,10 @@ function App() {
                     const currentStep = tx.stepIndex !== undefined ? tx.stepIndex : 0;
                     return (
                       <React.Fragment key={tx.id}>
-                        <tr 
+                        <tr
                           onClick={() => setExpandedTxId(isExpanded ? null : tx.id)}
-                          style={{ 
-                            borderBottom: '1px solid rgba(255,255,255,0.04)', 
+                          style={{
+                            borderBottom: '1px solid rgba(255,255,255,0.04)',
                             cursor: 'pointer',
                             backgroundColor: isExpanded ? 'rgba(255, 255, 255, 0.02)' : 'transparent',
                             transition: 'all 0.2s ease'
@@ -1381,8 +1388,8 @@ function App() {
                             </div>
                           </td>
                           <td style={{ padding: '12px 8px' }}>
-                            <span style={{ fontWeight: '600' }}>{tx.buyEx}</span> 
-                            <span style={{ margin: '0 4px', color: 'var(--md-sys-color-outline)' }}>➔</span> 
+                            <span style={{ fontWeight: '600' }}>{tx.buyEx}</span>
+                            <span style={{ margin: '0 4px', color: 'var(--md-sys-color-outline)' }}>➔</span>
                             <span style={{ fontWeight: '600' }}>{tx.sellEx}</span>
                           </td>
                           <td style={{ padding: '12px 8px', fontWeight: '600' }}>
@@ -1446,7 +1453,7 @@ function App() {
                                     </span>
                                   )}
                                 </div>
-                                
+
                                 {/* Stepper Graphics */}
                                 <div style={{
                                   display: 'flex',
@@ -1468,7 +1475,7 @@ function App() {
                                     background: 'rgba(255,255,255,0.08)',
                                     zIndex: 1
                                   }} />
-                                  
+
                                   {/* Green completed line */}
                                   <div style={{
                                     position: 'absolute',
@@ -1484,7 +1491,7 @@ function App() {
                                   {TX_STEPS.map((step, idx) => {
                                     const isCompleted = idx < currentStep;
                                     const isActive = idx === currentStep;
-                                    
+
                                     let bubbleBg = 'var(--md-sys-color-surface-container-high)';
                                     let bubbleBorder = '1px solid rgba(255,255,255,0.1)';
                                     let textColor = 'var(--md-sys-color-on-surface-variant)';
@@ -1527,7 +1534,7 @@ function App() {
                                         }}>
                                           {isCompleted ? '✓' : idx + 1}
                                         </div>
-                                        
+
                                         {/* Step Label */}
                                         <div style={{
                                           fontSize: '11px',
@@ -1538,7 +1545,7 @@ function App() {
                                         }}>
                                           {step.label}
                                         </div>
-                                        
+
                                         {/* Step Description */}
                                         <div style={{
                                           fontSize: '9px',
@@ -1569,7 +1576,7 @@ function App() {
       {/* AI Agent Scanner Tab Content */}
       {activeTab === 'agent' && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', animation: 'fadeIn 0.3s ease' }}>
-          
+
           {/* Column 1: Agent Setup and Terminal Logs */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div className="md3-card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -1579,14 +1586,14 @@ function App() {
               <p style={{ fontSize: '12px', color: 'var(--md-sys-color-on-surface-variant)', margin: 0 }}>
                 Agen AI berjalan secara otonom memindai internet, DEX pools, dan CEX announcements untuk mencari koin baru dengan spread harga tertinggi.
               </p>
-              
+
               {/* Row 1: Spread & Spawn Count */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '8px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--md-sys-color-on-surface-variant)' }}>Target Spread Minimal:</span>
-                  <input 
-                    type="number" 
-                    value={minSpreadCriteria} 
+                  <input
+                    type="number"
+                    value={minSpreadCriteria}
                     onChange={(e) => setMinSpreadCriteria(Math.max(0.1, parseFloat(e.target.value) || 1.5))}
                     step="0.1"
                     style={{
@@ -1677,9 +1684,9 @@ function App() {
             </div>
 
             {/* Terminal Window */}
-            <div className="md3-card" style={{ 
-              padding: '16px', 
-              backgroundColor: '#0a0d14', 
+            <div className="md3-card" style={{
+              padding: '16px',
+              backgroundColor: '#0a0d14',
               border: '1px solid rgba(255,255,255,0.06)',
               borderRadius: 'var(--md-shape-corner-medium)',
               flex: 1,
@@ -1692,20 +1699,20 @@ function App() {
                 </span>
                 <span style={{ fontSize: '10px', color: 'var(--md-sys-color-on-surface-variant)' }}>Console Logs</span>
               </div>
-              <div style={{ 
-                fontFamily: 'monospace', 
-                fontSize: '11px', 
-                color: '#eceff4', 
-                overflowY: 'auto', 
-                maxHeight: '220px', 
-                display: 'flex', 
-                flexDirection: 'column', 
+              <div style={{
+                fontFamily: 'monospace',
+                fontSize: '11px',
+                color: '#eceff4',
+                overflowY: 'auto',
+                maxHeight: '220px',
+                display: 'flex',
+                flexDirection: 'column',
                 gap: '6px',
                 textAlign: 'left'
               }}>
                 {agentLogs.map((log, idx) => (
-                  <div key={idx} style={{ 
-                    whiteSpace: 'pre-wrap', 
+                  <div key={idx} style={{
+                    whiteSpace: 'pre-wrap',
                     color: log.includes('MATCH') ? 'var(--color-profit-green)' : log.includes('SYSTEM') ? 'var(--md-sys-color-primary)' : 'inherit'
                   }}>
                     {log}
@@ -1757,9 +1764,9 @@ function App() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <span style={{ fontWeight: '800', fontSize: '14px' }}>{coin.symbol}</span>
                           <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)' }}>{coin.name}</span>
-                          <span style={{ 
-                            fontSize: '9px', 
-                            padding: '2px 6px', 
+                          <span style={{
+                            fontSize: '9px',
+                            padding: '2px 6px',
                             borderRadius: '4px',
                             fontWeight: '700',
                             backgroundColor: coin.category === 'MICIN' ? 'rgba(244,63,94,0.15)' : coin.category === 'STABLE' ? 'rgba(16,185,129,0.15)' : 'rgba(59,130,246,0.15)',
@@ -1781,7 +1788,7 @@ function App() {
                         </span>
                         <span style={{ fontSize: '9px', color: 'var(--md-sys-color-on-surface-variant)' }}>Spread</span>
                       </div>
-                      
+
                       <button
                         onClick={() => handleAddMockCoin(coin)}
                         className="tab-btn"
@@ -1816,7 +1823,7 @@ function App() {
               Informasi saldo modal, jaringan, latensi, dan fee transaksi yang terintegrasi secara otonom.
             </p>
           </div>
-          
+
           <div style={{ overflowX: 'auto' }}>
             <table className={compactMode ? 'compact-table' : ''} style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
               <thead>
@@ -1831,10 +1838,10 @@ function App() {
               </thead>
               <tbody>
                 {Object.entries(exchangeBalances).map(([exName, info]) => (
-                  <tr 
-                    key={exName} 
-                    style={{ 
-                      borderBottom: '1px solid rgba(255,255,255,0.05)', 
+                  <tr
+                    key={exName}
+                    style={{
+                      borderBottom: '1px solid rgba(255,255,255,0.05)',
                       transition: 'background-color 0.2s ease'
                     }}
                     onMouseEnter={(e) => {
@@ -1862,11 +1869,11 @@ function App() {
                     <td style={{ padding: '16px 20px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span style={{ color: 'var(--md-sys-color-primary)', fontWeight: '600' }}>{info.apiStatus}</span>
-                        <span style={{ 
-                          fontSize: '11px', 
-                          color: 'var(--color-profit-green)', 
-                          backgroundColor: 'rgba(52,211,153,0.08)', 
-                          padding: '2px 6px', 
+                        <span style={{
+                          fontSize: '11px',
+                          color: 'var(--color-profit-green)',
+                          backgroundColor: 'rgba(52,211,153,0.08)',
+                          padding: '2px 6px',
                           borderRadius: '4px',
                           fontWeight: '600'
                         }}>
@@ -1889,11 +1896,11 @@ function App() {
                         </div>
 
                         {/* Tooltip Info Trigger Icon */}
-                        <span 
-                          style={{ 
-                            position: 'relative', 
-                            display: 'inline-flex', 
-                            alignItems: 'center', 
+                        <span
+                          style={{
+                            position: 'relative',
+                            display: 'inline-flex',
+                            alignItems: 'center',
                             justifyContent: 'center',
                             cursor: 'help',
                             color: 'var(--md-sys-color-primary)',
@@ -1909,7 +1916,7 @@ function App() {
                           onMouseLeave={() => setHoveredExchange(null)}
                         >
                           i
-                          
+
                           {/* Floating Tooltip Box */}
                           <div style={{
                             position: 'absolute',
@@ -1936,7 +1943,7 @@ function App() {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', textAlign: 'left' }}>
                               {Object.entries(info).map(([asset, val]) => {
                                 if (['USDC', 'status', 'latency', 'type', 'network', 'apiStatus', 'fee'].includes(asset)) return null;
-                                
+
                                 let tokenPriceInUsd = 1.0;
                                 if (asset === 'SOL') tokenPriceInUsd = 145.20;
                                 else if (asset === 'ETH') tokenPriceInUsd = 3450.00;
@@ -2039,10 +2046,10 @@ function App() {
                   const hoverKey = `coin-${coin.symbol}`;
 
                   return (
-                    <tr 
-                      key={coin.symbol} 
-                      style={{ 
-                        borderBottom: '1px solid rgba(255,255,255,0.05)', 
+                    <tr
+                      key={coin.symbol}
+                      style={{
+                        borderBottom: '1px solid rgba(255,255,255,0.05)',
                         transition: 'background-color 0.2s ease'
                       }}
                       onMouseEnter={(e) => {
@@ -2055,7 +2062,7 @@ function App() {
                       {/* Koin Name */}
                       <td style={{ padding: '16px 20px', fontWeight: '700' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                           <CoinIcon symbol={coin.symbol} size={compactMode ? 20 : 28} />
+                          <CoinIcon symbol={coin.symbol} size={compactMode ? 20 : 28} />
                           <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <span>{coin.symbol}</span>
                             <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: 'normal' }}>{coin.name}</span>
@@ -2065,9 +2072,9 @@ function App() {
 
                       {/* Kategori */}
                       <td style={{ padding: '16px 20px' }}>
-                        <span style={{ 
-                          fontSize: '9px', 
-                          padding: '2px 6px', 
+                        <span style={{
+                          fontSize: '9px',
+                          padding: '2px 6px',
                           borderRadius: '4px',
                           fontWeight: '700',
                           backgroundColor: coin.category === 'MICIN' ? 'rgba(244,63,94,0.15)' : coin.category === 'STABLE' ? 'rgba(16,185,129,0.15)' : 'rgba(59,130,246,0.15)',
@@ -2105,11 +2112,11 @@ function App() {
                           </div>
 
                           {/* Tooltip Info Trigger Icon */}
-                          <span 
-                            style={{ 
-                              position: 'relative', 
-                              display: 'inline-flex', 
-                              alignItems: 'center', 
+                          <span
+                            style={{
+                              position: 'relative',
+                              display: 'inline-flex',
+                              alignItems: 'center',
                               justifyContent: 'center',
                               cursor: 'help',
                               color: 'var(--md-sys-color-primary)',
@@ -2125,7 +2132,7 @@ function App() {
                             onMouseLeave={() => setHoveredExchange(null)}
                           >
                             i
-                            
+
                             {/* Floating Tooltip Box */}
                             <div style={{
                               position: 'absolute',
@@ -2209,7 +2216,7 @@ function App() {
             <h2 style={{ fontSize: '18px', fontWeight: '700', margin: 0, color: 'var(--md-sys-color-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span>🔔</span> Konfirmasi Eksekusi
             </h2>
-            
+
             <p style={{ fontSize: '13px', margin: 0, color: 'var(--md-sys-color-on-surface-variant)', lineHeight: '1.5' }}>
               Apakah Anda yakin ingin mengeksekusi rute arbitrase ini? Transaksi akan secara otomatis dikirim ke antrean sistem.
             </p>
@@ -2301,14 +2308,14 @@ function App() {
       )}
 
       {/* Material Floating Action Button (FAB) for manual refresh */}
-      <button 
+      <button
         className={`md3-fab ${isRefreshing ? 'refreshing' : ''}`}
         onClick={handleManualRefresh}
         disabled={isRefreshing}
         aria-label="Refresh harga secara manual"
       >
         <svg className="fab-icon" viewBox="0 0 24 24">
-          <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+          <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" />
         </svg>
         <span>Refresh Sekarang</span>
       </button>
