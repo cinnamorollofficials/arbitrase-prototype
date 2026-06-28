@@ -49,6 +49,38 @@ const formatRupiah = (usdVal, rate) => {
 
 const defaultSymbols = ['USDT', 'SOL', 'ETH', 'PEPE', 'BONK', 'WIF', 'FLOKI', 'SHIB', 'JUP', 'W', 'RENDER', 'POPCAT', 'MEW', 'ENA', 'ONDO'];
 
+const COIN_ICONS = {
+  USDC:   'https://assets.coingecko.com/coins/images/6319/small/usdc.png',
+  USDT:   'https://assets.coingecko.com/coins/images/325/small/Tether.png',
+  SOL:    'https://assets.coingecko.com/coins/images/4128/small/solana.png',
+  ETH:    'https://assets.coingecko.com/coins/images/279/small/ethereum.png',
+  BNB:    'https://assets.coingecko.com/coins/images/825/small/bnb-icon2_2x.png',
+  PEPE:   'https://assets.coingecko.com/coins/images/29850/small/pepe-token.jpeg',
+  BONK:   'https://assets.coingecko.com/coins/images/28600/small/bonk.jpg',
+  POPCAT: 'https://assets.coingecko.com/coins/images/36766/small/popcat.png',
+  RENDER: 'https://assets.coingecko.com/coins/images/11636/small/rndr.png',
+  W:      'https://assets.coingecko.com/coins/images/35514/small/wormhole.png',
+  FLOKI:  'https://assets.coingecko.com/coins/images/16746/small/FLOKI.png',
+  NEIRO:  'https://assets.coingecko.com/coins/images/39392/small/NEIRO.png',
+  MOG:    'https://assets.coingecko.com/coins/images/31059/small/mog.png',
+  GIGA:   'https://assets.coingecko.com/coins/images/36477/small/gigachad.png',
+  TURBO:  'https://assets.coingecko.com/coins/images/29445/small/turbo.png',
+  FWOG:   'https://assets.coingecko.com/coins/images/39272/small/fwog.png',
+  BRETT:  'https://assets.coingecko.com/coins/images/36310/small/brett.png',
+  FDUSD:  'https://assets.coingecko.com/coins/images/31079/small/firstdigital.png',
+  USDE:   'https://assets.coingecko.com/coins/images/33613/small/USDE.png',
+  PYUSD:  'https://assets.coingecko.com/coins/images/31212/small/PYUSD.png',
+};
+
+const EXCHANGE_ICONS = {
+  'Binance':     'https://assets.coingecko.com/markets/images/52/small/binance.jpg',
+  'Bybit':       'https://assets.coingecko.com/markets/images/698/small/bybit_spot.png',
+  'Gate.io':     'https://assets.coingecko.com/markets/images/60/small/gate_io_logo1.jpg',
+  'Raydium':     'https://assets.coingecko.com/coins/images/13928/small/PSigc4ie_400x400.jpg',
+  'Uniswap':     'https://assets.coingecko.com/coins/images/12504/small/uniswap-uni.png',
+  'PancakeSwap': 'https://assets.coingecko.com/coins/images/12632/small/pancakeswap-cake-logo.png',
+};
+
 const TX_STEPS = [
   { label: 'Inisiasi', desc: 'Antrean Terbuka' },
   { label: 'Cek Saldo', desc: 'Verifikasi Modal' },
@@ -125,25 +157,25 @@ function App() {
   const coinAssets = useMemo(() => {
     const coins = {};
     const coinMeta = {
-      USDC: { name: 'USD Coin', category: 'STABLE', icon: '💵', price: 1.0 },
-      SOL: { name: 'Solana', category: 'FLUKTUATIF', icon: '🪙', price: 145.20 },
-      ETH: { name: 'Ethereum', category: 'FLUKTUATIF', icon: '🪙', price: 3450.00 },
-      BNB: { name: 'Binance Coin', category: 'FLUKTUATIF', icon: '🪙', price: 580.00 },
-      PEPE: { name: 'Pepe', category: 'MICIN', icon: '🐸', price: 0.0000125 },
-      BONK: { name: 'Bonk', category: 'MICIN', icon: '🐕', price: 0.0000215 },
-      POPCAT: { name: 'Popcat', category: 'MICIN', icon: '🐱', price: 0.85 },
-      RENDER: { name: 'Render Token', category: 'FLUKTUATIF', icon: '🎨', price: 7.45 },
-      W: { name: 'Wormhole', category: 'FLUKTUATIF', icon: '🌀', price: 0.35 },
-      FLOKI: { name: 'Floki Inu', category: 'MICIN', icon: '🐕', price: 0.000175 },
-      NEIRO: { name: 'Neiro Solana', category: 'MICIN', icon: '🐶', price: 0.00145 },
-      MOG: { name: 'Mog Coin', category: 'MICIN', icon: '😹', price: 0.0000018 },
-      GIGA: { name: 'GigaChad', category: 'MICIN', icon: '💪', price: 0.042 },
-      TURBO: { name: 'Turbo', category: 'FLUKTUATIF', icon: '🐌', price: 0.0052 },
-      FWOG: { name: 'Fwog', category: 'MICIN', icon: '🐸', price: 0.023 },
-      BRETT: { name: 'Brett', category: 'FLUKTUATIF', icon: '🛡️', price: 0.125 },
-      FDUSD: { name: 'First Digital USD', category: 'STABLE', icon: '💵', price: 1.0 },
-      USDE: { name: 'Athena USDe', category: 'STABLE', icon: '💵', price: 1.0 },
-      PYUSD: { name: 'PayPal USD', category: 'STABLE', icon: '💵', price: 1.0 }
+      USDC: { name: 'USD Coin',        category: 'STABLE',      icon: COIN_ICONS.USDC,   price: 1.0 },
+      SOL:  { name: 'Solana',           category: 'FLUKTUATIF',  icon: COIN_ICONS.SOL,    price: 145.20 },
+      ETH:  { name: 'Ethereum',         category: 'FLUKTUATIF',  icon: COIN_ICONS.ETH,    price: 3450.00 },
+      BNB:  { name: 'Binance Coin',     category: 'FLUKTUATIF',  icon: COIN_ICONS.BNB,    price: 580.00 },
+      PEPE: { name: 'Pepe',             category: 'MICIN',       icon: COIN_ICONS.PEPE,   price: 0.0000125 },
+      BONK: { name: 'Bonk',             category: 'MICIN',       icon: COIN_ICONS.BONK,   price: 0.0000215 },
+      POPCAT:{ name: 'Popcat',          category: 'MICIN',       icon: COIN_ICONS.POPCAT, price: 0.85 },
+      RENDER:{ name: 'Render Token',    category: 'FLUKTUATIF',  icon: COIN_ICONS.RENDER, price: 7.45 },
+      W:    { name: 'Wormhole',         category: 'FLUKTUATIF',  icon: COIN_ICONS.W,      price: 0.35 },
+      FLOKI:{ name: 'Floki Inu',        category: 'MICIN',       icon: COIN_ICONS.FLOKI,  price: 0.000175 },
+      NEIRO:{ name: 'Neiro Solana',     category: 'MICIN',       icon: COIN_ICONS.NEIRO,  price: 0.00145 },
+      MOG:  { name: 'Mog Coin',         category: 'MICIN',       icon: COIN_ICONS.MOG,    price: 0.0000018 },
+      GIGA: { name: 'GigaChad',         category: 'MICIN',       icon: COIN_ICONS.GIGA,   price: 0.042 },
+      TURBO:{ name: 'Turbo',            category: 'FLUKTUATIF',  icon: COIN_ICONS.TURBO,  price: 0.0052 },
+      FWOG: { name: 'Fwog',             category: 'MICIN',       icon: COIN_ICONS.FWOG,   price: 0.023 },
+      BRETT:{ name: 'Brett',            category: 'FLUKTUATIF',  icon: COIN_ICONS.BRETT,  price: 0.125 },
+      FDUSD:{ name: 'First Digital USD',category: 'STABLE',      icon: COIN_ICONS.FDUSD,  price: 1.0 },
+      USDE: { name: 'Athena USDe',      category: 'STABLE',      icon: COIN_ICONS.USDE,   price: 1.0 },
+      PYUSD:{ name: 'PayPal USD',       category: 'STABLE',      icon: COIN_ICONS.PYUSD,  price: 1.0 },
     };
 
     Object.entries(exchangeBalances).forEach(([exName, info]) => {
@@ -155,7 +187,7 @@ function App() {
             symbol: key,
             name: coinMeta[key]?.name || key,
             category: coinMeta[key]?.category || 'VOLATILE',
-            icon: coinMeta[key]?.icon || '🪙',
+            icon: coinMeta[key]?.icon || COIN_ICONS.USDT || null,
             price: coinMeta[key]?.price || 1.0,
             total: 0,
             breakdown: []
@@ -1636,8 +1668,20 @@ function App() {
                   >
                     {/* Bursa Name & Badge */}
                     <td style={{ padding: '16px 20px', fontWeight: '700' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span>{exName}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <img
+                            src={EXCHANGE_ICONS[exName]}
+                            alt={exName}
+                            onError={(e) => { e.target.style.display = 'none'; }}
+                            style={{
+                              width: '28px',
+                              height: '28px',
+                              borderRadius: '6px',
+                              objectFit: 'cover',
+                              border: '1px solid rgba(255,255,255,0.1)'
+                            }}
+                          />
+                          <span>{exName}</span>
                         <span className={`badge ${info.type === 'CEX' ? 'badge-cex' : 'badge-dex'}`}>
                           {info.type}
                         </span>
@@ -1844,7 +1888,19 @@ function App() {
                       {/* Koin Name */}
                       <td style={{ padding: '16px 20px', fontWeight: '700' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <span style={{ fontSize: '18px' }}>{coin.icon}</span>
+                          <img
+                            src={coin.icon}
+                            alt={coin.symbol}
+                            onError={(e) => { e.target.style.display = 'none'; }}
+                            style={{
+                              width: '28px',
+                              height: '28px',
+                              borderRadius: '50%',
+                              objectFit: 'cover',
+                              border: '1px solid rgba(255,255,255,0.1)',
+                              flexShrink: 0
+                            }}
+                          />
                           <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <span>{coin.symbol}</span>
                             <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: 'normal' }}>{coin.name}</span>
