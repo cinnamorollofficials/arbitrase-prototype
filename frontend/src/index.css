@@ -562,3 +562,38 @@ h1, h2, h3, h4 {
 .compact-table td span {
   font-size: 11px !important;
 }
+
+/* Infinite Ticker/Marquee for Asset Selector */
+.asset-marquee-container {
+  overflow: hidden;
+  width: 100%;
+  background: var(--md-sys-color-surface-container-high);
+  padding: 6px;
+  border-radius: var(--md-shape-corner-full);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.asset-marquee-track {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: assetMarquee 40s linear infinite;
+  white-space: nowrap;
+  width: max-content;
+}
+
+.asset-marquee-container:hover .asset-marquee-track {
+  animation-play-state: paused;
+}
+
+@keyframes assetMarquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}

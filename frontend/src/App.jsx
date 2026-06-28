@@ -793,46 +793,87 @@ function App() {
         </div>
       </header>
 
-      {/* Asset Selector Row (Moved Below Header to Avoid Overflow) */}
+      {/* Asset Selector Row with Infinite Animated Scrolling Ticker */}
       <div className="asset-selector-row" style={{ marginBottom: '24px' }}>
-        <div className="asset-selector-container" style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--md-sys-color-surface-container-high)', padding: '6px', borderRadius: 'var(--md-shape-corner-full)', border: '1px solid var(--md-sys-color-outline-variant)', overflowX: 'auto', maxWidth: '100%', whiteSpace: 'nowrap', scrollbarWidth: 'none' }}>
-          {symbolsList.map(sym => {
-            const spread = spreads[sym] || 0;
-            return (
-              <button
-                key={sym}
-                onClick={() => handleAssetChange(sym)}
-                className="tab-btn"
-                style={{
-                  padding: '8px 16px',
-                  fontSize: '13px',
-                  fontWeight: '700',
-                  backgroundColor: activeSymbol === sym ? 'var(--md-sys-color-primary-container)' : 'transparent',
-                  color: activeSymbol === sym ? 'var(--md-sys-color-on-primary-container)' : 'var(--md-sys-color-on-surface-variant)',
-                  borderRadius: 'var(--md-shape-corner-full)',
-                  border: 'none',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  flexShrink: 0,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}
-              >
-                <CoinIcon symbol={sym} size={16} />
-                {sym}
-                {spread > 0 && (
-                  <span style={{
-                    fontSize: '10px',
-                    color: activeSymbol === sym ? 'var(--md-sys-color-primary)' : 'var(--color-profit-green)',
-                    fontWeight: '800'
-                  }}>
-                    +{spread.toFixed(2)}%
-                  </span>
-                )}
-              </button>
-            );
-          })}
+        <div className="asset-marquee-container">
+          <div className="asset-marquee-track">
+            {/* Copy 1 */}
+            {symbolsList.map(sym => {
+              const spread = spreads[sym] || 0;
+              return (
+                <button
+                  key={`first-${sym}`}
+                  onClick={() => handleAssetChange(sym)}
+                  className="tab-btn"
+                  style={{
+                    padding: '8px 16px',
+                    fontSize: '13px',
+                    fontWeight: '700',
+                    backgroundColor: activeSymbol === sym ? 'var(--md-sys-color-primary-container)' : 'transparent',
+                    color: activeSymbol === sym ? 'var(--md-sys-color-on-primary-container)' : 'var(--md-sys-color-on-surface-variant)',
+                    borderRadius: 'var(--md-shape-corner-full)',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    flexShrink: 0,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                >
+                  <CoinIcon symbol={sym} size={16} />
+                  {sym}
+                  {spread > 0 && (
+                    <span style={{
+                      fontSize: '10px',
+                      color: activeSymbol === sym ? 'var(--md-sys-color-primary)' : 'var(--color-profit-green)',
+                      fontWeight: '800'
+                    }}>
+                      +{spread.toFixed(2)}%
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+            {/* Copy 2 (Seamless loop fallback) */}
+            {symbolsList.map(sym => {
+              const spread = spreads[sym] || 0;
+              return (
+                <button
+                  key={`second-${sym}`}
+                  onClick={() => handleAssetChange(sym)}
+                  className="tab-btn"
+                  style={{
+                    padding: '8px 16px',
+                    fontSize: '13px',
+                    fontWeight: '700',
+                    backgroundColor: activeSymbol === sym ? 'var(--md-sys-color-primary-container)' : 'transparent',
+                    color: activeSymbol === sym ? 'var(--md-sys-color-on-primary-container)' : 'var(--md-sys-color-on-surface-variant)',
+                    borderRadius: 'var(--md-shape-corner-full)',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    flexShrink: 0,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                >
+                  <CoinIcon symbol={sym} size={16} />
+                  {sym}
+                  {spread > 0 && (
+                    <span style={{
+                      fontSize: '10px',
+                      color: activeSymbol === sym ? 'var(--md-sys-color-primary)' : 'var(--color-profit-green)',
+                      fontWeight: '800'
+                    }}>
+                      +{spread.toFixed(2)}%
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
