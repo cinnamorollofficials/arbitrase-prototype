@@ -793,6 +793,27 @@ function App() {
     fetchPrices();
   };
 
+  const renderInfoIcon = (tooltipContent) => (
+    <span className="tooltip-icon" style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: '14px',
+      height: '14px',
+      borderRadius: '50%',
+      backgroundColor: 'rgba(255,255,255,0.15)',
+      color: '#ffffff',
+      fontSize: '9px',
+      fontWeight: 'bold',
+      cursor: 'pointer',
+      position: 'relative',
+      marginLeft: '6px'
+    }}>
+      i
+      <span className="tooltip-text">{tooltipContent}</span>
+    </span>
+  );
+
   return (
     <div className={`app-container ${compactMode ? 'compact-ui' : ''}`}>
       {/* Header */}
@@ -970,24 +991,48 @@ function App() {
         <div className="summary-grid">
           {/* Average Price */}
           <div className="md3-card summary-card">
-            <div className="summary-label">Harga Rata-Rata (Last)</div>
-            <div className="summary-value">${stats.average.toFixed(5)}</div>
-            <div style={{ fontSize: '13px', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '2px', fontWeight: '500' }}>
-              {formatRupiah(stats.average, usdToIdrRate)}
+            <div className="summary-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+              <span>Harga Rata-Rata (Last)</span>
+              {compactMode && renderInfoIcon(
+                <div>
+                  <div style={{ fontWeight: '700', marginBottom: '2px' }}>Rupiah Ekuivalen:</div>
+                  <div>{formatRupiah(stats.average, usdToIdrRate)}</div>
+                  <div style={{ marginTop: '6px', opacity: 0.8, fontSize: '10px' }}>Dari bursa yang terhubung</div>
+                </div>
+              )}
             </div>
-            <div className="summary-subtext" style={{ marginTop: '8px' }}>Dari bursa yang berhasil terhubung</div>
+            <div className="summary-value">${stats.average.toFixed(5)}</div>
+            {!compactMode && (
+              <>
+                <div style={{ fontSize: '13px', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '2px', fontWeight: '500' }}>
+                  {formatRupiah(stats.average, usdToIdrRate)}
+                </div>
+                <div className="summary-subtext" style={{ marginTop: '8px' }}>Dari bursa yang berhasil terhubung</div>
+              </>
+            )}
             <div className="countdown-line" style={{ width: `${(refreshCountdown / 10) * 100}%` }}></div>
           </div>
 
           {/* Max Spread % */}
           <div className="md3-card summary-card">
-            <div className="summary-label">Spread Arbitrase Eksekusi</div>
+            <div className="summary-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+              <span>Spread Arbitrase Eksekusi</span>
+              {compactMode && renderInfoIcon(
+                <div>
+                  <div style={{ fontWeight: '700', marginBottom: '2px' }}>Selisih Nominal:</div>
+                  <div>${stats.spreadUsd.toFixed(5)}</div>
+                  <div style={{ marginTop: '4px' }}>({formatRupiah(stats.spreadUsd, usdToIdrRate)})</div>
+                </div>
+              )}
+            </div>
             <div className="summary-value" style={{ color: stats.spreadPct > 0 ? 'var(--color-profit-green)' : 'inherit' }}>
               {stats.spreadPct > 0 ? `+${stats.spreadPct.toFixed(3)}%` : `${stats.spreadPct.toFixed(3)}%`}
             </div>
-            <div className="summary-subtext">
-              Selisih nominal: ${stats.spreadUsd.toFixed(5)} ({formatRupiah(stats.spreadUsd, usdToIdrRate)})
-            </div>
+            {!compactMode && (
+              <div className="summary-subtext">
+                Selisih nominal: ${stats.spreadUsd.toFixed(5)} ({formatRupiah(stats.spreadUsd, usdToIdrRate)})
+              </div>
+            )}
             {stats.spreadPct > 0.05 && (
               <span className="badge badge-dex" style={{ position: 'absolute', top: '16px', right: '16px', fontSize: '10px' }}>
                 PROFIT PELUANG
@@ -997,7 +1042,33 @@ function App() {
 
           {/* Arbitrage Route Recommendation */}
           <div className={`md3-card summary-card ${netCalculation.net > 0 ? 'rec-card' : ''}`} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div className="summary-label">Rekomendasi Rute & Net Profit</div>
+            <div className="summary-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+              <span>Rekomendasi Rute & Net Profit</span>
+              {compactMode && renderInfoIcon(
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ fontWeight: '700', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '3px', marginBottom: '3px' }}>
+                    Estimasi Net Profit (Modal: {capital} USDC)
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
+                    <span>Gross Profit:</span>
+                    <span style={{ color: 'var(--color-profit-green)', fontWeight: 'bold' }}>+${netCalculation.gross.toFixed(2)}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
+                    <span>Biaya (Fees):</span>
+                    <span style={{ color: 'var(--md-sys-color-error)', fontWeight: 'bold' }}>-${netCalculation.fees.toFixed(2)}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px', borderTop: '1px dashed rgba(255,255,255,0.2)', paddingTop: '4px', marginTop: '2px', fontWeight: '800' }}>
+                    <span>Net Profit:</span>
+                    <span style={{ color: netCalculation.net > 0 ? 'var(--color-profit-green)' : 'var(--md-sys-color-error)' }}>
+                      {netCalculation.net >= 0 ? '+' : ''}${netCalculation.net.toFixed(2)}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '10px', opacity: 0.8, textAlign: 'right', marginTop: '2px' }}>
+                    ({formatRupiah(netCalculation.net, usdToIdrRate)})
+                  </div>
+                </div>
+              )}
+            </div>
             {stats.lowestAsk && stats.highestBid ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <div className="rec-path">
@@ -1029,26 +1100,28 @@ function App() {
                 </div>
 
                 {/* Net Breakdown */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '11px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '6px', marginTop: '2px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>Profit Kotor (Gross):</span>
-                    <span style={{ color: netCalculation.gross > 0 ? 'var(--color-profit-green)' : 'inherit', fontWeight: '600' }}>
-                      {netCalculation.gross >= 0 ? '+' : ''}${netCalculation.gross.toFixed(2)} ({formatRupiah(netCalculation.gross, usdToIdrRate)})
-                    </span>
+                {!compactMode && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '11px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '6px', marginTop: '2px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span>Profit Kotor (Gross):</span>
+                      <span style={{ color: netCalculation.gross > 0 ? 'var(--color-profit-green)' : 'inherit', fontWeight: '600' }}>
+                        {netCalculation.gross >= 0 ? '+' : ''}${netCalculation.gross.toFixed(2)} ({formatRupiah(netCalculation.gross, usdToIdrRate)})
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span>Estimasi Biaya (Fee):</span>
+                      <span style={{ color: 'var(--md-sys-color-error)', fontWeight: '600' }}>
+                        -${netCalculation.fees.toFixed(2)} ({formatRupiah(netCalculation.fees, usdToIdrRate)})
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: '700', marginTop: '2px', borderTop: '1px dashed rgba(255,255,255,0.08)', paddingTop: '3px' }}>
+                      <span>Net Profit/Loss:</span>
+                      <span style={{ color: netCalculation.net > 0 ? 'var(--color-profit-green)' : 'var(--md-sys-color-error)' }}>
+                        {netCalculation.net >= 0 ? '+' : ''}${netCalculation.net.toFixed(2)} ({formatRupiah(netCalculation.net, usdToIdrRate)})
+                      </span>
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>Estimasi Biaya (Fee):</span>
-                    <span style={{ color: 'var(--md-sys-color-error)', fontWeight: '600' }}>
-                      -${netCalculation.fees.toFixed(2)} ({formatRupiah(netCalculation.fees, usdToIdrRate)})
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: '700', marginTop: '2px', borderTop: '1px dashed rgba(255,255,255,0.08)', paddingTop: '3px' }}>
-                    <span>Net Profit/Loss:</span>
-                    <span style={{ color: netCalculation.net > 0 ? 'var(--color-profit-green)' : 'var(--md-sys-color-error)' }}>
-                      {netCalculation.net >= 0 ? '+' : ''}${netCalculation.net.toFixed(2)} ({formatRupiah(netCalculation.net, usdToIdrRate)})
-                    </span>
-                  </div>
-                </div>
+                )}
 
                 {/* Execute Button */}
                 <button

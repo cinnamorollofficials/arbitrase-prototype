@@ -698,3 +698,39 @@ h1, h2, h3, h4 {
   font-size: 8px !important;
   padding: 1px 4px !important;
 }
+
+/* Tooltip styling for compact mode cards info */
+.tooltip-icon {
+  position: relative;
+  user-select: none;
+}
+
+.tooltip-icon .tooltip-text {
+  visibility: hidden;
+  width: 240px;
+  background-color: var(--md-sys-color-surface-container-high) !important;
+  color: var(--md-sys-color-on-surface) !important;
+  text-align: left;
+  border-radius: var(--md-shape-corner-medium);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  padding: 12px 14px;
+  position: absolute;
+  z-index: 1000;
+  bottom: 130%; /* Position above the icon */
+  right: 0;
+  opacity: 0;
+  transition: opacity 0.15s ease-in-out, transform 0.15s ease-in-out;
+  font-size: 11px !important;
+  font-weight: normal !important;
+  line-height: 1.5;
+  pointer-events: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  white-space: normal;
+  transform: translateY(6px);
+}
+
+.tooltip-icon:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0);
+}
