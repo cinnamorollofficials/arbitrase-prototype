@@ -1566,7 +1566,7 @@ function App() {
                           {/* Net profit estimate */}
                           <td style={{ padding: compactMode ? '8px 12px' : '16px 20px', textAlign: 'right', fontWeight: '800', color: netProfit > 0 ? 'var(--color-profit-green)' : 'var(--md-sys-color-error)', fontSize: '14px' }}>
                             {netProfit >= 0 ? '+' : ''}${netProfit.toFixed(2)}
-                            <div style={{ fontSize: '11px', fontWeight: 'normal', color: 'var(--md-sys-color-on-surface-variant)' }}>
+                            <div style={{ fontSize: '9px', fontWeight: 'normal', color: 'var(--md-sys-color-on-surface-variant)' }}>
                               {formatRupiah(netProfit, usdToIdrRate)}
                             </div>
                           </td>
@@ -1712,7 +1712,7 @@ function App() {
                                 <span className="price-tag" style={{ color: isLowestAsk ? 'var(--color-profit-green)' : 'inherit', fontWeight: '700' }}>
                                   ${item.ask.toFixed(5)}
                                 </span>
-                                <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '1px' }}>
+                                <span style={{ fontSize: '9px', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '1px' }}>
                                   {formatRupiah(item.ask, usdToIdrRate)}
                                 </span>
                               </div>
@@ -1730,7 +1730,7 @@ function App() {
                                 <span className="price-tag" style={{ color: isHighestBid ? 'var(--color-loss-red)' : 'inherit', fontWeight: '700' }}>
                                   ${item.bid.toFixed(5)}
                                 </span>
-                                <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '1px' }}>
+                                <span style={{ fontSize: '9px', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '1px' }}>
                                   {formatRupiah(item.bid, usdToIdrRate)}
                                 </span>
                               </div>
@@ -2456,7 +2456,7 @@ function App() {
                       <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end', width: '100%' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
                           <span style={{ fontWeight: '700' }}>{info.USDC.toLocaleString('id-ID', { minimumFractionDigits: 2 })} USDC</span>
-                          <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)' }}>
+                          <span style={{ fontSize: '9px', color: 'var(--md-sys-color-on-surface-variant)' }}>
                             {formatRupiah(info.USDC, usdToIdrRate)}
                           </span>
                         </div>
@@ -2699,7 +2699,7 @@ function App() {
                       <td style={{ padding: '16px 20px', textAlign: 'right' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
                           <span>${coin.price >= 0.01 ? coin.price.toLocaleString('id-ID', { minimumFractionDigits: 2 }) : coin.price.toFixed(7)}</span>
-                          <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)' }}>
+                          <span style={{ fontSize: '9px', color: 'var(--md-sys-color-on-surface-variant)' }}>
                             {formatRupiah(coin.price, usdToIdrRate)}
                           </span>
                         </div>
@@ -2717,7 +2717,7 @@ function App() {
                             <span style={{ fontWeight: '700', color: 'var(--md-sys-color-primary)' }}>
                               ${totalValUsd.toLocaleString('id-ID', { minimumFractionDigits: 2 })}
                             </span>
-                            <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)' }}>
+                            <span style={{ fontSize: '9px', color: 'var(--md-sys-color-on-surface-variant)' }}>
                               {formatRupiah(totalValUsd, usdToIdrRate)}
                             </span>
                           </div>
