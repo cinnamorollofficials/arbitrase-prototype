@@ -98,20 +98,25 @@ function App() {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [agentStatus, setAgentStatus] = useState('running');
   const [minSpreadCriteria, setMinSpreadCriteria] = useState(1.5);
+  const [numAgents, setNumAgents] = useState(1);
+  const [coinCategory, setCoinCategory] = useState('ALL');
   const [agentLogs, setAgentLogs] = useState([
     `[${new Date().toLocaleTimeString()}] [SYSTEM] Memulai agen AI pemindai spreads...`,
     `[${new Date().toLocaleTimeString()}] [INFO] Kriteria: Min Spread > 1.50%`
   ]);
   const [discoveredCoins, setDiscoveredCoins] = useState([
-    { symbol: 'NEIRO', name: 'Neiro Solana', spread: 3.45, buyEx: 'Bybit', sellEx: 'Gate.io', added: false },
-    { symbol: 'MOG', name: 'Mog Coin', spread: 3.12, buyEx: 'Bybit', sellEx: 'Gate.io', added: false }
+    { symbol: 'NEIRO', name: 'Neiro Solana', spread: 3.45, buyEx: 'Bybit', sellEx: 'Gate.io', category: 'MICIN', added: false },
+    { symbol: 'MOG', name: 'Mog Coin', spread: 3.12, buyEx: 'Bybit', sellEx: 'Gate.io', category: 'MICIN', added: false }
   ]);
 
   const mockAvailableCoins = useMemo(() => [
-    { symbol: 'GIGA', name: 'GigaChad', spread: 2.84, buyEx: 'Bybit', sellEx: 'Gate.io' },
-    { symbol: 'TURBO', name: 'Turbo', spread: 2.50, buyEx: 'Bybit', sellEx: 'Gate.io' },
-    { symbol: 'FWOG', name: 'Fwog', spread: 2.91, buyEx: 'Bybit', sellEx: 'Gate.io' },
-    { symbol: 'BRETT', name: 'Brett', spread: 1.85, buyEx: 'Bybit', sellEx: 'Gate.io' }
+    { symbol: 'GIGA', name: 'GigaChad', spread: 2.84, buyEx: 'Bybit', sellEx: 'Gate.io', category: 'MICIN' },
+    { symbol: 'TURBO', name: 'Turbo', spread: 2.50, buyEx: 'Bybit', sellEx: 'Gate.io', category: 'VOLATILE' },
+    { symbol: 'FWOG', name: 'Fwog', spread: 2.91, buyEx: 'Bybit', sellEx: 'Gate.io', category: 'MICIN' },
+    { symbol: 'BRETT', name: 'Brett', spread: 1.85, buyEx: 'Bybit', sellEx: 'Gate.io', category: 'VOLATILE' },
+    { symbol: 'FDUSD', name: 'First Digital USD', spread: 0.12, buyEx: 'Binance', sellEx: 'Bybit', category: 'STABLE' },
+    { symbol: 'USDE', name: 'Athena USDe', spread: 0.45, buyEx: 'Gate.io', sellEx: 'Bybit', category: 'STABLE' },
+    { symbol: 'PYUSD', name: 'PayPal USD', spread: 0.28, buyEx: 'Bybit', sellEx: 'Gate.io', category: 'STABLE' }
   ], []);
 
   // AI Agent Log & Discovery Simulator
@@ -119,21 +124,53 @@ function App() {
     if (agentStatus !== 'running') return;
 
     let logCounter = 0;
+    const intervalSpeed = Math.max(1200, 6000 / numAgents);
+
     const interval = setInterval(() => {
       const time = new Date().toLocaleTimeString();
-      const randomSearchLogs = [
-        `[${time}] [SCAN] Menelusuri koin baru terdaftar di Raydium & Uniswap...`,
-        `[${time}] [SCAN] Memeriksa pasangan token baru di Gate.io & MEXC...`,
-        `[${time}] [ANALYSIS] Menganalisis likuiditas & volume perdagangan token micin...`,
-        `[${time}] [CALC] Menghitung penyimpangan harga antar bursa...`
-      ];
-
-      setAgentLogs(prev => [randomSearchLogs[logCounter % randomSearchLogs.length], ...prev.slice(0, 49)]);
+      const agentId = Math.floor(Math.random() * numAgents) + 1;
       
-      // Every 3 ticks (~18 seconds), potentially "discover" a new coin
+      let logOptions = [];
+      if (coinCategory === 'MICIN') {
+        logOptions = [
+          `Menelusuri token micin di blockchain Solana via Raydium...`,
+          `Memeriksa volume likuiditas meme pools baru di Raydium...`,
+          `Menganalisis transaksi paus (whale tracker) koin meme...`,
+          `Menghitung deviasi harga DEX vs CEX MEXC...`
+        ];
+      } else if (coinCategory === 'STABLE') {
+        logOptions = [
+          `Memindai de-pegging minor stablecoin di Curve pools...`,
+          `Memeriksa selisih harga USDC/USDT lintas bursa...`,
+          `Menganalisis order book kedalaman besar di Binance...`,
+          `Menghitung arbitrase aman pasangan stablecoin fiat...`
+        ];
+      } else if (coinCategory === 'VOLATILE') {
+        logOptions = [
+          `Memindai pasangan baru listing di Gate.io & OKX...`,
+          `Menganalisis fluktuasi harga ekstrim koin lapis kedua...`,
+          `Mendeteksi volatilitas tinggi pasangan token BNB Chain...`,
+          `Menghitung spread arbitrase cepat pasca peluncuran koin...`
+        ];
+      } else {
+        logOptions = [
+          `Menelusuri koin baru terdaftar di Raydium & Uniswap...`,
+          `Memeriksa pasangan token baru di Gate.io & MEXC...`,
+          `Menganalisis likuiditas & volume perdagangan token micin...`,
+          `Menghitung penyimpangan harga antar bursa...`,
+          `Memindai de-pegging minor stablecoin di Curve pools...`,
+          `Memeriksa selisih harga USDC/USDT lintas bursa...`
+        ];
+      }
+
+      const randomLog = logOptions[Math.floor(Math.random() * logOptions.length)];
+      setAgentLogs(prev => [`[${time}] [AGENT #${agentId}] [SCAN] ${randomLog}`, ...prev.slice(0, 49)]);
+      
       if (logCounter > 0 && logCounter % 3 === 0) {
         const nextCoin = mockAvailableCoins.find(
-          c => !discoveredCoins.some(d => d.symbol === c.symbol) && c.spread >= minSpreadCriteria
+          c => !discoveredCoins.some(d => d.symbol === c.symbol) && 
+               c.spread >= minSpreadCriteria &&
+               (coinCategory === 'ALL' || c.category === coinCategory)
         );
         if (nextCoin) {
           setDiscoveredCoins(prev => [
@@ -141,22 +178,17 @@ function App() {
             ...prev
           ]);
           setAgentLogs(prev => [
-            `[${time}] [🏆 MATCH] Menemukan koin potensial: ${nextCoin.symbol} dengan spread +${nextCoin.spread.toFixed(2)}%!`,
-            ...prev
-          ]);
-        } else {
-          setAgentLogs(prev => [
-            `[${time}] [INFO] Pemindaian selesai. Tidak ada koin baru yang cocok dengan kriteria saat ini.`,
+            `[${time}] [AGENT #${agentId}] [🏆 MATCH] Menemukan koin potensial: ${nextCoin.symbol} (${nextCoin.category}) dengan spread +${nextCoin.spread.toFixed(2)}%!`,
             ...prev
           ]);
         }
       }
 
       logCounter++;
-    }, 6000);
+    }, intervalSpeed);
 
     return () => clearInterval(interval);
-  }, [agentStatus, discoveredCoins, minSpreadCriteria, mockAvailableCoins]);
+  }, [agentStatus, discoveredCoins, minSpreadCriteria, mockAvailableCoins, numAgents, coinCategory]);
 
   const handleAddMockCoin = (coin) => {
     if (!symbolsList.includes(coin.symbol)) {
@@ -255,14 +287,17 @@ function App() {
     setError(null);
 
     // Intercept mock coins discovered by AI Agent to return simulated prices locally
-    if (['GIGA', 'TURBO', 'FWOG', 'BRETT', 'NEIRO', 'MOG'].includes(symbol)) {
+    if (['GIGA', 'TURBO', 'FWOG', 'BRETT', 'NEIRO', 'MOG', 'FDUSD', 'USDE', 'PYUSD'].includes(symbol)) {
       const mockRates = {
         NEIRO: { price: 0.0034, spread: 3.45 },
         MOG: { price: 0.00000185, spread: 3.12 },
         GIGA: { price: 0.045, spread: 2.84 },
         TURBO: { price: 0.0052, spread: 2.50 },
         FWOG: { price: 0.0125, spread: 2.91 },
-        BRETT: { price: 0.085, spread: 1.85 }
+        BRETT: { price: 0.085, spread: 1.85 },
+        FDUSD: { price: 1.00, spread: 0.12 },
+        USDE: { price: 0.998, spread: 0.45 },
+        PYUSD: { price: 1.001, spread: 0.28 }
       };
       
       const config = mockRates[symbol] || { price: 0.05, spread: 2.0 };
@@ -1219,8 +1254,9 @@ function App() {
                 Agen AI berjalan secara otonom memindai internet, DEX pools, dan CEX announcements untuk mencari koin baru dengan spread harga tertinggi.
               </p>
               
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '8px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+              {/* Row 1: Spread & Spawn Count */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '8px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--md-sys-color-on-surface-variant)' }}>Target Spread Minimal:</span>
                   <input 
                     type="number" 
@@ -1240,8 +1276,59 @@ function App() {
                   />
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
-                  <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--md-sys-color-on-surface-variant)' }}>Status Agen:</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--md-sys-color-on-surface-variant)' }}>Jumlah Agen Aktif:</span>
+                  <select
+                    value={numAgents}
+                    onChange={(e) => setNumAgents(parseInt(e.target.value) || 1)}
+                    style={{
+                      background: 'rgba(255,255,255,0.04)',
+                      border: '1px solid var(--md-sys-color-outline-variant)',
+                      borderRadius: 'var(--md-shape-corner-small)',
+                      color: '#ffffff',
+                      padding: '6px 10px',
+                      fontSize: '13px',
+                      fontWeight: '700',
+                      outline: 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option style={{ backgroundColor: '#1e1e24' }} value="1">1 Agen (Standar)</option>
+                    <option style={{ backgroundColor: '#1e1e24' }} value="2">2 Agen (Cepat)</option>
+                    <option style={{ backgroundColor: '#1e1e24' }} value="3">3 Agen (Sangat Cepat)</option>
+                    <option style={{ backgroundColor: '#1e1e24' }} value="5">5 Agen (Super Cepat)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Row 2: Coin Category Filter & Status */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '4px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--md-sys-color-on-surface-variant)' }}>Filter Kategori Koin:</span>
+                  <select
+                    value={coinCategory}
+                    onChange={(e) => setCoinCategory(e.target.value)}
+                    style={{
+                      background: 'rgba(255,255,255,0.04)',
+                      border: '1px solid var(--md-sys-color-outline-variant)',
+                      borderRadius: 'var(--md-shape-corner-small)',
+                      color: '#ffffff',
+                      padding: '6px 10px',
+                      fontSize: '13px',
+                      fontWeight: '700',
+                      outline: 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option style={{ backgroundColor: '#1e1e24' }} value="ALL">Semua Kategori</option>
+                    <option style={{ backgroundColor: '#1e1e24' }} value="MICIN">Coin Micin (Meme)</option>
+                    <option style={{ backgroundColor: '#1e1e24' }} value="VOLATILE">Fluktuatif (Lapis 2)</option>
+                    <option style={{ backgroundColor: '#1e1e24' }} value="STABLE">Stablecoin (Pegged)</option>
+                  </select>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--md-sys-color-on-surface-variant)' }}>Status Mesin Agen:</span>
                   <button
                     onClick={() => setAgentStatus(agentStatus === 'running' ? 'paused' : 'running')}
                     className="tab-btn"
@@ -1252,7 +1339,9 @@ function App() {
                       padding: '8px',
                       fontSize: '12px',
                       fontWeight: '700',
-                      borderRadius: 'var(--md-shape-corner-small)'
+                      borderRadius: 'var(--md-shape-corner-small)',
+                      height: '34px',
+                      cursor: 'pointer'
                     }}
                   >
                     {agentStatus === 'running' ? '● RUNNING' : '■ PAUSED'}
@@ -1304,7 +1393,7 @@ function App() {
           <div className="md3-card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div>
               <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: 'var(--md-sys-color-primary)' }}>
-                Hasil Pemindaian Koin Potensial
+                Hasil Pemindaian Koin Potensial ({coinCategory === 'ALL' ? 'Semua' : coinCategory})
               </h3>
               <p style={{ fontSize: '12px', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '2px', marginBottom: 0 }}>
                 Koin-koin di bawah ini berhasil dianalisis memiliki selisih harga antar bursa yang melampaui kriteria Anda.
@@ -1312,13 +1401,13 @@ function App() {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', maxHeight: '350px', paddingRight: '4px' }}>
-              {discoveredCoins.length === 0 ? (
+              {discoveredCoins.filter(c => coinCategory === 'ALL' || c.category === coinCategory).length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '40px', color: 'var(--md-sys-color-on-surface-variant)' }}>
                   <span>🔍</span>
-                  <p style={{ fontSize: '12px', marginTop: '4px' }}>Belum menemukan koin yang sesuai kriteria. Biarkan agen AI berjalan...</p>
+                  <p style={{ fontSize: '12px', marginTop: '4px' }}>Belum menemukan koin {coinCategory !== 'ALL' ? coinCategory : ''} yang sesuai kriteria. Biarkan agen AI berjalan...</p>
                 </div>
               ) : (
-                discoveredCoins.map(coin => (
+                discoveredCoins.filter(c => coinCategory === 'ALL' || c.category === coinCategory).map(coin => (
                   <div key={coin.symbol} style={{
                     display: 'flex',
                     justifyContent: 'space-between',
@@ -1333,6 +1422,16 @@ function App() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span style={{ fontWeight: '800', fontSize: '14px' }}>{coin.symbol}</span>
                         <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)' }}>{coin.name}</span>
+                        <span style={{ 
+                          fontSize: '9px', 
+                          padding: '2px 6px', 
+                          borderRadius: '4px',
+                          fontWeight: '700',
+                          backgroundColor: coin.category === 'MICIN' ? 'rgba(244,63,94,0.15)' : coin.category === 'STABLE' ? 'rgba(16,185,129,0.15)' : 'rgba(59,130,246,0.15)',
+                          color: coin.category === 'MICIN' ? '#f43f5e' : coin.category === 'STABLE' ? '#10b981' : '#3b82f6'
+                        }}>
+                          {coin.category}
+                        </span>
                       </div>
                       <div style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '4px' }}>
                         Potensi Rute: <span style={{ fontWeight: '600', color: '#ffffff' }}>{coin.buyEx} ➔ {coin.sellEx}</span>
