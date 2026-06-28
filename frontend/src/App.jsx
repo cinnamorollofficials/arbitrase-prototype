@@ -366,6 +366,7 @@ function App() {
   const [exchangeDetails, setExchangeDetails] = useState({ exchange: 'Binance', tokens: [] });
   const [loadingExchange, setLoadingExchange] = useState(false);
   const [showExchangeModal, setShowExchangeModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useUrlState('q', '');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [transactions, setTransactions] = useState(() => {
     const saved = localStorage.getItem('arbitrage_transactions');
@@ -780,7 +781,13 @@ function App() {
 
   const filteredPrices = useMemo(() => {
     const localExchanges = ['Indodax', 'Tokocrypto', 'Reku'];
+    const search = searchQuery.toLowerCase().trim();
     return prices.filter(p => {
+      // Check search match
+      if (search && !p.name.toLowerCase().includes(search) && !p.pair.toLowerCase().includes(search)) {
+        return false;
+      }
+
       if (filter === 'CEX') return p.type === 'CEX';
       if (filter === 'DEX') return p.type === 'DEX';
       if (filter === 'LOCAL') return localExchanges.includes(p.name);
@@ -800,7 +807,17 @@ function App() {
       }
       return true;
     });
-  }, [prices, filter]);
+  }, [prices, filter, searchQuery]);
+
+  const filteredOpportunities = useMemo(() => {
+    const search = searchQuery.toLowerCase().trim();
+    if (!search) return opportunities;
+    return opportunities.filter(opp => 
+      opp.symbol.toLowerCase().includes(search) ||
+      opp.buyEx.toLowerCase().includes(search) ||
+      opp.sellEx.toLowerCase().includes(search)
+    );
+  }, [opportunities, searchQuery]);
 
   // Compute Arbitrage Stats
   const stats = useMemo(() => {
@@ -1396,41 +1413,78 @@ function App() {
       {/* Main Table Section */}
       {activeTab === 'prices' && (
         <div className="md3-card table-card">
-          <div className="table-header-section">
-            <h2 className="table-title">Perbandingan Order Book CEX & DEX</h2>
+          <div className="table-header-section" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+            <h2 className="table-title" style={{ margin: 0 }}>Perbandingan Order Book CEX & DEX</h2>
 
-            {/* Filter Tabs */}
-            <div className="tabs-container">
-              <button
-                className={`tab-btn ${filter === 'ALL' ? 'active' : ''}`}
-                onClick={() => setFilter('ALL')}
-              >
-                Semua
-              </button>
-              <button
-                className={`tab-btn ${filter === 'CEX' ? 'active' : ''}`}
-                onClick={() => setFilter('CEX')}
-              >
-                CEX
-              </button>
-              <button
-                className={`tab-btn ${filter === 'DEX' ? 'active' : ''}`}
-                onClick={() => setFilter('DEX')}
-              >
-                DEX
-              </button>
-              <button
-                className={`tab-btn ${filter === 'LOCAL' ? 'active' : ''}`}
-                onClick={() => setFilter('LOCAL')}
-              >
-                Indonesia
-              </button>
-              <button
-                className={`tab-btn ${filter === 'PROFITABLE' ? 'active' : ''}`}
-                onClick={() => setFilter('PROFITABLE')}
-              >
-                Paling Untung
-              </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              {/* Search Box */}
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <input
+                  type="text"
+                  placeholder={filter === 'PROFITABLE' ? "Cari koin/bursa..." : "Cari bursa/pair..."}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{
+                    padding: '8px 12px 8px 32px',
+                    fontSize: '13px',
+                    backgroundColor: 'rgba(255,255,255,0.06)',
+                    border: '1px solid var(--md-sys-color-outline-variant)',
+                    borderRadius: 'var(--md-shape-corner-medium)',
+                    color: '#ffffff',
+                    outline: 'none',
+                    width: '180px',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.width = '240px';
+                    e.target.style.borderColor = 'var(--md-sys-color-primary)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.width = '180px';
+                    e.target.style.borderColor = 'var(--md-sys-color-outline-variant)';
+                  }}
+                />
+                <svg 
+                  style={{ position: 'absolute', left: '10px', width: '14px', height: '14px', fill: 'var(--md-sys-color-on-surface-variant)', pointerEvents: 'none' }} 
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                </svg>
+              </div>
+
+              {/* Filter Tabs */}
+              <div className="tabs-container" style={{ margin: 0 }}>
+                <button
+                  className={`tab-btn ${filter === 'ALL' ? 'active' : ''}`}
+                  onClick={() => setFilter('ALL')}
+                >
+                  Semua
+                </button>
+                <button
+                  className={`tab-btn ${filter === 'CEX' ? 'active' : ''}`}
+                  onClick={() => setFilter('CEX')}
+                >
+                  CEX
+                </button>
+                <button
+                  className={`tab-btn ${filter === 'DEX' ? 'active' : ''}`}
+                  onClick={() => setFilter('DEX')}
+                >
+                  DEX
+                </button>
+                <button
+                  className={`tab-btn ${filter === 'LOCAL' ? 'active' : ''}`}
+                  onClick={() => setFilter('LOCAL')}
+                >
+                  Indonesia
+                </button>
+                <button
+                  className={`tab-btn ${filter === 'PROFITABLE' ? 'active' : ''}`}
+                  onClick={() => setFilter('PROFITABLE')}
+                >
+                  Paling Untung
+                </button>
+              </div>
             </div>
           </div>
 
@@ -1450,7 +1504,7 @@ function App() {
                   </tr>
                 </thead>
                 <tbody>
-                  {opportunities.length === 0 ? (
+                  {filteredOpportunities.length === 0 ? (
                     <tr>
                       <td colSpan="7" style={{ textAlign: 'center', padding: '40px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '500' }}>
                         <span style={{ fontSize: '24px', display: 'block', marginBottom: '8px' }}>🔍</span>
@@ -1458,7 +1512,7 @@ function App() {
                       </td>
                     </tr>
                   ) : (
-                    opportunities.map(opp => {
+                    filteredOpportunities.map(opp => {
                       const coinInfo = COIN_META_LOOKUP[opp.symbol] || { name: opp.symbol, category: 'FLUKTUATIF' };
                       const netProfit = (capital * (opp.spread / 100)) - (capital * 0.002); // gross - approx 0.2% buy/sell fees
 
