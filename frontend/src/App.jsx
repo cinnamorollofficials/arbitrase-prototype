@@ -1518,7 +1518,11 @@ function App() {
                       >
                         {coin.added ? 'Ditambahkan' : 'Tambah Ke Dashboard'}
                       </button>
-            )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       )}
