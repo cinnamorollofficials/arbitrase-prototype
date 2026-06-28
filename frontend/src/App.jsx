@@ -681,7 +681,8 @@ function App() {
             </tbody>
           </table>
         </div>
-      )}
+      </div>
+    )}
 
       {/* Antrean Transaksi Tab Content */}
       {activeTab === 'queue' && (
