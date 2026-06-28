@@ -636,6 +636,20 @@ function App() {
       if (filter === 'CEX') return p.type === 'CEX';
       if (filter === 'DEX') return p.type === 'DEX';
       if (filter === 'LOCAL') return localExchanges.includes(p.name);
+      if (filter === 'PROFITABLE') {
+        const activePrices = prices.filter(x => x.status === 'success' && x.price !== null && x.bid !== null && x.ask !== null);
+        if (activePrices.length < 2) return false;
+        let lowestAsk = activePrices[0];
+        let highestBid = activePrices[0];
+        activePrices.forEach(x => {
+          if (x.ask < lowestAsk.ask) lowestAsk = x;
+          if (x.bid > highestBid.bid) highestBid = x;
+        });
+        const isLowestAsk = lowestAsk && p.name === lowestAsk.name;
+        const isHighestBid = highestBid && p.name === highestBid.name;
+        const hasSpread = ((highestBid.bid - lowestAsk.ask) / lowestAsk.ask) * 100 > 0;
+        return hasSpread && (isLowestAsk || isHighestBid);
+      }
       return true;
     });
   }, [prices, filter]);
@@ -1173,19 +1187,25 @@ function App() {
                 className={`tab-btn ${filter === 'CEX' ? 'active' : ''}`}
                 onClick={() => setFilter('CEX')}
               >
-                CEX Only
+                CEX
               </button>
               <button
                 className={`tab-btn ${filter === 'DEX' ? 'active' : ''}`}
                 onClick={() => setFilter('DEX')}
               >
-                DEX Only
+                DEX
               </button>
               <button
                 className={`tab-btn ${filter === 'LOCAL' ? 'active' : ''}`}
                 onClick={() => setFilter('LOCAL')}
               >
-                Indonesia Only
+                Indonesia
+              </button>
+              <button
+                className={`tab-btn ${filter === 'PROFITABLE' ? 'active' : ''}`}
+                onClick={() => setFilter('PROFITABLE')}
+              >
+                🔥 Paling Untung
               </button>
             </div>
           </div>
@@ -1232,6 +1252,12 @@ function App() {
                       <td><div className="skeleton skeleton-text" style={{ width: '80px', height: '18px' }}></div></td>
                     </tr>
                   ))
+                ) : sortedPrices.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" style={{ textAlign: 'center', padding: '30px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '500' }}>
+                      🔍 Tidak ada peluang arbitrase yang menghasilkan profit untuk koin {activeSymbol} saat ini.
+                    </td>
+                  </tr>
                 ) : (
                   sortedPrices.map((item) => {
                     const isLowestAsk = stats.lowestAsk && stats.lowestAsk.name === item.name;
