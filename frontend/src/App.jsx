@@ -122,6 +122,56 @@ function App() {
     { symbol: 'MOG', name: 'Mog Coin', spread: 3.12, buyEx: 'Bybit', sellEx: 'Gate.io', category: 'MICIN', added: false }
   ]);
 
+  const coinAssets = useMemo(() => {
+    const coins = {};
+    const coinMeta = {
+      USDC: { name: 'USD Coin', category: 'STABLE', icon: '💵', price: 1.0 },
+      SOL: { name: 'Solana', category: 'FLUKTUATIF', icon: '🪙', price: 145.20 },
+      ETH: { name: 'Ethereum', category: 'FLUKTUATIF', icon: '🪙', price: 3450.00 },
+      BNB: { name: 'Binance Coin', category: 'FLUKTUATIF', icon: '🪙', price: 580.00 },
+      PEPE: { name: 'Pepe', category: 'MICIN', icon: '🐸', price: 0.0000125 },
+      BONK: { name: 'Bonk', category: 'MICIN', icon: '🐕', price: 0.0000215 },
+      POPCAT: { name: 'Popcat', category: 'MICIN', icon: '🐱', price: 0.85 },
+      RENDER: { name: 'Render Token', category: 'FLUKTUATIF', icon: '🎨', price: 7.45 },
+      W: { name: 'Wormhole', category: 'FLUKTUATIF', icon: '🌀', price: 0.35 },
+      FLOKI: { name: 'Floki Inu', category: 'MICIN', icon: '🐕', price: 0.000175 },
+      NEIRO: { name: 'Neiro Solana', category: 'MICIN', icon: '🐶', price: 0.00145 },
+      MOG: { name: 'Mog Coin', category: 'MICIN', icon: '😹', price: 0.0000018 },
+      GIGA: { name: 'GigaChad', category: 'MICIN', icon: '💪', price: 0.042 },
+      TURBO: { name: 'Turbo', category: 'FLUKTUATIF', icon: '🐌', price: 0.0052 },
+      FWOG: { name: 'Fwog', category: 'MICIN', icon: '🐸', price: 0.023 },
+      BRETT: { name: 'Brett', category: 'FLUKTUATIF', icon: '🛡️', price: 0.125 },
+      FDUSD: { name: 'First Digital USD', category: 'STABLE', icon: '💵', price: 1.0 },
+      USDE: { name: 'Athena USDe', category: 'STABLE', icon: '💵', price: 1.0 },
+      PYUSD: { name: 'PayPal USD', category: 'STABLE', icon: '💵', price: 1.0 }
+    };
+
+    Object.entries(exchangeBalances).forEach(([exName, info]) => {
+      Object.entries(info).forEach(([key, val]) => {
+        if (['status', 'latency', 'type', 'network', 'apiStatus', 'fee'].includes(key)) return;
+        
+        if (!coins[key]) {
+          coins[key] = {
+            symbol: key,
+            name: coinMeta[key]?.name || key,
+            category: coinMeta[key]?.category || 'VOLATILE',
+            icon: coinMeta[key]?.icon || '🪙',
+            price: coinMeta[key]?.price || 1.0,
+            total: 0,
+            breakdown: []
+          };
+        }
+        
+        if (val > 0) {
+          coins[key].total += val;
+          coins[key].breakdown.push({ exName, amount: val });
+        }
+      });
+    });
+
+    return Object.values(coins);
+  }, [exchangeBalances]);
+
   const mockAvailableCoins = useMemo(() => [
     { symbol: 'GIGA', name: 'GigaChad', spread: 2.84, buyEx: 'Bybit', sellEx: 'Gate.io', category: 'MICIN' },
     { symbol: 'TURBO', name: 'Turbo', spread: 2.50, buyEx: 'Bybit', sellEx: 'Gate.io', category: 'VOLATILE' },
@@ -1725,6 +1775,173 @@ function App() {
                     </td>
                   </tr>
                 ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Spacer */}
+        <div style={{ height: '35px' }} />
+
+        {/* Saldo Aset Koin Section - Compact Table */}
+        <div className="md3-card table-card" style={{ padding: '0px', overflow: 'hidden', animation: 'fadeIn 0.3s ease 0.1s' }}>
+          <div className="table-header-section" style={{ padding: '20px' }}>
+            <h2 className="table-title">Daftar Aset Koin & Estimasi Portofolio</h2>
+            <p style={{ fontSize: '12px', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '4px', marginBottom: 0 }}>
+              Nilai total kepemilikan koin dari seluruh bursa yang terintegrasi beserta alokasi distribusinya.
+            </p>
+          </div>
+
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', backgroundColor: 'rgba(255,255,255,0.02)' }}>
+                  <th style={{ padding: '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700' }}>Koin</th>
+                  <th style={{ padding: '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700' }}>Kategori</th>
+                  <th style={{ padding: '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700', textAlign: 'right' }}>Harga Pasar (USD)</th>
+                  <th style={{ padding: '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700', textAlign: 'right' }}>Total Saldo</th>
+                  <th style={{ padding: '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700', textAlign: 'right' }}>Total Nilai Aset</th>
+                </tr>
+              </thead>
+              <tbody>
+                {coinAssets.map((coin) => {
+                  const totalValUsd = coin.total * coin.price;
+                  const hoverKey = `coin-${coin.symbol}`;
+
+                  return (
+                    <tr 
+                      key={coin.symbol} 
+                      style={{ 
+                        borderBottom: '1px solid rgba(255,255,255,0.05)', 
+                        transition: 'background-color 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.02)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }}
+                    >
+                      {/* Koin Name */}
+                      <td style={{ padding: '16px 20px', fontWeight: '700' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span style={{ fontSize: '18px' }}>{coin.icon}</span>
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span>{coin.symbol}</span>
+                            <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: 'normal' }}>{coin.name}</span>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Kategori */}
+                      <td style={{ padding: '16px 20px' }}>
+                        <span style={{ 
+                          fontSize: '9px', 
+                          padding: '2px 6px', 
+                          borderRadius: '4px',
+                          fontWeight: '700',
+                          backgroundColor: coin.category === 'MICIN' ? 'rgba(244,63,94,0.15)' : coin.category === 'STABLE' ? 'rgba(16,185,129,0.15)' : 'rgba(59,130,246,0.15)',
+                          color: coin.category === 'MICIN' ? '#f43f5e' : coin.category === 'STABLE' ? '#10b981' : '#3b82f6'
+                        }}>
+                          {coin.category}
+                        </span>
+                      </td>
+
+                      {/* Harga Pasar */}
+                      <td style={{ padding: '16px 20px', textAlign: 'right' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                          <span>${coin.price >= 0.01 ? coin.price.toLocaleString('id-ID', { minimumFractionDigits: 2 }) : coin.price.toFixed(7)}</span>
+                          <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)' }}>
+                            {formatRupiah(coin.price, usdToIdrRate)}
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* Total Saldo */}
+                      <td style={{ padding: '16px 20px', textAlign: 'right', fontWeight: '600' }}>
+                        {coin.total.toLocaleString('id-ID', { minimumFractionDigits: 2 })} {coin.symbol}
+                      </td>
+
+                      {/* Total Nilai Aset + Tooltip Info Icon */}
+                      <td style={{ padding: '16px 20px', textAlign: 'right' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end', width: '100%' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                            <span style={{ fontWeight: '700', color: 'var(--md-sys-color-primary)' }}>
+                              ${totalValUsd.toLocaleString('id-ID', { minimumFractionDigits: 2 })}
+                            </span>
+                            <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)' }}>
+                              {formatRupiah(totalValUsd, usdToIdrRate)}
+                            </span>
+                          </div>
+
+                          {/* Tooltip Info Trigger Icon */}
+                          <span 
+                            style={{ 
+                              position: 'relative', 
+                              display: 'inline-flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'center',
+                              cursor: 'help',
+                              color: 'var(--md-sys-color-primary)',
+                              backgroundColor: 'rgba(0, 176, 255, 0.1)',
+                              borderRadius: '50%',
+                              width: '16px',
+                              height: '16px',
+                              fontSize: '10px',
+                              fontWeight: '700',
+                              userSelect: 'none'
+                            }}
+                            onMouseEnter={() => setHoveredExchange(hoverKey)}
+                            onMouseLeave={() => setHoveredExchange(null)}
+                          >
+                            i
+                            
+                            {/* Floating Tooltip Box */}
+                            <div style={{
+                              position: 'absolute',
+                              bottom: '120%',
+                              right: '0',
+                              transform: hoveredExchange === hoverKey ? 'translateY(-4px)' : 'translateY(8px)',
+                              opacity: hoveredExchange === hoverKey ? 1 : 0,
+                              visibility: hoveredExchange === hoverKey ? 'visible' : 'hidden',
+                              transition: 'all 0.2s ease',
+                              backgroundColor: '#1b1d26',
+                              border: '1px solid rgba(255, 255, 255, 0.12)',
+                              borderRadius: 'var(--md-shape-corner-medium)',
+                              padding: '12px',
+                              width: '260px',
+                              zIndex: 1000,
+                              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+                              pointerEvents: 'none',
+                              textTransform: 'none',
+                              letterSpacing: 'normal'
+                            }}>
+                              <div style={{ fontWeight: '700', fontSize: '11px', color: 'var(--md-sys-color-primary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '4px', textAlign: 'left' }}>
+                                Alokasi Bursa ({coin.symbol})
+                              </div>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', textAlign: 'left' }}>
+                                {coin.breakdown.map((item) => {
+                                  const itemUsd = item.amount * coin.price;
+                                  return (
+                                    <div key={item.exName} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#ffffff' }}>
+                                      <span style={{ fontWeight: '600' }}>{item.exName}</span>
+                                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                        <span>{item.amount.toLocaleString('id-ID')} {coin.symbol}</span>
+                                        <span style={{ fontSize: '9px', color: 'var(--md-sys-color-on-surface-variant)' }}>
+                                          {formatRupiah(itemUsd, usdToIdrRate)}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
