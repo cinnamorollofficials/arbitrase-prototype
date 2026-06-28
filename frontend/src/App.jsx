@@ -130,6 +130,39 @@ const TX_STEPS = [
   { label: 'Selesai', desc: 'Profit Masuk Dompet' }
 ];
 
+// ── URL State Hook ──────────────────────────────────────────────────────────
+function useUrlState(key, defaultValue) {
+  const getFromUrl = () => {
+    const params = new URLSearchParams(window.location.search);
+    const raw = params.get(key);
+    if (raw === null) return defaultValue;
+    // attempt to coerce type to match default
+    if (typeof defaultValue === 'number') return isNaN(Number(raw)) ? defaultValue : Number(raw);
+    return raw;
+  };
+
+  const [state, _setState] = useState(getFromUrl);
+
+  const setState = (valueOrFn) => {
+    _setState(prev => {
+      const next = typeof valueOrFn === 'function' ? valueOrFn(prev) : valueOrFn;
+      const params = new URLSearchParams(window.location.search);
+      if (next === defaultValue || next === null || next === undefined) {
+        params.delete(key);
+      } else {
+        params.set(key, String(next));
+      }
+      const newUrl = params.toString() ? `${window.location.pathname}?${params}` : window.location.pathname;
+      window.history.replaceState(null, '', newUrl);
+      return next;
+    });
+  };
+
+  return [state, setState];
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
+
 function App() {
   const [prices, setPrices] = useState([]);
   const [usdToIdrRate, setUsdToIdrRate] = useState(16500);
@@ -155,12 +188,12 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
-  const [filter, setFilter] = useState('ALL'); // 'ALL' | 'CEX' | 'DEX'
+  const [filter,             setFilter]             = useUrlState('filter', 'ALL');
   const [refreshCountdown, setRefreshCountdown] = useState(10);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [capital, setCapital] = useState(10000); // Default capital $10,000 USD
-  const [activeSymbol, setActiveSymbol] = useState('USDT'); // Active asset: USDT, SOL, ETH, PEPE, BONK, WIF, FLOKI, SHIB, JUP, W, RENDER, POPCAT, MEW, ENA, ONDO
-  const [activeTab, setActiveTab] = useState('prices'); // 'prices' | 'queue'
+  const [isRefreshing,       setIsRefreshing]       = useState(false);
+  const [capital,             setCapital]             = useUrlState('capital', 10000);
+  const [activeSymbol,       setActiveSymbol]       = useUrlState('coin', 'USDT');
+  const [activeTab,           setActiveTab]           = useUrlState('tab', 'prices');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [transactions, setTransactions] = useState(() => {
     const saved = localStorage.getItem('arbitrage_transactions');
@@ -181,10 +214,10 @@ function App() {
       PancakeSwap: { USDC: 1820.75, BNB: 2.40, FLOKI: 2500000, status: 'Online', latency: '22ms', type: 'DEX', network: 'BNB Chain (BEP20)', apiStatus: 'MetaMask Connected', fee: 'Swap: 0.25% | Gas: ~0.0008 BNB' }
     };
   });
-  const [agentStatus, setAgentStatus] = useState('running');
-  const [minSpreadCriteria, setMinSpreadCriteria] = useState(1.5);
-  const [numAgents, setNumAgents] = useState(1);
-  const [coinCategory, setCoinCategory] = useState('ALL');
+  const [agentStatus,       setAgentStatus]       = useState('running');
+  const [minSpreadCriteria, setMinSpreadCriteria] = useUrlState('spread', 1.5);
+  const [numAgents,         setNumAgents]         = useUrlState('agents', 1);
+  const [coinCategory,     setCoinCategory]     = useUrlState('cat', 'ALL');
   const [agentLogs, setAgentLogs] = useState([
     `[${new Date().toLocaleTimeString()}] [SYSTEM] Memulai agen AI pemindai spreads...`,
     `[${new Date().toLocaleTimeString()}] [INFO] Kriteria: Min Spread > 1.50%`
