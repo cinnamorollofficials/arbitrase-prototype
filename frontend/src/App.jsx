@@ -896,6 +896,26 @@ function App() {
         >
           🏦 Saldo & Dompet
         </button>
+        <button
+          onClick={() => setActiveTab('portfolio')}
+          className="tab-btn"
+          style={{
+            padding: '10px 20px',
+            fontSize: '13px',
+            fontWeight: '700',
+            backgroundColor: activeTab === 'portfolio' ? 'var(--md-sys-color-primary-container)' : 'var(--md-sys-color-surface-container-high)',
+            color: activeTab === 'portfolio' ? 'var(--md-sys-color-on-primary-container)' : 'var(--md-sys-color-on-surface-variant)',
+            borderRadius: 'var(--md-shape-corner-medium)',
+            border: activeTab === 'portfolio' ? '1px solid var(--md-sys-color-primary)' : '1px solid var(--md-sys-color-outline-variant)',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px'
+          }}
+        >
+          🪙 Portofolio Koin
+        </button>
       </div>
 
       {/* Main Table Section */}
@@ -1579,7 +1599,6 @@ function App() {
       )}
 
       {activeTab === 'balances' && (
-        <>
         <div className="md3-card table-card" style={{ padding: '0px', overflow: 'hidden', animation: 'fadeIn 0.3s ease' }}>
           <div className="table-header-section" style={{ padding: '20px' }}>
             <h2 className="table-title">Daftar Bursa & Saldo Dompet</h2>
@@ -1780,12 +1799,11 @@ function App() {
             </table>
           </div>
         </div>
+      )}
 
-        {/* Spacer */}
-        <div style={{ height: '35px' }} />
-
-        {/* Saldo Aset Koin Section - Compact Table */}
-        <div className="md3-card table-card" style={{ padding: '0px', overflow: 'hidden', animation: 'fadeIn 0.3s ease 0.1s' }}>
+      {/* Portofolio Koin Tab */}
+      {activeTab === 'portfolio' && (
+        <div className="md3-card table-card" style={{ padding: '0px', overflow: 'hidden', animation: 'fadeIn 0.3s ease' }}>
           <div className="table-header-section" style={{ padding: '20px' }}>
             <h2 className="table-title">Daftar Aset Koin & Estimasi Portofolio</h2>
             <p style={{ fontSize: '12px', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '4px', marginBottom: 0 }}>
@@ -1947,7 +1965,6 @@ function App() {
             </table>
           </div>
         </div>
-        </>
       )}
 
       {/* Confirmation Modal */}
