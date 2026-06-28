@@ -1668,29 +1668,31 @@ function App() {
                           }}
                         >
                           {/* Exchange Name */}
-                          <td style={{ fontWeight: '600', display: 'flex', alignItems: 'center' }}>
-                            <button
-                              onClick={() => {
-                                setSelectedExchange(item.name);
-                                setShowExchangeModal(true);
-                              }}
-                              style={{
-                                background: 'none',
-                                border: 'none',
-                                padding: 0,
-                                margin: 0,
-                                font: 'inherit',
-                                color: 'var(--md-sys-color-primary)',
-                                cursor: 'pointer',
-                                textAlign: 'left',
-                                textDecoration: 'underline'
-                              }}
-                            >
-                              {item.name}
-                            </button>
-                            {item.source === 'coingecko' && (
-                              <span className="badge badge-source">via CG</span>
-                            )}
+                          <td>
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontWeight: '600' }}>
+                              <button
+                                onClick={() => {
+                                  setSelectedExchange(item.name);
+                                  setShowExchangeModal(true);
+                                }}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  padding: 0,
+                                  margin: 0,
+                                  font: 'inherit',
+                                  color: 'var(--md-sys-color-primary)',
+                                  cursor: 'pointer',
+                                  textAlign: 'left',
+                                  textDecoration: 'underline'
+                                }}
+                              >
+                                {item.name}
+                              </button>
+                              {item.source === 'coingecko' && (
+                                <span className="badge badge-source">via CG</span>
+                              )}
+                            </div>
                           </td>
 
                           {/* Type Badge */}
