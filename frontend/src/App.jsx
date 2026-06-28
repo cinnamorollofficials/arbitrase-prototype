@@ -47,7 +47,7 @@ const formatRupiah = (usdVal, rate) => {
   }
 };
 
-const defaultSymbols = ['USDT', 'SOL', 'ETH', 'PEPE', 'BONK', 'WIF', 'FLOKI', 'SHIB', 'JUP', 'W', 'RENDER', 'POPCAT', 'MEW', 'ENA', 'ONDO'];
+const defaultSymbols = ['USDT', 'SOL', 'ETH', 'PEPE', 'BONK', 'WIF', 'FLOKI', 'SHIB', 'JUP', 'W', 'RENDER', 'POPCAT', 'MEW', 'ENA', 'ONDO', 'LTC', 'XRP', 'ADA', 'AVAX', 'DOT', 'LINK', 'NEAR', 'APT', 'SUI', 'FET'];
 
 const COIN_ICONS = {
   USDC:   'https://assets.coingecko.com/coins/images/6319/small/usdc.png',
@@ -70,6 +70,16 @@ const COIN_ICONS = {
   FDUSD:  'https://assets.coingecko.com/coins/images/31079/small/firstdigital.png',
   USDE:   'https://assets.coingecko.com/coins/images/33613/small/USDE.png',
   PYUSD:  'https://assets.coingecko.com/coins/images/31212/small/PYUSD.png',
+  LTC:    'https://assets.coingecko.com/coins/images/2/small/litecoin.png',
+  XRP:    'https://assets.coingecko.com/coins/images/44/small/xrp.png',
+  ADA:    'https://assets.coingecko.com/coins/images/975/small/cardano.png',
+  AVAX:   'https://assets.coingecko.com/coins/images/12559/small/Avalanche_Circle_RedWhite_Trans.png',
+  DOT:    'https://assets.coingecko.com/coins/images/12171/small/polkadot.png',
+  LINK:   'https://assets.coingecko.com/coins/images/877/small/chainlink-link.png',
+  NEAR:   'https://assets.coingecko.com/coins/images/10365/small/near.png',
+  APT:    'https://assets.coingecko.com/coins/images/26455/small/aptos_round.png',
+  SUI:    'https://assets.coingecko.com/coins/images/26375/small/sui_asset.png',
+  FET:    'https://assets.coingecko.com/coins/images/5681/small/Fetch.png',
 };
 
 const EXCHANGE_ICONS = {
@@ -281,6 +291,16 @@ function App() {
       FDUSD:{ name: 'First Digital USD',category: 'STABLE',      icon: COIN_ICONS.FDUSD,  price: 1.0 },
       USDE: { name: 'Athena USDe',      category: 'STABLE',      icon: COIN_ICONS.USDE,   price: 1.0 },
       PYUSD:{ name: 'PayPal USD',       category: 'STABLE',      icon: COIN_ICONS.PYUSD,  price: 1.0 },
+      LTC:  { name: 'Litecoin',         category: 'FLUKTUATIF',  icon: COIN_ICONS.LTC,    price: 76.50 },
+      XRP:  { name: 'Ripple',           category: 'FLUKTUATIF',  icon: COIN_ICONS.XRP,    price: 0.585 },
+      ADA:  { name: 'Cardano',          category: 'FLUKTUATIF',  icon: COIN_ICONS.ADA,    price: 0.382 },
+      AVAX: { name: 'Avalanche',        category: 'FLUKTUATIF',  icon: COIN_ICONS.AVAX,   price: 28.40 },
+      DOT:  { name: 'Polkadot',         category: 'FLUKTUATIF',  icon: COIN_ICONS.DOT,    price: 6.15 },
+      LINK: { name: 'Chainlink',        category: 'FLUKTUATIF',  icon: COIN_ICONS.LINK,   price: 14.80 },
+      NEAR: { name: 'Near Protocol',    category: 'FLUKTUATIF',  icon: COIN_ICONS.NEAR,   price: 4.85 },
+      APT:  { name: 'Aptos',            category: 'FLUKTUATIF',  icon: COIN_ICONS.APT,    price: 8.20 },
+      SUI:  { name: 'Sui',              category: 'FLUKTUATIF',  icon: COIN_ICONS.SUI,    price: 1.08 },
+      FET:  { name: 'Artificial Superintelligence Alliance', category: 'FLUKTUATIF', icon: COIN_ICONS.FET, price: 1.35 },
     };
 
     Object.entries(exchangeBalances).forEach(([exName, info]) => {

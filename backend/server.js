@@ -15,7 +15,8 @@ app.use(express.json());
 const priceCache = {};
 const CACHE_DURATION_MS = 5000; // 5 seconds cache
 const spreadCache = {
-  USDT: 0, SOL: 0, ETH: 0, PEPE: 0, BONK: 0, WIF: 0, FLOKI: 0, SHIB: 0, JUP: 0, W: 0, RENDER: 0, POPCAT: 0, MEW: 0, ENA: 0, ONDO: 0
+  USDT: 0, SOL: 0, ETH: 0, PEPE: 0, BONK: 0, WIF: 0, FLOKI: 0, SHIB: 0, JUP: 0, W: 0, RENDER: 0, POPCAT: 0, MEW: 0, ENA: 0, ONDO: 0,
+  LTC: 0, XRP: 0, ADA: 0, AVAX: 0, DOT: 0, LINK: 0, NEAR: 0, APT: 0, SUI: 0, FET: 0
 };
 
 // CoinGecko fallback caches
@@ -38,7 +39,17 @@ const COIN_IDS = {
   POPCAT: 'popcat',
   MEW: 'cat-in-a-dogs-world',
   ENA: 'ethena',
-  ONDO: 'ondo'
+  ONDO: 'ondo',
+  LTC: 'litecoin',
+  XRP: 'ripple',
+  ADA: 'cardano',
+  AVAX: 'avalanche-2',
+  DOT: 'polkadot',
+  LINK: 'chainlink',
+  NEAR: 'near',
+  APT: 'aptos',
+  SUI: 'sui',
+  FET: 'fetch-ai'
 };
 
 const ASSET_TOKENS = {
@@ -96,6 +107,37 @@ const ASSET_TOKENS = {
   },
   ONDO: {
     ethereum: '0xfaba6f8e4a5e8ab82f62fe7c39859fa577269be3'
+  },
+  LTC: {
+    bsc: '0x4338665C3543ce62480d23f33c14353E1eA6fca4'
+  },
+  XRP: {
+    bsc: '0x1D2F0da169ceB2dC6B123f87b2b740120bF6E4cf'
+  },
+  ADA: {
+    bsc: '0x3EE2200Efb3400fAbH9B1F2f719e6490ceda012A'
+  },
+  AVAX: {
+    bsc: '0x1CE0c4827e87014C68CFCb0aF871578fCEF9ff9c'
+  },
+  DOT: {
+    bsc: '0x7083609fCE4d1d8Dc0C979AAb8c869ae2C873cD0'
+  },
+  LINK: {
+    ethereum: '0x514910771AF9Ca656af840dff83E8264EcF986CA',
+    bsc: '0xF8A0B185dE16242419409FA01e1419FDe47bD28C'
+  },
+  NEAR: {
+    bsc: '0x1Fa4a73a3f0133f0025378af00236f3aBDEE5D63'
+  },
+  APT: {
+    bsc: '0x1930A6318458c5fF4d0D3B032Ff70C5768D3540d'
+  },
+  SUI: {
+    bsc: '0x32356c9aCbeB0D478bcfb5B63ff4F138f7c9eFeF'
+  },
+  FET: {
+    ethereum: '0xaeD2F71AB68f56fee5FC94919c1e17F38E6b6188'
   }
 };
 
