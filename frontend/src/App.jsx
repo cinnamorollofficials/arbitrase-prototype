@@ -81,6 +81,46 @@ const EXCHANGE_ICONS = {
   'PancakeSwap': 'https://assets.coingecko.com/coins/images/12632/small/pancakeswap-cake-logo.png',
 };
 
+const SYMBOL_COLORS = {
+  USDC: '#2775CA', USDT: '#26A17B', SOL: '#9945FF', ETH: '#627EEA',
+  BNB: '#F0B90B', PEPE: '#4CAF50', BONK: '#F57C00', POPCAT: '#78909C',
+  RENDER: '#FF007A', W: '#9C27B0', FLOKI: '#FFB300', NEIRO: '#FF6F00',
+  MOG: '#E91E63', GIGA: '#3F51B5', TURBO: '#00BCD4', FWOG: '#388E3C',
+  BRETT: '#5D4037', FDUSD: '#1565C0', USDE: '#37474F', PYUSD: '#1976D2',
+};
+
+function CoinIcon({ symbol, size = 28, round = true }) {
+  const [failed, setFailed] = React.useState(false);
+  const src = COIN_ICONS[symbol];
+  const color = SYMBOL_COLORS[symbol] || '#607D8B';
+  const radius = round ? '50%' : '6px';
+  const style = { width: size, height: size, borderRadius: radius, objectFit: 'cover', border: '1px solid rgba(255,255,255,0.1)', flexShrink: 0 };
+
+  if (!src || failed) {
+    return (
+      <div style={{ ...style, backgroundColor: color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.42, fontWeight: '800', color: '#fff', letterSpacing: '-0.5px' }}>
+        {(symbol || '?').slice(0, 2)}
+      </div>
+    );
+  }
+  return <img src={src} alt={symbol} onError={() => setFailed(true)} style={style} />;
+}
+
+function ExchangeIcon({ name, size = 28 }) {
+  const [failed, setFailed] = React.useState(false);
+  const src = EXCHANGE_ICONS[name];
+  const style = { width: size, height: size, borderRadius: '6px', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.1)', flexShrink: 0 };
+
+  if (!src || failed) {
+    return (
+      <div style={{ ...style, background: 'linear-gradient(135deg, #455a64, #607d8b)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.38, fontWeight: '800', color: '#fff' }}>
+        {(name || '?').slice(0, 2).toUpperCase()}
+      </div>
+    );
+  }
+  return <img src={src} alt={name} onError={() => setFailed(true)} style={style} />;
+}
+
 const TX_STEPS = [
   { label: 'Inisiasi', desc: 'Antrean Terbuka' },
   { label: 'Cek Saldo', desc: 'Verifikasi Modal' },
@@ -690,6 +730,7 @@ function App() {
                   gap: '4px'
                 }}
               >
+                <CoinIcon symbol={sym} size={16} />
                 {sym}
                 {spread > 0 && (
                   <span style={{ 
@@ -1211,7 +1252,12 @@ function App() {
                           <td style={{ padding: '12px 8px', color: 'var(--md-sys-color-on-surface-variant)' }}>
                             {new Date(tx.timestamp).toLocaleString('id-ID')}
                           </td>
-                          <td style={{ padding: '12px 8px', fontWeight: '700' }}>{tx.symbol}</td>
+                          <td style={{ padding: '12px 8px', fontWeight: '700' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+                              <CoinIcon symbol={tx.symbol} size={20} />
+                              {tx.symbol}
+                            </div>
+                          </td>
                           <td style={{ padding: '12px 8px' }}>
                             <span style={{ fontWeight: '600' }}>{tx.buyEx}</span> 
                             <span style={{ margin: '0 4px', color: 'var(--md-sys-color-outline)' }}>➔</span> 
@@ -1576,23 +1622,33 @@ function App() {
                     padding: '12px 16px',
                     transition: 'all 0.2s ease'
                   }}>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontWeight: '800', fontSize: '14px' }}>{coin.symbol}</span>
-                        <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)' }}>{coin.name}</span>
-                        <span style={{ 
-                          fontSize: '9px', 
-                          padding: '2px 6px', 
-                          borderRadius: '4px',
-                          fontWeight: '700',
-                          backgroundColor: coin.category === 'MICIN' ? 'rgba(244,63,94,0.15)' : coin.category === 'STABLE' ? 'rgba(16,185,129,0.15)' : 'rgba(59,130,246,0.15)',
-                          color: coin.category === 'MICIN' ? '#f43f5e' : coin.category === 'STABLE' ? '#10b981' : '#3b82f6'
-                        }}>
-                          {coin.category}
-                        </span>
-                      </div>
-                      <div style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '4px' }}>
-                        Potensi Rute: <span style={{ fontWeight: '600', color: '#ffffff' }}>{coin.buyEx} ➔ {coin.sellEx}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      {COIN_ICONS[coin.symbol] && (
+                        <img
+                          src={COIN_ICONS[coin.symbol]}
+                          alt={coin.symbol}
+                          onError={(e) => { e.target.style.display = 'none'; }}
+                          style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.1)', flexShrink: 0 }}
+                        />
+                      )}
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontWeight: '800', fontSize: '14px' }}>{coin.symbol}</span>
+                          <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)' }}>{coin.name}</span>
+                          <span style={{ 
+                            fontSize: '9px', 
+                            padding: '2px 6px', 
+                            borderRadius: '4px',
+                            fontWeight: '700',
+                            backgroundColor: coin.category === 'MICIN' ? 'rgba(244,63,94,0.15)' : coin.category === 'STABLE' ? 'rgba(16,185,129,0.15)' : 'rgba(59,130,246,0.15)',
+                            color: coin.category === 'MICIN' ? '#f43f5e' : coin.category === 'STABLE' ? '#10b981' : '#3b82f6'
+                          }}>
+                            {coin.category}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '4px' }}>
+                          Potensi Rute: <span style={{ fontWeight: '600', color: '#ffffff' }}>{coin.buyEx} ➔ {coin.sellEx}</span>
+                        </div>
                       </div>
                     </div>
 
@@ -1669,19 +1725,8 @@ function App() {
                     {/* Bursa Name & Badge */}
                     <td style={{ padding: '16px 20px', fontWeight: '700' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <img
-                            src={EXCHANGE_ICONS[exName]}
-                            alt={exName}
-                            onError={(e) => { e.target.style.display = 'none'; }}
-                            style={{
-                              width: '28px',
-                              height: '28px',
-                              borderRadius: '6px',
-                              objectFit: 'cover',
-                              border: '1px solid rgba(255,255,255,0.1)'
-                            }}
-                          />
-                          <span>{exName}</span>
+                        <ExchangeIcon name={exName} size={28} />
+                        <span>{exName}</span>
                         <span className={`badge ${info.type === 'CEX' ? 'badge-cex' : 'badge-dex'}`}>
                           {info.type}
                         </span>
@@ -1888,19 +1933,7 @@ function App() {
                       {/* Koin Name */}
                       <td style={{ padding: '16px 20px', fontWeight: '700' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <img
-                            src={coin.icon}
-                            alt={coin.symbol}
-                            onError={(e) => { e.target.style.display = 'none'; }}
-                            style={{
-                              width: '28px',
-                              height: '28px',
-                              borderRadius: '50%',
-                              objectFit: 'cover',
-                              border: '1px solid rgba(255,255,255,0.1)',
-                              flexShrink: 0
-                            }}
-                          />
+                          <CoinIcon symbol={coin.symbol} size={28} />
                           <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <span>{coin.symbol}</span>
                             <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: 'normal' }}>{coin.name}</span>
