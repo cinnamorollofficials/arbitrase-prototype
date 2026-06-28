@@ -580,7 +580,7 @@ h1, h2, h3, h4 {
   display: flex;
   align-items: center;
   gap: 8px;
-  animation: assetMarquee 40s linear infinite;
+  animation: assetMarquee 120s linear infinite;
   white-space: nowrap;
   width: max-content;
 }
