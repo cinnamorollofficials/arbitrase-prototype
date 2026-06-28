@@ -1528,215 +1528,206 @@ function App() {
         </div>
       )}
 
-      {/* Saldo & Dompet Bursa Tab Content */}
       {activeTab === 'balances' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px', animation: 'fadeIn 0.3s ease' }}>
-          {Object.entries(exchangeBalances).map(([exName, info]) => (
-            <div 
-              key={exName} 
-              className="md3-card" 
-              style={{ 
-                padding: '20px', 
-                display: 'flex', 
-                flexDirection: 'column', 
-                gap: '14px'
-              }}
-            >
-              
-              {/* Card Header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontWeight: '800', fontSize: '16px' }}>{exName}</span>
-                  <span className={`badge ${info.type === 'CEX' ? 'badge-cex' : 'badge-dex'}`}>{exName === 'Binance' || exName === 'Bybit' || exName === 'Gate.io' ? 'CEX' : 'DEX'}</span>
-                </div>
-                <span style={{ 
-                  fontSize: '11px', 
-                  color: 'var(--color-profit-green)', 
-                  backgroundColor: 'rgba(52,211,153,0.1)', 
-                  padding: '3px 8px', 
-                  borderRadius: 'var(--md-shape-corner-full)',
-                  fontWeight: '600'
-                }}>
-                  ⚡ {info.latency}
-                </span>
-              </div>
-
-              {/* Network Details */}
-              <div style={{ fontSize: '12px', color: 'var(--md-sys-color-on-surface-variant)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Jaringan:</span>
-                  <span style={{ color: '#ffffff', fontWeight: '600' }}>{info.network}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Status API:</span>
-                  <span style={{ color: 'var(--md-sys-color-primary)', fontWeight: '600' }}>{info.apiStatus}</span>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Biaya (Fee):</span>
-                  <span style={{ color: 'var(--color-profit-green)', fontWeight: '600' }}>{info.fee || 'Spot: 0.1%'}</span>
-                </div>
-              </div>
-
-              <div style={{ height: '1px', backgroundColor: 'rgba(255,255,255,0.06)' }} />
-
-              {/* Wallet Balances list */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <span style={{ 
-                  fontSize: '11px', 
-                  fontWeight: '700', 
-                  color: 'var(--md-sys-color-on-surface-variant)', 
-                  textTransform: 'uppercase', 
-                  letterSpacing: '0.5px'
-                }}>
-                  Aset & Saldo
-                </span>
-                
-                {/* USDC balance - Left Title & Right Amount */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
-                  {/* Left Side: Title + Tooltip Info Icon */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontWeight: '600', fontSize: '13px', color: 'var(--md-sys-color-on-surface-variant)' }}>USDC Balance</span>
-                    
-                    {/* Tooltip Info Trigger Icon */}
-                    <span 
-                      style={{ 
-                        position: 'relative', 
-                        display: 'inline-flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'center',
-                        cursor: 'help',
-                        color: 'var(--md-sys-color-primary)',
-                        backgroundColor: 'rgba(0, 176, 255, 0.1)',
-                        borderRadius: '50%',
-                        width: '16px',
-                        height: '16px',
-                        fontSize: '10px',
-                        fontWeight: '700',
-                        userSelect: 'none'
-                      }}
-                      onMouseEnter={() => setHoveredExchange(exName)}
-                      onMouseLeave={() => setHoveredExchange(null)}
-                    >
-                      i
-                      
-                      {/* Floating Tooltip Box */}
-                      <div style={{
-                        position: 'absolute',
-                        bottom: '100%',
-                        left: '50%',
-                        transform: hoveredExchange === exName ? 'translateX(-50%) translateY(-8px)' : 'translateX(-50%) translateY(4px)',
-                        opacity: hoveredExchange === exName ? 1 : 0,
-                        visibility: hoveredExchange === exName ? 'visible' : 'hidden',
-                        transition: 'all 0.2s ease',
-                        backgroundColor: '#1b1d26',
-                        border: '1px solid rgba(255, 255, 255, 0.12)',
-                        borderRadius: 'var(--md-shape-corner-medium)',
-                        padding: '12px',
-                        width: '250px',
-                        zIndex: 1000,
-                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
-                        pointerEvents: 'none',
-                        textTransform: 'none',
-                        letterSpacing: 'normal'
-                      }}>
-                        <div style={{ fontWeight: '700', fontSize: '11px', color: 'var(--md-sys-color-primary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '4px', textAlign: 'left' }}>
-                          Detail Saldo Koin
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', textAlign: 'left' }}>
-                          {Object.entries(info).map(([asset, val]) => {
-                            if (['USDC', 'status', 'latency', 'type', 'network', 'apiStatus', 'fee'].includes(asset)) return null;
-                            
-                            let tokenPriceInUsd = 1.0;
-                            if (asset === 'SOL') tokenPriceInUsd = 145.20;
-                            else if (asset === 'ETH') tokenPriceInUsd = 3450.00;
-                            else if (asset === 'BNB') tokenPriceInUsd = 580.00;
-                            else if (asset === 'PEPE') tokenPriceInUsd = 0.0000125;
-                            else if (asset === 'BONK') tokenPriceInUsd = 0.0000215;
-                            else if (asset === 'POPCAT') tokenPriceInUsd = 0.85;
-                            else if (asset === 'RENDER') tokenPriceInUsd = 7.45;
-                            else if (asset === 'W') tokenPriceInUsd = 0.35;
-                            else if (asset === 'FLOKI') tokenPriceInUsd = 0.000175;
-
-                            const valueInUsd = val * tokenPriceInUsd;
-
-                            return (
-                              <div key={asset} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#ffffff', marginTop: '2px' }}>
-                                <span style={{ fontWeight: '700' }}>
-                                  {val.toLocaleString('id-ID')} {asset}
-                                </span>
-                                <span style={{ color: 'var(--md-sys-color-on-surface-variant)', fontSize: '10px' }}>
-                                  {formatRupiah(valueInUsd, usdToIdrRate)}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                        
-                        {/* Tooltip triangle indicator */}
-                        <div style={{
-                          position: 'absolute',
-                          top: '100%',
-                          left: '50%',
-                          transform: 'translateX(-50%)',
-                          width: 0,
-                          height: 0,
-                          borderLeft: '6px solid transparent',
-                          borderRight: '6px solid transparent',
-                          borderTop: '6px solid #1b1d26'
-                        }} />
+        <div className="md3-card table-card" style={{ padding: '0px', overflow: 'hidden', animation: 'fadeIn 0.3s ease' }}>
+          <div className="table-header-section" style={{ padding: '20px' }}>
+            <h2 className="table-title">Daftar Bursa & Saldo Dompet</h2>
+            <p style={{ fontSize: '12px', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '4px', marginBottom: 0 }}>
+              Informasi saldo modal, jaringan, latensi, dan fee transaksi yang terintegrasi secara otonom.
+            </p>
+          </div>
+          
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', backgroundColor: 'rgba(255,255,255,0.02)' }}>
+                  <th style={{ padding: '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700' }}>Bursa</th>
+                  <th style={{ padding: '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700' }}>Jaringan</th>
+                  <th style={{ padding: '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700' }}>Status API / Latency</th>
+                  <th style={{ padding: '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700' }}>Biaya (Fee)</th>
+                  <th style={{ padding: '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700', textAlign: 'right' }}>Saldo Utama (USDC)</th>
+                  <th style={{ padding: '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700', textAlign: 'center' }}>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(exchangeBalances).map(([exName, info]) => (
+                  <tr 
+                    key={exName} 
+                    style={{ 
+                      borderBottom: '1px solid rgba(255,255,255,0.05)', 
+                      transition: 'background-color 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.02)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                    }}
+                  >
+                    {/* Bursa Name & Badge */}
+                    <td style={{ padding: '16px 20px', fontWeight: '700' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span>{exName}</span>
+                        <span className={`badge ${info.type === 'CEX' ? 'badge-cex' : 'badge-dex'}`}>
+                          {info.type}
+                        </span>
                       </div>
-                    </span>
-                  </div>
-                  
-                  {/* Right Side: Total Balance Amount */}
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', textAlign: 'right' }}>
-                    <span style={{ fontWeight: '700', fontSize: '14px' }}>{info.USDC.toLocaleString('id-ID', { minimumFractionDigits: 2 })} USDC</span>
-                    <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)' }}>
-                      {formatRupiah(info.USDC, usdToIdrRate)}
-                    </span>
-                  </div>
-                </div>
-              </div>
+                    </td>
 
-              {/* Action buttons */}
-              <div style={{ display: 'flex', gap: '8px', marginTop: 'auto', paddingTop: '10px' }}>
-                <button
-                  onClick={() => alert(`Fitur Deposit otomatis ke ${exName} disimulasikan.`)}
-                  className="tab-btn"
-                  style={{
-                    flex: 1,
-                    padding: '6px',
-                    fontSize: '11px',
-                    fontWeight: '700',
-                    border: '1px solid var(--md-sys-color-outline-variant)',
-                    backgroundColor: 'rgba(255,255,255,0.02)',
-                    color: '#ffffff',
-                    borderRadius: 'var(--md-shape-corner-small)',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Deposit
-                </button>
-                <button
-                  onClick={() => alert(`Fitur Penarikan (Withdraw) otomatis dari ${exName} disimulasikan.`)}
-                  className="tab-btn"
-                  style={{
-                    flex: 1,
-                    padding: '6px',
-                    fontSize: '11px',
-                    fontWeight: '700',
-                    border: '1px solid var(--md-sys-color-outline-variant)',
-                    backgroundColor: 'rgba(255,255,255,0.02)',
-                    color: '#ffffff',
-                    borderRadius: 'var(--md-shape-corner-small)',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Withdraw
-                </button>
-              </div>
-            </div>
-          ))}
+                    {/* Jaringan */}
+                    <td style={{ padding: '16px 20px', color: '#ffffff' }}>{info.network}</td>
+
+                    {/* Status API / Latency */}
+                    <td style={{ padding: '16px 20px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ color: 'var(--md-sys-color-primary)', fontWeight: '600' }}>{info.apiStatus}</span>
+                        <span style={{ 
+                          fontSize: '11px', 
+                          color: 'var(--color-profit-green)', 
+                          backgroundColor: 'rgba(52,211,153,0.08)', 
+                          padding: '2px 6px', 
+                          borderRadius: '4px',
+                          fontWeight: '600'
+                        }}>
+                          ⚡ {info.latency}
+                        </span>
+                      </div>
+                    </td>
+
+                    {/* Biaya (Fee) */}
+                    <td style={{ padding: '16px 20px', color: 'var(--color-profit-green)', fontWeight: '600' }}>{info.fee}</td>
+
+                    {/* Saldo Utama (USDC) + Tooltip Info Icon */}
+                    <td style={{ padding: '16px 20px', textAlign: 'right' }}>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end', width: '100%' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                          <span style={{ fontWeight: '700' }}>{info.USDC.toLocaleString('id-ID', { minimumFractionDigits: 2 })} USDC</span>
+                          <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)' }}>
+                            {formatRupiah(info.USDC, usdToIdrRate)}
+                          </span>
+                        </div>
+
+                        {/* Tooltip Info Trigger Icon */}
+                        <span 
+                          style={{ 
+                            position: 'relative', 
+                            display: 'inline-flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center',
+                            cursor: 'help',
+                            color: 'var(--md-sys-color-primary)',
+                            backgroundColor: 'rgba(0, 176, 255, 0.1)',
+                            borderRadius: '50%',
+                            width: '16px',
+                            height: '16px',
+                            fontSize: '10px',
+                            fontWeight: '700',
+                            userSelect: 'none'
+                          }}
+                          onMouseEnter={() => setHoveredExchange(exName)}
+                          onMouseLeave={() => setHoveredExchange(null)}
+                        >
+                          i
+                          
+                          {/* Floating Tooltip Box */}
+                          <div style={{
+                            position: 'absolute',
+                            bottom: '120%',
+                            right: '0',
+                            transform: hoveredExchange === exName ? 'translateY(-4px)' : 'translateY(8px)',
+                            opacity: hoveredExchange === exName ? 1 : 0,
+                            visibility: hoveredExchange === exName ? 'visible' : 'hidden',
+                            transition: 'all 0.2s ease',
+                            backgroundColor: '#1b1d26',
+                            border: '1px solid rgba(255, 255, 255, 0.12)',
+                            borderRadius: 'var(--md-shape-corner-medium)',
+                            padding: '12px',
+                            width: '250px',
+                            zIndex: 1000,
+                            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+                            pointerEvents: 'none',
+                            textTransform: 'none',
+                            letterSpacing: 'normal'
+                          }}>
+                            <div style={{ fontWeight: '700', fontSize: '11px', color: 'var(--md-sys-color-primary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '4px', textAlign: 'left' }}>
+                              Detail Saldo Koin ({exName})
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', textAlign: 'left' }}>
+                              {Object.entries(info).map(([asset, val]) => {
+                                if (['USDC', 'status', 'latency', 'type', 'network', 'apiStatus', 'fee'].includes(asset)) return null;
+                                
+                                let tokenPriceInUsd = 1.0;
+                                if (asset === 'SOL') tokenPriceInUsd = 145.20;
+                                else if (asset === 'ETH') tokenPriceInUsd = 3450.00;
+                                else if (asset === 'BNB') tokenPriceInUsd = 580.00;
+                                else if (asset === 'PEPE') tokenPriceInUsd = 0.0000125;
+                                else if (asset === 'BONK') tokenPriceInUsd = 0.0000215;
+                                else if (asset === 'POPCAT') tokenPriceInUsd = 0.85;
+                                else if (asset === 'RENDER') tokenPriceInUsd = 7.45;
+                                else if (asset === 'W') tokenPriceInUsd = 0.35;
+                                else if (asset === 'FLOKI') tokenPriceInUsd = 0.000175;
+
+                                const valueInUsd = val * tokenPriceInUsd;
+
+                                return (
+                                  <div key={asset} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#ffffff', marginTop: '2px' }}>
+                                    <span style={{ fontWeight: '700' }}>
+                                      {val.toLocaleString('id-ID')} {asset}
+                                    </span>
+                                    <span style={{ color: 'var(--md-sys-color-on-surface-variant)', fontSize: '10px' }}>
+                                      {formatRupiah(valueInUsd, usdToIdrRate)}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </span>
+                      </div>
+                    </td>
+
+                    {/* Aksi Deposit / Withdraw */}
+                    <td style={{ padding: '16px 20px', textAlign: 'center' }}>
+                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                        <button
+                          onClick={() => alert(`Fitur Deposit otomatis ke ${exName} disimulasikan.`)}
+                          className="tab-btn"
+                          style={{
+                            padding: '4px 10px',
+                            fontSize: '11px',
+                            fontWeight: '700',
+                            border: '1px solid var(--md-sys-color-outline-variant)',
+                            backgroundColor: 'rgba(255,255,255,0.02)',
+                            color: '#ffffff',
+                            borderRadius: '4px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Deposit
+                        </button>
+                        <button
+                          onClick={() => alert(`Fitur Penarikan (Withdraw) dari ${exName} disimulasikan.`)}
+                          className="tab-btn"
+                          style={{
+                            padding: '4px 10px',
+                            fontSize: '11px',
+                            fontWeight: '700',
+                            border: '1px solid var(--md-sys-color-outline-variant)',
+                            backgroundColor: 'rgba(255,255,255,0.02)',
+                            color: '#ffffff',
+                            borderRadius: '4px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Withdraw
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
