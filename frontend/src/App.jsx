@@ -202,16 +202,30 @@ function App() {
           </div>
         </div>
 
-        {/* Asset Selector Dropdown/Segmented Buttons */}
-        <div className="asset-selector-container" style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--md-sys-color-surface-container-high)', padding: '4px', borderRadius: 'var(--md-shape-corner-full)', border: '1px solid var(--md-sys-color-outline-variant)', overflowX: 'auto', maxWidth: '100%', whiteSpace: 'nowrap' }}>
+        <div className="sync-status-container">
+          <div className="status-chip">
+            <span className={`status-indicator ${isRefreshing ? 'loading' : ''}`}></span>
+            {isRefreshing ? 'Memperbarui...' : `Auto-refresh dalam ${refreshCountdown}s`}
+          </div>
+          {lastUpdated && (
+            <span style={{ fontSize: '13px', color: 'var(--md-sys-color-on-surface-variant)' }}>
+              Update: {lastUpdated.toLocaleTimeString()}
+            </span>
+          )}
+        </div>
+      </header>
+
+      {/* Asset Selector Row (Moved Below Header to Avoid Overflow) */}
+      <div className="asset-selector-row" style={{ marginBottom: '24px' }}>
+        <div className="asset-selector-container" style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--md-sys-color-surface-container-high)', padding: '6px', borderRadius: 'var(--md-shape-corner-full)', border: '1px solid var(--md-sys-color-outline-variant)', overflowX: 'auto', maxWidth: '100%', whiteSpace: 'nowrap', scrollbarWidth: 'none' }}>
           {['USDT', 'SOL', 'ETH', 'PEPE', 'BONK', 'WIF', 'FLOKI', 'SHIB', 'JUP', 'W', 'RENDER', 'POPCAT', 'MEW', 'ENA', 'ONDO'].map(sym => (
             <button
               key={sym}
               onClick={() => handleAssetChange(sym)}
               className="tab-btn"
               style={{
-                padding: '6px 14px',
-                fontSize: '12px',
+                padding: '8px 16px',
+                fontSize: '13px',
                 fontWeight: '700',
                 backgroundColor: activeSymbol === sym ? 'var(--md-sys-color-primary-container)' : 'transparent',
                 color: activeSymbol === sym ? 'var(--md-sys-color-on-primary-container)' : 'var(--md-sys-color-on-surface-variant)',
@@ -226,19 +240,7 @@ function App() {
             </button>
           ))}
         </div>
-
-        <div className="sync-status-container">
-          <div className="status-chip">
-            <span className={`status-indicator ${isRefreshing ? 'loading' : ''}`}></span>
-            {isRefreshing ? 'Memperbarui...' : `Auto-refresh dalam ${refreshCountdown}s`}
-          </div>
-          {lastUpdated && (
-            <span style={{ fontSize: '13px', color: 'var(--md-sys-color-on-surface-variant)' }}>
-              Update: {lastUpdated.toLocaleTimeString()}
-            </span>
-          )}
-        </div>
-      </header>
+      </div>
 
       {/* Error State */}
       {error && (
