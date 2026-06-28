@@ -1579,6 +1579,7 @@ function App() {
       )}
 
       {activeTab === 'balances' && (
+        <>
         <div className="md3-card table-card" style={{ padding: '0px', overflow: 'hidden', animation: 'fadeIn 0.3s ease' }}>
           <div className="table-header-section" style={{ padding: '20px' }}>
             <h2 className="table-title">Daftar Bursa & Saldo Dompet</h2>
@@ -1946,6 +1947,7 @@ function App() {
             </table>
           </div>
         </div>
+        </>
       )}
 
       {/* Confirmation Modal */}
