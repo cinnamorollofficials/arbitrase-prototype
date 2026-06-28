@@ -388,6 +388,27 @@ async function getPricesForSymbol(symbol) {
         const p = parseFloat(symbol === 'USDT' ? 1 / parseFloat(d.price) : d.price);
         return { price: p, bid: p * 0.9999, ask: p * 1.0001 };
       }, 'mexc'),
+
+    // Indodax (Indonesian CEX - supports API)
+    getCexPrice('Indodax', symbol, `https://indodax.com/api/${symbol === 'USDT' ? 'usdt' : symbol.toLowerCase()}_idr/ticker`,
+      d => {
+        if (!d || !d.ticker) throw new Error('Invalid Indodax ticker');
+        const idrRate = 16500;
+        const last = parseFloat(d.ticker.last);
+        const buy = parseFloat(d.ticker.buy);
+        const sell = parseFloat(d.ticker.sell);
+        return {
+          price: symbol === 'USDT' ? 1.0 : last / idrRate,
+          bid: buy / idrRate,
+          ask: sell / idrRate
+        };
+      }, 'indodax'),
+
+    // Tokocrypto (Indonesian CEX - supports API)
+    getCexPrice('Tokocrypto', symbol, 'https://api.tokocrypto.com/open/v1/invalid_trigger', () => {}, 'tokocrypto'),
+
+    // Reku (Indonesian CEX - supports API)
+    getCexPrice('Reku', symbol, 'https://reku.id/api/v1/invalid_trigger', () => {}, 'reku'),
     
     getDexPrices(symbol)
   ]);

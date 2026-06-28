@@ -82,6 +82,9 @@ const EXCHANGE_ICONS = {
   'KuCoin':      'https://assets.coingecko.com/markets/images/61/small/kucoin.png',
   'Coinbase':    'https://assets.coingecko.com/markets/images/23/small/Coinbase_Coin_Primary.png',
   'HTX':         'https://assets.coingecko.com/markets/images/25/small/huobi.jpg',
+  'Indodax':     'https://coin-images.coingecko.com/markets/images/3/large/logogram-Indodax-new-_JPG_format.jpg',
+  'Tokocrypto':  'https://coin-images.coingecko.com/markets/images/635/large/tokocrypto.png',
+  'Reku':        'https://coin-images.coingecko.com/markets/images/1029/large/reku.png',
   // DEX
   'Raydium':     'https://assets.coingecko.com/coins/images/13928/small/PSigc4ie_400x400.jpg',
   'Uniswap':     'https://assets.coingecko.com/coins/images/12504/small/uniswap-uni.png',
@@ -215,9 +218,7 @@ function App() {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [hoveredExchange, setHoveredExchange] = useState(null);
   const [exchangeBalances, setExchangeBalances] = useState(() => {
-    const saved = localStorage.getItem('arbitrage_balances');
-    if (saved) return JSON.parse(saved);
-    return {
+    const defaultBalances = {
       Binance:     { USDC: 15420.50, ETH: 0.45, PEPE: 12500000,             status: 'Online', latency: '52ms',  type: 'CEX', network: 'Ethereum / BSC / Solana',    apiStatus: 'Terkoneksi',          fee: 'Spot: 0.1% | Penarikan: $1.0'            },
       Bybit:       { USDC: 10200.00, SOL: 12.40, BONK: 5600000,             status: 'Online', latency: '84ms',  type: 'CEX', network: 'Ethereum / BSC / Solana',    apiStatus: 'Terkoneksi',          fee: 'Spot: 0.1% | Penarikan: $1.0'            },
       'Gate.io':   { USDC:  4150.25, RENDER: 12.0, POPCAT: 85000,           status: 'Online', latency: '120ms', type: 'CEX', network: 'Ethereum / BSC / Solana',    apiStatus: 'Terkoneksi',          fee: 'Spot: 0.2% | Penarikan: $1.5'            },
@@ -226,6 +227,9 @@ function App() {
       KuCoin:      { USDC:  3800.00, SOL: 5.40, FLOKI: 1200000,             status: 'Online', latency: '110ms', type: 'CEX', network: 'Ethereum / BSC / KCC',       apiStatus: 'Terkoneksi',          fee: 'Spot: 0.1% | Penarikan: $1.2'            },
       Coinbase:    { USDC: 12500.00, ETH: 1.20, RENDER: 8.0,                status: 'Online', latency: '75ms',  type: 'CEX', network: 'Ethereum / Base / Solana',   apiStatus: 'Terkoneksi',          fee: 'Spot: 0.6% (taker) | Penarikan: $0.50'  },
       HTX:         { USDC:  2900.00, SOL: 3.10, PEPE: 8000000,              status: 'Online', latency: '140ms', type: 'CEX', network: 'Ethereum / BSC / TRON',      apiStatus: 'Terkoneksi',          fee: 'Spot: 0.2% | Penarikan: $1.5'            },
+      Indodax:     { USDC:  7500.00, SOL: 15.00, ETH: 0.50, BONK: 4500000,     status: 'Online', latency: '35ms',  type: 'CEX', network: 'Indonesian Rupiah / TRON / SOL', apiStatus: 'Terkoneksi (API)', fee: 'Spot: 0.21% | Penarikan: Rp 25.000'       },
+      Tokocrypto:  { USDC:  9200.00, SOL: 10.50, PEPE: 6000000,             status: 'Online', latency: '42ms',  type: 'CEX', network: 'Indonesian Rupiah / BSC / SOL',  apiStatus: 'Terkoneksi (API)', fee: 'Spot: 0.1% | Penarikan: Rp 10.000'        },
+      Reku:        { USDC:  4800.00, ETH: 0.65, POPCAT: 40000,               status: 'Online', latency: '48ms',  type: 'CEX', network: 'Indonesian Rupiah / ERC20 / SOL', apiStatus: 'Terkoneksi (API)', fee: 'Spot: 0.1% | Penarikan: Rp 6.500'         },
       Raydium:     { USDC: 12850.10, SOL: 45.82, BONK: 15400000,            status: 'Online', latency: '8ms',   type: 'DEX', network: 'Solana (SPL)',              apiStatus: 'Phantom Connected',   fee: 'Swap: 0.25% | Gas: ~0.00005 SOL'         },
       Uniswap:     { USDC:  3450.00, ETH: 1.15, W: 500000,                  status: 'Online', latency: '15ms',  type: 'DEX', network: 'Ethereum / Arbitrum / Base', apiStatus: 'MetaMask Connected',  fee: 'Swap: 0.3% | Gas: ~0.002 ETH'            },
       PancakeSwap: { USDC:  1820.75, BNB: 2.40, FLOKI: 2500000,             status: 'Online', latency: '22ms',  type: 'DEX', network: 'BNB Chain (BEP20)',          apiStatus: 'MetaMask Connected',  fee: 'Swap: 0.25% | Gas: ~0.0008 BNB'          },
@@ -235,6 +239,12 @@ function App() {
       dYdX:        { USDC:  7400.00, ETH: 0.90,                              status: 'Online', latency: '12ms',  type: 'DEX', network: 'StarkEx / Cosmos (dYdX Chain)', apiStatus: 'MetaMask Connected', fee: 'Taker: 0.05% | Maker: 0.0%'             },
       Jupiter:     { USDC:  6600.00, SOL: 22.00, BONK: 9000000,             status: 'Online', latency: '5ms',   type: 'DEX', network: 'Solana (SPL)',              apiStatus: 'Phantom Connected',   fee: 'Swap: 0.2% | Gas: ~0.00004 SOL'          },
     };
+    const saved = localStorage.getItem('arbitrage_balances');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return { ...defaultBalances, ...parsed };
+    }
+    return defaultBalances;
   });
   const [agentStatus,       setAgentStatus]       = useState('running');
   const [minSpreadCriteria, setMinSpreadCriteria] = useUrlState('spread', 1.5);
