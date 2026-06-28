@@ -96,6 +96,18 @@ function App() {
   });
   const [expandedTxId, setExpandedTxId] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [exchangeBalances, setExchangeBalances] = useState(() => {
+    const saved = localStorage.getItem('arbitrage_balances');
+    if (saved) return JSON.parse(saved);
+    return {
+      Binance: { USDC: 15420.50, ETH: 0.45, PEPE: 12500000, status: 'Online', latency: '52ms', type: 'CEX', network: 'Ethereum/BSC/Solana', apiStatus: 'Terkoneksi' },
+      Bybit: { USDC: 10200.00, SOL: 12.40, BONK: 5600000, status: 'Online', latency: '84ms', type: 'CEX', network: 'Ethereum/BSC/Solana', apiStatus: 'Terkoneksi' },
+      'Gate.io': { USDC: 4150.25, RENDER: 12.0, POPCAT: 85000, status: 'Online', latency: '120ms', type: 'CEX', network: 'Ethereum/BSC/Solana', apiStatus: 'Terkoneksi' },
+      Raydium: { USDC: 12850.10, SOL: 45.82, BONK: 15400000, status: 'Online', latency: '8ms', type: 'DEX', network: 'Solana (SPL)', apiStatus: 'Phantom Connected' },
+      Uniswap: { USDC: 3450.00, ETH: 1.15, W: 500000, status: 'Online', latency: '15ms', type: 'DEX', network: 'Ethereum/Arbitrum', apiStatus: 'MetaMask Connected' },
+      PancakeSwap: { USDC: 1820.75, BNB: 2.40, FLOKI: 2500000, status: 'Online', latency: '22ms', type: 'DEX', network: 'BNB Chain (BEP20)', apiStatus: 'MetaMask Connected' }
+    };
+  });
   const [agentStatus, setAgentStatus] = useState('running');
   const [minSpreadCriteria, setMinSpreadCriteria] = useState(1.5);
   const [numAgents, setNumAgents] = useState(1);
@@ -223,12 +235,35 @@ function App() {
   };
 
   const handleExecuteTransaction = () => {
+    const buyExchange = stats.lowestAsk?.name;
+    const sellExchange = stats.highestBid?.name;
+    
+    if (buyExchange && sellExchange) {
+      setExchangeBalances(prevBalances => {
+        const updated = { ...prevBalances };
+        if (updated[buyExchange]) {
+          updated[buyExchange] = {
+            ...updated[buyExchange],
+            USDC: Math.max(0, updated[buyExchange].USDC - capital)
+          };
+        }
+        if (updated[sellExchange]) {
+          updated[sellExchange] = {
+            ...updated[sellExchange],
+            USDC: updated[sellExchange].USDC + capital + netCalculation.net
+          };
+        }
+        localStorage.setItem('arbitrage_balances', JSON.stringify(updated));
+        return updated;
+      });
+    }
+
     const newTx = {
       id: 'TX-' + Date.now().toString().slice(-6),
       timestamp: new Date().toISOString(),
       symbol: activeSymbol,
-      buyEx: stats.lowestAsk?.name || 'N/A',
-      sellEx: stats.highestBid?.name || 'N/A',
+      buyEx: buyExchange || 'N/A',
+      sellEx: sellExchange || 'N/A',
       capital: capital,
       grossProfit: netCalculation.gross,
       fees: netCalculation.fees,
@@ -789,6 +824,26 @@ function App() {
           }}
         >
           🤖 Agen AI Scanner
+        </button>
+        <button
+          onClick={() => setActiveTab('balances')}
+          className="tab-btn"
+          style={{
+            padding: '10px 20px',
+            fontSize: '13px',
+            fontWeight: '700',
+            backgroundColor: activeTab === 'balances' ? 'var(--md-sys-color-primary-container)' : 'var(--md-sys-color-surface-container-high)',
+            color: activeTab === 'balances' ? 'var(--md-sys-color-on-primary-container)' : 'var(--md-sys-color-on-surface-variant)',
+            borderRadius: 'var(--md-shape-corner-medium)',
+            border: activeTab === 'balances' ? '1px solid var(--md-sys-color-primary)' : '1px solid var(--md-sys-color-outline-variant)',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px'
+          }}
+        >
+          🏦 Saldo & Dompet
         </button>
       </div>
 
@@ -1463,12 +1518,138 @@ function App() {
                       >
                         {coin.added ? 'Ditambahkan' : 'Tambah Ke Dashboard'}
                       </button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
+            )}
           </div>
+        </div>
+      )}
+
+      {/* Saldo & Dompet Bursa Tab Content */}
+      {activeTab === 'balances' && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px', animation: 'fadeIn 0.3s ease' }}>
+          {Object.entries(exchangeBalances).map(([exName, info]) => (
+            <div key={exName} className="md3-card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              
+              {/* Card Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontWeight: '800', fontSize: '16px' }}>{exName}</span>
+                  <span className={`badge ${info.type === 'CEX' ? 'badge-cex' : 'badge-dex'}`}>{exName === 'Binance' || exName === 'Bybit' || exName === 'Gate.io' ? 'CEX' : 'DEX'}</span>
+                </div>
+                <span style={{ 
+                  fontSize: '11px', 
+                  color: 'var(--color-profit-green)', 
+                  backgroundColor: 'rgba(52,211,153,0.1)', 
+                  padding: '3px 8px', 
+                  borderRadius: 'var(--md-shape-corner-full)',
+                  fontWeight: '600'
+                }}>
+                  ⚡ {info.latency}
+                </span>
+              </div>
+
+              {/* Network Details */}
+              <div style={{ fontSize: '12px', color: 'var(--md-sys-color-on-surface-variant)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Jaringan:</span>
+                  <span style={{ color: '#ffffff', fontWeight: '600' }}>{info.network}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Status API:</span>
+                  <span style={{ color: 'var(--md-sys-color-primary)', fontWeight: '600' }}>{info.apiStatus}</span>
+                </div>
+              </div>
+
+              <div style={{ height: '1px', backgroundColor: 'rgba(255,255,255,0.06)' }} />
+
+              {/* Wallet Balances list */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <span style={{ fontSize: '11px', fontWeight: '700', color: 'var(--md-sys-color-on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Aset & Saldo
+                </span>
+                
+                {/* USDC balance */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontWeight: '700', fontSize: '14px' }}>{info.USDC.toLocaleString('id-ID', { minimumFractionDigits: 2 })} USDC</span>
+                    <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)' }}>
+                      {formatRupiah(info.USDC, usdToIdrRate)}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '18px' }}>💵</span>
+                </div>
+
+                {/* Additional assets */}
+                {Object.entries(info).map(([asset, val]) => {
+                  if (['USDC', 'status', 'latency', 'type', 'network', 'apiStatus'].includes(asset)) return null;
+                  
+                  let tokenPriceInUsd = 1.0;
+                  if (asset === 'SOL') tokenPriceInUsd = 145.20;
+                  else if (asset === 'ETH') tokenPriceInUsd = 3450.00;
+                  else if (asset === 'BNB') tokenPriceInUsd = 580.00;
+                  else if (asset === 'PEPE') tokenPriceInUsd = 0.0000125;
+                  else if (asset === 'BONK') tokenPriceInUsd = 0.0000215;
+                  else if (asset === 'POPCAT') tokenPriceInUsd = 0.85;
+                  else if (asset === 'RENDER') tokenPriceInUsd = 7.45;
+                  else if (asset === 'W') tokenPriceInUsd = 0.35;
+                  else if (asset === 'FLOKI') tokenPriceInUsd = 0.000175;
+
+                  const valueInUsd = val * tokenPriceInUsd;
+
+                  return (
+                    <div key={asset} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ fontWeight: '700', fontSize: '13px' }}>
+                          {val.toLocaleString('id-ID')} {asset}
+                        </span>
+                        <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)' }}>
+                          ${valueInUsd.toLocaleString('id-ID', { maximumFractionDigits: 2 })} ≈ {formatRupiah(valueInUsd, usdToIdrRate)}
+                        </span>
+                      </div>
+                      <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--md-sys-color-on-surface-variant)' }}>🪙</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Action buttons */}
+              <div style={{ display: 'flex', gap: '8px', marginTop: 'auto', paddingTop: '10px' }}>
+                <button
+                  onClick={() => alert(`Fitur Deposit otomatis ke ${exName} disimulasikan.`)}
+                  className="tab-btn"
+                  style={{
+                    flex: 1,
+                    padding: '6px',
+                    fontSize: '11px',
+                    fontWeight: '700',
+                    border: '1px solid var(--md-sys-color-outline-variant)',
+                    backgroundColor: 'rgba(255,255,255,0.02)',
+                    color: '#ffffff',
+                    borderRadius: 'var(--md-shape-corner-small)',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Deposit
+                </button>
+                <button
+                  onClick={() => alert(`Fitur Penarikan (Withdraw) otomatis dari ${exName} disimulasikan.`)}
+                  className="tab-btn"
+                  style={{
+                    flex: 1,
+                    padding: '6px',
+                    fontSize: '11px',
+                    fontWeight: '700',
+                    border: '1px solid var(--md-sys-color-outline-variant)',
+                    backgroundColor: 'rgba(255,255,255,0.02)',
+                    color: '#ffffff',
+                    borderRadius: 'var(--md-shape-corner-small)',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Withdraw
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
