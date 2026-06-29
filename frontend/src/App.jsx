@@ -334,6 +334,27 @@ function App() {
   const [usdToIdrRate, setUsdToIdrRate] = useState(16500);
   const [symbolsList, setSymbolsList] = useState(defaultSymbols);
   const [spreads, setSpreads] = useState({});
+  const [exchangesDb, setExchangesDb] = useState([]);
+  const [loadingExchangesDb, setLoadingExchangesDb] = useState(false);
+  const [errorExchangesDb, setErrorExchangesDb] = useState(null);
+
+  const fetchExchangesDb = async () => {
+    setLoadingExchangesDb(true);
+    setErrorExchangesDb(null);
+    try {
+      const response = await fetch('http://localhost:5001/api/exchanges-db');
+      if (!response.ok) {
+        throw new Error(`HTTP error ${response.status}`);
+      }
+      const data = await response.json();
+      setExchangesDb(data.exchanges || []);
+    } catch (err) {
+      console.error('Failed to fetch exchanges from DB:', err);
+      setErrorExchangesDb(err.message);
+    } finally {
+      setLoadingExchangesDb(false);
+    }
+  };
 
   useEffect(() => {
     const fetchExchangeRate = async () => {
@@ -351,6 +372,7 @@ function App() {
     };
     fetchExchangeRate();
   }, []);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
@@ -360,6 +382,12 @@ function App() {
   const [capital, setCapital] = useUrlState('capital', 10000);
   const [activeSymbol, setActiveSymbol] = useUrlState('coin', 'USDT');
   const [activeTab, setActiveTab] = useUrlState('tab', 'prices');
+  useEffect(() => {
+    if (activeTab === 'exchanges') {
+      fetchExchangesDb();
+    }
+  }, [activeTab]);
+  const [exchangesViewMode, setExchangesViewMode] = useUrlState('ex_mode', 'table');
   const [isCompact, setIsCompact] = useUrlState('compact', 'false');
   const [opportunities, setOpportunities] = useState([]);
   const [selectedExchange, setSelectedExchange] = useUrlState('ex', 'Binance');
@@ -1410,6 +1438,26 @@ function App() {
             }}
           >
             Portofolio Koin
+          </button>
+          <button
+            onClick={() => setActiveTab('exchanges')}
+            className="tab-btn"
+            style={{
+              padding: '10px 20px',
+              fontSize: '13px',
+              fontWeight: '700',
+              backgroundColor: activeTab === 'exchanges' ? 'var(--md-sys-color-primary-container)' : 'var(--md-sys-color-surface-container-high)',
+              color: activeTab === 'exchanges' ? 'var(--md-sys-color-on-primary-container)' : 'var(--md-sys-color-on-surface-variant)',
+              borderRadius: 'var(--md-shape-corner-medium)',
+              border: activeTab === 'exchanges' ? '1px solid var(--md-sys-color-primary)' : '1px solid var(--md-sys-color-outline-variant)',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            Exchanges (DB)
           </button>
         </div>
       </div>
@@ -2795,6 +2843,402 @@ function App() {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {/* Exchanges Database Tab */}
+      {activeTab === 'exchanges' && (
+        <div className="md3-card table-card" style={{ padding: '0px', overflow: 'hidden', animation: 'fadeIn 0.3s ease' }}>
+          <div className="table-header-section" style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+            <div>
+              <h2 className="table-title" style={{ margin: 0 }}>Daftar & Regulasi Bursa Kripto</h2>
+              <p style={{ fontSize: '12px', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '4px', marginBottom: 0 }}>
+                Data real-time dari database berisi bursa CEX & DEX, tautan resmi, logo bursa, status regulasi Bappebti Indonesia, dan skema biaya (fees).
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              {/* View mode toggle */}
+              <div className="tabs-container" style={{ margin: 0, padding: '2px', display: 'inline-flex', height: 'auto', gap: '4px' }}>
+                <button
+                  className={`tab-btn ${exchangesViewMode === 'table' ? 'active' : ''}`}
+                  onClick={() => setExchangesViewMode('table')}
+                  style={{ padding: '4px 10px', fontSize: '12px', borderRadius: '4px' }}
+                >
+                  📋 Tabel
+                </button>
+                <button
+                  className={`tab-btn ${exchangesViewMode === 'grid' ? 'active' : ''}`}
+                  onClick={() => setExchangesViewMode('grid')}
+                  style={{ padding: '4px 10px', fontSize: '12px', borderRadius: '4px' }}
+                >
+                  🎴 Grid
+                </button>
+              </div>
+
+              <button
+                onClick={fetchExchangesDb}
+                className="tab-btn"
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '12px',
+                  fontWeight: '700',
+                  backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                  border: '1px solid var(--md-sys-color-outline-variant)',
+                  borderRadius: 'var(--md-shape-corner-medium)',
+                  color: '#ffffff',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                🔄 Refresh DB
+              </button>
+            </div>
+          </div>
+
+          {loadingExchangesDb ? (
+            <div style={{ padding: '40px', textAlign: 'center' }}>
+              <div className="skeleton skeleton-text" style={{ width: '40%', margin: '0 auto 12px' }}></div>
+              <div className="skeleton skeleton-text" style={{ width: '60%', margin: '0 auto 24px' }}></div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px', padding: '0 20px' }}>
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="md3-card" style={{ padding: '20px', height: '140px', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '8px' }}>
+                    <div className="skeleton skeleton-text" style={{ width: '80%' }}></div>
+                    <div className="skeleton skeleton-text" style={{ width: '50%', marginTop: '12px' }}></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : errorExchangesDb ? (
+            <div style={{ padding: '40px', textAlign: 'center', color: 'var(--md-sys-color-error)' }}>
+              <span style={{ fontSize: '24px' }}>⚠️</span>
+              <p style={{ margin: '8px 0' }}>Gagal memuat data dari database: {errorExchangesDb}</p>
+              <button
+                onClick={fetchExchangesDb}
+                className="tab-btn"
+                style={{ backgroundColor: 'var(--md-sys-color-error-container)', color: 'var(--md-sys-color-on-error-container)' }}
+              >
+                Coba Lagi
+              </button>
+            </div>
+          ) : (
+            <div style={{ padding: '0 20px 20px' }}>
+              {exchangesViewMode === 'table' ? (
+                /* Table View Mode */
+                <div style={{ overflowX: 'auto' }}>
+                  <table className={`md3-table ${compactMode ? 'compact-table' : ''}`} style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', backgroundColor: 'rgba(255,255,255,0.02)' }}>
+                        <th style={{ padding: '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700' }}>Bursa / Tipe</th>
+                        <th style={{ padding: '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700' }}>Legalitas Indonesia</th>
+                        <th style={{ padding: '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700' }}>Endpoint API / Router</th>
+                        <th style={{ padding: '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700' }}>Trading Fee (Spot/Pool)</th>
+                        <th style={{ padding: '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700' }}>Withdrawal Fees (Flat)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {exchangesDb.map((ex) => {
+                        const tradeFee = ex.fees?.find(f => f.fee_type === 'CEX_TRADE');
+                        const apiAttribute = ex.attributes?.find(a => a.attribute_key === 'api_url' || a.attribute_key === 'factory_address');
+                        const withdrawalFees = ex.fees?.filter(f => f.fee_type === 'WITHDRAWAL') || [];
+
+                        return (
+                          <tr
+                            key={ex.id}
+                            style={{
+                              borderBottom: '1px solid rgba(255,255,255,0.05)',
+                              transition: 'background-color 0.2s ease'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.02)'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                          >
+                            {/* Bursa name & icon */}
+                            <td style={{ padding: '16px 20px', fontWeight: '700' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                {ex.logo_url ? (
+                                  <img
+                                    src={ex.logo_url}
+                                    alt={ex.name}
+                                    onError={(e) => {
+                                      e.target.style.display = 'none';
+                                      e.target.nextSibling.style.display = 'flex';
+                                    }}
+                                    style={{ width: '28px', height: '28px', borderRadius: '6px', objectFit: 'cover' }}
+                                  />
+                                ) : null}
+                                <div
+                                  style={{
+                                    display: ex.logo_url ? 'none' : 'flex',
+                                    width: '28px',
+                                    height: '28px',
+                                    borderRadius: '6px',
+                                    background: 'linear-gradient(135deg, #455a64, #607d8b)',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '11px',
+                                    fontWeight: '800',
+                                    color: '#fff'
+                                  }}
+                                >
+                                  {ex.name.slice(0, 2).toUpperCase()}
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <span>{ex.name}</span>
+                                    <span className={`badge ${ex.type === 'CEX' ? 'badge-cex' : 'badge-dex'}`} style={{ fontSize: '9px', padding: '1px 4px' }}>
+                                      {ex.type}
+                                    </span>
+                                  </div>
+                                  {ex.website_url && (
+                                    <a
+                                      href={ex.website_url}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      style={{ fontSize: '10px', color: 'var(--md-sys-color-primary)', textDecoration: 'none', fontWeight: 'normal' }}
+                                    >
+                                      Kunjungi Website ➔
+                                    </a>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Legalitas */}
+                            <td style={{ padding: '16px 20px' }}>
+                              {ex.is_registered_indonesia ? (
+                                <span style={{
+                                  fontSize: '10px',
+                                  fontWeight: '700',
+                                  color: '#10b981',
+                                  backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                                  padding: '3px 8px',
+                                  borderRadius: '4px',
+                                  border: '1px solid rgba(16, 185, 129, 0.2)'
+                                }}>
+                                  🛡️ Terdaftar Bappebti
+                                </span>
+                              ) : (
+                                <span style={{
+                                  fontSize: '10px',
+                                  fontWeight: '600',
+                                  color: 'var(--md-sys-color-on-surface-variant)',
+                                  backgroundColor: 'rgba(255,255,255,0.05)',
+                                  padding: '3px 8px',
+                                  borderRadius: '4px'
+                                }}>
+                                  🌍 Internasional
+                                </span>
+                              )}
+                            </td>
+
+                            {/* API / Contract Router */}
+                            <td style={{ padding: '16px 20px', fontFamily: 'monospace', fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)', maxWidth: '240px', wordBreak: 'break-all' }}>
+                              {apiAttribute ? apiAttribute.attribute_value : '-'}
+                            </td>
+
+                            {/* Fees */}
+                            <td style={{ padding: '16px 20px', fontWeight: '700', color: 'var(--color-profit-green)' }}>
+                              {tradeFee ? `${(parseFloat(tradeFee.fee_percentage) * 100).toFixed(2)}%` : ex.type === 'CEX' ? '0.10%' : '0.30%'}
+                            </td>
+
+                            {/* Withdrawal Fees */}
+                            <td style={{ padding: '16px 20px' }}>
+                              {withdrawalFees.length > 0 ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '11px' }}>
+                                  {withdrawalFees.map(f => {
+                                    const tokenSymbol = f.token_id === 1 ? 'USDT' : f.token_id === 2 ? 'SOL' : f.token_id === 3 ? 'ETH' : 'USDT';
+                                    const chainName = f.chain_id === 1 ? 'Ethereum' : f.chain_id === 2 ? 'BSC' : f.chain_id === 3 ? 'Solana' : 'Solana';
+                                    return (
+                                      <div key={f.id} style={{ display: 'flex', gap: '8px' }}>
+                                        <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>{tokenSymbol} ({chainName}):</span>
+                                        <span style={{ fontWeight: '600', color: '#ffffff' }}>{parseFloat(f.fee_flat).toFixed(2)} {tokenSymbol}</span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              ) : (
+                                <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>-</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                /* Grid Cards View Mode */
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+                  {exchangesDb.map((ex) => {
+                    const tradeFee = ex.fees?.find(f => f.fee_type === 'CEX_TRADE');
+                    const apiAttribute = ex.attributes?.find(a => a.attribute_key === 'api_url' || a.attribute_key === 'factory_address');
+                    const withdrawalFees = ex.fees?.filter(f => f.fee_type === 'WITHDRAWAL') || [];
+
+                    return (
+                      <div
+                        key={ex.id}
+                        className="md3-card"
+                        style={{
+                          padding: '20px',
+                          backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                          border: '1px solid rgba(255, 255, 255, 0.06)',
+                          borderRadius: 'var(--md-shape-corner-medium)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'space-between',
+                          gap: '16px',
+                          transition: 'transform 0.2s ease, border-color 0.2s ease',
+                          position: 'relative'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor = 'var(--md-sys-color-primary)';
+                          e.currentTarget.style.transform = 'translateY(-2px)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.06)';
+                          e.currentTarget.style.transform = 'none';
+                        }}
+                      >
+                        {/* Top Row: Logo & Name & Type */}
+                        <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                          {ex.logo_url ? (
+                            <img
+                              src={ex.logo_url}
+                              alt={ex.name}
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.nextSibling.style.display = 'flex';
+                              }}
+                              style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.1)' }}
+                            />
+                          ) : null}
+                          <div
+                            style={{
+                              display: ex.logo_url ? 'none' : 'flex',
+                              width: '40px',
+                              height: '40px',
+                              borderRadius: '8px',
+                              background: 'linear-gradient(135deg, #455a64, #607d8b)',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: '16px',
+                              fontWeight: '800',
+                              color: '#fff'
+                            }}
+                          >
+                            {ex.name.slice(0, 2).toUpperCase()}
+                          </div>
+
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ fontSize: '16px', fontWeight: '800', color: '#ffffff' }}>{ex.name}</span>
+                              <span className={`badge ${ex.type === 'CEX' ? 'badge-cex' : 'badge-dex'}`}>
+                                {ex.type}
+                              </span>
+                            </div>
+                            {ex.website_url && (
+                              <a
+                                href={ex.website_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                style={{ fontSize: '11px', color: 'var(--md-sys-color-primary)', textDecoration: 'none' }}
+                              >
+                                🔗 Kunjungi Website
+                              </a>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Middle: Regulated Legal Badge */}
+                        <div style={{ margin: '4px 0' }}>
+                          {ex.is_registered_indonesia ? (
+                            <div style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              fontSize: '11px',
+                              fontWeight: '800',
+                              color: '#10b981',
+                              backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                              padding: '4px 10px',
+                              borderRadius: '4px',
+                              border: '1px solid rgba(16, 185, 129, 0.2)'
+                            }}>
+                              🛡️ TERDAFTAR BAPPEBTI (LEGAL)
+                            </div>
+                          ) : (
+                            <div style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              fontSize: '11px',
+                              fontWeight: '600',
+                              color: 'var(--md-sys-color-on-surface-variant)',
+                              backgroundColor: 'rgba(255,255,255,0.05)',
+                              padding: '4px 10px',
+                              borderRadius: '4px'
+                            }}>
+                              🌍 BURSA INTERNASIONAL
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Bottom Info: Config Attribute & Fees */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '10px' }}>
+                          {/* API Config */}
+                          {apiAttribute && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
+                              <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
+                                {apiAttribute.attribute_key === 'api_url' ? 'Endpoint API:' : 'Router/Factory:'}
+                              </span>
+                              <span style={{ fontWeight: '500', color: '#ffffff', wordBreak: 'break-all', textAlign: 'right', fontSize: '11px' }}>
+                                {apiAttribute.attribute_value}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Trade / Pool Fees */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
+                              {ex.type === 'CEX' ? 'Trading Fee (Spot):' : 'Default Pool Fee:'}
+                            </span>
+                            <span style={{ fontWeight: '700', color: 'var(--color-profit-green)' }}>
+                              {tradeFee ? `${(parseFloat(tradeFee.fee_percentage) * 100).toFixed(2)}%` : ex.type === 'CEX' ? '0.10%' : '0.30%'}
+                            </span>
+                          </div>
+
+                          {/* Withdrawal Fees List */}
+                          {withdrawalFees.length > 0 && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px', borderTop: '1px dashed rgba(255,255,255,0.05)', paddingTop: '6px' }}>
+                              <span style={{ color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '600', fontSize: '11px' }}>
+                                Flat Withdrawal Fee (Penarikan CEX):
+                              </span>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '11px', paddingLeft: '8px' }}>
+                                {withdrawalFees.map(f => {
+                                  const tokenSymbol = f.token_id === 1 ? 'USDT' : f.token_id === 2 ? 'SOL' : f.token_id === 3 ? 'ETH' : 'USDT';
+                                  const chainName = f.chain_id === 1 ? 'Ethereum' : f.chain_id === 2 ? 'BSC' : f.chain_id === 3 ? 'Solana' : 'Solana';
+                                  return (
+                                    <div key={f.id} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                      <span>{tokenSymbol} ({chainName}):</span>
+                                      <span style={{ fontWeight: '600', color: '#ffffff' }}>
+                                        {parseFloat(f.fee_flat).toFixed(2)} {tokenSymbol}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 

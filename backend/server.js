@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import axios from 'axios';
 import dotenv from 'dotenv';
+import db from './models/index.js';
 
 dotenv.config();
 
@@ -560,6 +561,21 @@ app.get('/api/exchanges/:exchangeName', (req, res) => {
     exchange: exchangeName,
     tokens
   });
+});
+
+// Endpoint to fetch real exchange data from database
+app.get('/api/exchanges-db', async (req, res) => {
+  try {
+    const exchanges = await db.Exchange.findAll({
+      include: [
+        { model: db.ExchangeAttribute, as: 'attributes' },
+        { model: db.Fee, as: 'fees' }
+      ]
+    });
+    res.json({ exchanges });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch exchanges from database', message: error.message });
+  }
 });
 
 // Background polling loop to stagger CEX/DEX fetches for all coins
