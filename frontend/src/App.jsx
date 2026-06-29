@@ -1705,6 +1705,9 @@ function App() {
                     <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('pair')}>
                       Pasangan {getSortIndicator('pair')}
                     </th>
+                    <th>
+                      Sumber Data
+                    </th>
                     <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('ask')}>
                       Beli (Ask) {getSortIndicator('ask')}
                     </th>
@@ -1786,9 +1789,6 @@ function App() {
                               >
                                 {item.name}
                               </button>
-                              {item.source === 'coingecko' && (
-                                <span className="badge badge-source">via CG</span>
-                              )}
                             </div>
                           </td>
 
@@ -1802,6 +1802,19 @@ function App() {
                           {/* Trading Pair */}
                           <td style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
                             {item.pair}
+                          </td>
+
+                          {/* Data Source */}
+                          <td style={{ fontSize: '12px' }}>
+                            {item.source === 'direct' ? (
+                              <span style={{ color: '#10b981', fontWeight: '600' }}>Direct API</span>
+                            ) : item.source === 'coingecko' ? (
+                              <span style={{ color: '#f59e0b', fontWeight: '600' }}>CoinGecko</span>
+                            ) : item.source === 'dexscreener' ? (
+                              <span style={{ color: '#3b82f6', fontWeight: '600' }}>DexScreener</span>
+                            ) : (
+                              <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>-</span>
+                            )}
                           </td>
 
                           {/* Ask Price (Buy Price) */}
