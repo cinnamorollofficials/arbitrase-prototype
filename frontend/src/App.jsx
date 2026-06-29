@@ -1733,9 +1733,6 @@ function App() {
                     <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('name')}>
                       Bursa / Exchange {getSortIndicator('name')}
                     </th>
-                    <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('type')}>
-                      Jenis {getSortIndicator('type')}
-                    </th>
                     <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('pair')}>
                       Pasangan {getSortIndicator('pair')}
                     </th>
@@ -1798,7 +1795,7 @@ function App() {
                                 : 'transparent'
                           }}
                         >
-                          {/* Exchange Name */}
+                          {/* Exchange Name & Type */}
                           <td>
                             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontWeight: '600' }}>
                               <button
@@ -1820,14 +1817,10 @@ function App() {
                               >
                                 {item.name}
                               </button>
+                              <span className={`badge ${item.type === 'CEX' ? 'badge-cex' : 'badge-dex'}`} style={{ fontSize: '10px', padding: '2px 6px' }}>
+                                {item.type}
+                              </span>
                             </div>
-                          </td>
-
-                          {/* Type Badge */}
-                          <td>
-                            <span className={`badge ${item.type === 'CEX' ? 'badge-cex' : 'badge-dex'}`}>
-                              {item.type}
-                            </span>
                           </td>
 
                           {/* Trading Pair */}
