@@ -534,10 +534,15 @@ app.get('/api/prices', async (req, res) => {
 
   try {
     const data = await getPricesForSymbol(symbol);
+    const cachedTime = priceCache[symbol] ? priceCache[symbol].time : Date.now();
+    const dataWithTime = data.map(item => ({
+      ...item,
+      timestamp: item.status === 'success' ? cachedTime : null
+    }));
     res.json({ 
       cached: priceCache[symbol] ? (Date.now() - priceCache[symbol].time < CACHE_DURATION_MS) : false, 
-      timestamp: priceCache[symbol] ? priceCache[symbol].time : Date.now(), 
-      data,
+      timestamp: cachedTime, 
+      data: dataWithTime,
       spreads: spreadCache
     });
   } catch (error) {

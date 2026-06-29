@@ -1714,6 +1714,9 @@ function App() {
                     <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('deviation')}>
                       Deviasi Rata-Rata (Last) {getSortIndicator('deviation')}
                     </th>
+                    <th>
+                      Waktu Update
+                    </th>
                     <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('status')}>
                       Status {getSortIndicator('status')}
                     </th>
@@ -1846,6 +1849,11 @@ function App() {
                             ) : (
                               '-'
                             )}
+                          </td>
+
+                          {/* Price Timestamp */}
+                          <td style={{ color: 'var(--md-sys-color-on-surface-variant)', fontSize: '12px' }}>
+                            {item.timestamp ? new Date(item.timestamp).toLocaleTimeString() : (lastUpdated ? lastUpdated.toLocaleTimeString() : '-')}
                           </td>
 
                           {/* Action / Indicators */}
