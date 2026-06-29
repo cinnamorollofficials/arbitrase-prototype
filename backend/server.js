@@ -28,6 +28,74 @@ redisClient.connect().catch(err => {
   console.warn('Could not connect to Redis, running with database/memory fallback mode.');
 });
 
+// Graceful fallback in-memory cache for raw price logger
+const rawPriceFallbackCache = new Map();
+const FALLBACK_CACHE_TTL_MS = 300000; // 5 minutes TTL
+
+async function saveRawPriceToCache(key, data) {
+  const payload = JSON.stringify({
+    timestamp: Date.now(),
+    ...data
+  });
+
+  if (isRedisConnected) {
+    try {
+      await redisClient.set(key, payload, { EX: 300 });
+      return;
+    } catch (err) {
+      // Fallback to memory on failure
+    }
+  }
+
+  rawPriceFallbackCache.set(key, {
+    payload,
+    expiresAt: Date.now() + FALLBACK_CACHE_TTL_MS
+  });
+}
+
+async function getRawPriceFromCache(key) {
+  if (isRedisConnected) {
+    try {
+      const data = await redisClient.get(key);
+      if (data) return data;
+    } catch (err) {
+      // Fallback to memory on failure
+    }
+  }
+
+  const cached = rawPriceFallbackCache.get(key);
+  if (cached) {
+    if (Date.now() < cached.expiresAt) {
+      return cached.payload;
+    } else {
+      rawPriceFallbackCache.delete(key);
+    }
+  }
+  return null;
+}
+
+async function getRawPriceKeys() {
+  if (isRedisConnected) {
+    try {
+      const keys = await redisClient.keys('raw_price:*');
+      return keys;
+    } catch (err) {
+      // Fallback to memory on failure
+    }
+  }
+
+  const now = Date.now();
+  const validKeys = [];
+  for (const [key, cached] of rawPriceFallbackCache.entries()) {
+    if (now < cached.expiresAt) {
+      validKeys.push(key);
+    } else {
+      rawPriceFallbackCache.delete(key);
+    }
+  }
+  return validKeys;
+}
+
 const app = express();
 const PORT = process.env.PORT || 5001;
 
@@ -314,16 +382,11 @@ async function getCexPrice(name, symbol, url, parser, coingeckoKey) {
   try {
     const data = await fetchWithTimeout(url, {}, 4000);
     
-    // Save raw response to Redis
-    if (isRedisConnected) {
-      redisClient.set(`raw_price:cex:${name.toLowerCase().replace(/\s+/g, '_')}:${symbol.toLowerCase()}`, JSON.stringify({
-        timestamp: Date.now(),
-        url,
-        raw: data
-      }), {
-        EX: 300 // 5 minutes expiration
-      }).catch(err => console.warn('Failed to save to Redis:', err.message));
-    }
+    // Save raw response to cache
+    saveRawPriceToCache(`raw_price:cex:${name.toLowerCase().replace(/\s+/g, '_')}:${symbol.toLowerCase()}`, {
+      url,
+      raw: data
+    });
 
     const parsed = parser(data);
     if (!parsed || !parsed.price || isNaN(parsed.price)) throw new Error('Invalid price parsed');
@@ -333,14 +396,11 @@ async function getCexPrice(name, symbol, url, parser, coingeckoKey) {
     try {
       const tickers = await getCoinGeckoTickers(symbol);
       
-      // Save raw CoinGecko tickers to Redis
-      if (isRedisConnected && tickers) {
-        redisClient.set(`raw_price:coingecko:${symbol.toLowerCase()}`, JSON.stringify({
-          timestamp: Date.now(),
+      // Save raw CoinGecko tickers to cache
+      if (tickers) {
+        saveRawPriceToCache(`raw_price:coingecko:${symbol.toLowerCase()}`, {
           raw: tickers
-        }), {
-          EX: 300
-        }).catch(err => console.warn('Failed to save fallback tickers to Redis:', err.message));
+        });
       }
 
       const parsed = getPriceFromTickers(tickers, coingeckoKey || name, symbol);
@@ -374,17 +434,12 @@ async function getDexPrices(symbol) {
       tokens.solana ? fetchWithTimeout(`https://api.dexscreener.com/latest/dex/tokens/${tokens.solana}`, {}, 4000).catch(() => ({ pairs: [] })) : { pairs: [] }
     ]);
 
-    // Save raw DexScreener responses to Redis
-    if (isRedisConnected) {
-      redisClient.set(`raw_price:dex:${symbol.toLowerCase()}`, JSON.stringify({
-        timestamp: Date.now(),
-        ethereum: resEth,
-        bsc: resBsc,
-        solana: resSol
-      }), {
-        EX: 300 // 5 minutes expiration
-      }).catch(err => console.warn('Failed to save DEX raw to Redis:', err.message));
-    }
+    // Save raw DexScreener responses to cache
+    saveRawPriceToCache(`raw_price:dex:${symbol.toLowerCase()}`, {
+      ethereum: resEth,
+      bsc: resBsc,
+      solana: resSol
+    });
 
     const ethPairs = resEth.pairs || [];
     const bscPairs = resBsc.pairs || [];
@@ -768,12 +823,8 @@ app.get('/api/tokens-db', async (req, res) => {
 });
 
 
-// Endpoint to fetch raw prices from Redis
+// Endpoint to fetch raw prices from Redis or Fallback cache
 app.get('/api/raw-prices', async (req, res) => {
-  if (!isRedisConnected) {
-    return res.status(503).json({ error: 'Redis is not connected or active' });
-  }
-
   const { exchange, symbol } = req.query;
 
   try {
@@ -784,14 +835,14 @@ app.get('/api/raw-prices', async (req, res) => {
 
       // CEX search
       const key = `raw_price:cex:${exKey}:${symKey}`;
-      const data = await redisClient.get(key);
+      const data = await getRawPriceFromCache(key);
       if (data) {
         return res.json({ key, data: JSON.parse(data) });
       }
 
       // DEX search
       const dexKey = `raw_price:dex:${symKey}`;
-      const dexData = await redisClient.get(dexKey);
+      const dexData = await getRawPriceFromCache(dexKey);
       if (dexData) {
         const parsed = JSON.parse(dexData);
         // Find if this specific DEX exists in the payload
@@ -813,19 +864,19 @@ app.get('/api/raw-prices', async (req, res) => {
 
       // CoinGecko fallback search
       const cgKey = `raw_price:coingecko:${symKey}`;
-      const cgData = await redisClient.get(cgKey);
+      const cgData = await getRawPriceFromCache(cgKey);
       if (cgData) {
         return res.json({ key: cgKey, data: JSON.parse(cgData) });
       }
 
-      return res.status(404).json({ error: 'Raw price data not found in Redis' });
+      return res.status(404).json({ error: 'Raw price data not found in Redis or fallback cache' });
     }
 
     // List all raw keys
-    const keys = await redisClient.keys('raw_price:*');
+    const keys = await getRawPriceKeys();
     const list = [];
     for (const key of keys) {
-      const val = await redisClient.get(key);
+      const val = await getRawPriceFromCache(key);
       if (val) {
         const parsed = JSON.parse(val);
         list.push({
@@ -843,19 +894,15 @@ app.get('/api/raw-prices', async (req, res) => {
 
 // Endpoint to view specific raw price details by key
 app.get('/api/raw-prices/detail', async (req, res) => {
-  if (!isRedisConnected) {
-    return res.status(503).json({ error: 'Redis is not connected or active' });
-  }
-
   const { key } = req.query;
   if (!key) {
     return res.status(400).json({ error: 'Query parameter ?key=... is required' });
   }
 
   try {
-    const rawData = await redisClient.get(key);
+    const rawData = await getRawPriceFromCache(key);
     if (!rawData) {
-      return res.status(404).json({ error: `Key '${key}' not found in Redis` });
+      return res.status(404).json({ error: `Key '${key}' not found in Redis or fallback cache` });
     }
 
     res.json({ key, data: JSON.parse(rawData) });
