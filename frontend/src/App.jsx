@@ -87,7 +87,7 @@ const getRatingStatus = (ratingVal) => {
   }
 };
 
-const defaultSymbols = ['USDT', 'SOL', 'ETH', 'PEPE', 'BONK', 'WIF', 'FLOKI', 'SHIB', 'JUP', 'W', 'RENDER', 'POPCAT', 'MEW', 'ENA', 'ONDO', 'LTC', 'XRP', 'ADA', 'AVAX', 'DOT', 'LINK', 'NEAR', 'APT', 'SUI', 'FET'];
+const defaultSymbols = ['USDT', 'SOL', 'ETH'];
 
 const COIN_ICONS = {
   USDC: 'https://assets.coingecko.com/coins/images/6319/small/usdc.png',
@@ -123,36 +123,36 @@ const COIN_ICONS = {
 };
 
 const COIN_META_LOOKUP = {
-  USDC: { name: 'USD Coin', category: 'STABLE', price: 1.0 },
-  USDT: { name: 'Tether', category: 'STABLE', price: 1.0 },
-  SOL: { name: 'Solana', category: 'FLUKTUATIF', price: 145.20 },
-  ETH: { name: 'Ethereum', category: 'FLUKTUATIF', price: 3450.00 },
-  BNB: { name: 'Binance Coin', category: 'FLUKTUATIF', price: 580.00 },
-  PEPE: { name: 'Pepe', category: 'MICIN', price: 0.0000125 },
-  BONK: { name: 'Bonk', category: 'MICIN', price: 0.0000215 },
-  POPCAT: { name: 'Popcat', category: 'MICIN', price: 0.85 },
-  RENDER: { name: 'Render Token', category: 'FLUKTUATIF', price: 7.45 },
-  W: { name: 'Wormhole', category: 'FLUKTUATIF', price: 0.35 },
-  FLOKI: { name: 'Floki Inu', category: 'MICIN', price: 0.000175 },
-  NEIRO: { name: 'Neiro Solana', category: 'MICIN', price: 0.00145 },
-  MOG: { name: 'Mog Coin', category: 'MICIN', price: 0.0000018 },
-  GIGA: { name: 'GigaChad', category: 'MICIN', price: 0.042 },
-  TURBO: { name: 'Turbo', category: 'FLUKTUATIF', price: 0.0052 },
-  FWOG: { name: 'Fwog', category: 'MICIN', price: 0.023 },
-  BRETT: { name: 'Brett', category: 'FLUKTUATIF', price: 0.125 },
-  FDUSD: { name: 'First Digital USD', category: 'STABLE', price: 1.0 },
-  USDE: { name: 'Athena USDe', category: 'STABLE', price: 1.0 },
-  PYUSD: { name: 'PayPal USD', category: 'STABLE', price: 1.0 },
-  LTC: { name: 'Litecoin', category: 'FLUKTUATIF', price: 76.50 },
-  XRP: { name: 'Ripple', category: 'FLUKTUATIF', price: 0.585 },
-  ADA: { name: 'Cardano', category: 'FLUKTUATIF', price: 0.382 },
-  AVAX: { name: 'Avalanche', category: 'FLUKTUATIF', price: 28.40 },
-  DOT: { name: 'Polkadot', category: 'FLUKTUATIF', price: 6.15 },
-  LINK: { name: 'Chainlink', category: 'FLUKTUATIF', price: 14.80 },
-  NEAR: { name: 'Near Protocol', category: 'FLUKTUATIF', price: 4.85 },
-  APT: { name: 'Aptos', category: 'FLUKTUATIF', price: 8.20 },
-  SUI: { name: 'Sui', category: 'FLUKTUATIF', price: 1.08 },
-  FET: { name: 'Artificial Superintelligence Alliance', category: 'FLUKTUATIF', price: 1.35 },
+  USDC: { category: 'STABLE' },
+  USDT: { category: 'STABLE' },
+  SOL: { category: 'FLUKTUATIF' },
+  ETH: { category: 'FLUKTUATIF' },
+  BNB: { category: 'FLUKTUATIF' },
+  PEPE: { category: 'MICIN' },
+  BONK: { category: 'MICIN' },
+  POPCAT: { category: 'MICIN' },
+  RENDER: { category: 'FLUKTUATIF' },
+  W: { category: 'FLUKTUATIF' },
+  FLOKI: { category: 'MICIN' },
+  NEIRO: { category: 'MICIN' },
+  MOG: { category: 'MICIN' },
+  GIGA: { category: 'MICIN' },
+  TURBO: { category: 'FLUKTUATIF' },
+  FWOG: { category: 'MICIN' },
+  BRETT: { category: 'FLUKTUATIF' },
+  FDUSD: { category: 'STABLE' },
+  USDE: { category: 'STABLE' },
+  PYUSD: { category: 'STABLE' },
+  LTC: { category: 'FLUKTUATIF' },
+  XRP: { category: 'FLUKTUATIF' },
+  ADA: { category: 'FLUKTUATIF' },
+  AVAX: { category: 'FLUKTUATIF' },
+  DOT: { category: 'FLUKTUATIF' },
+  LINK: { category: 'FLUKTUATIF' },
+  NEAR: { category: 'FLUKTUATIF' },
+  APT: { category: 'FLUKTUATIF' },
+  SUI: { category: 'FLUKTUATIF' },
+  FET: { category: 'FLUKTUATIF' },
 };
 
 const EXCHANGE_ICONS = {
@@ -377,6 +377,9 @@ function App() {
   const [exchangesDb, setExchangesDb] = useState([]);
   const [loadingExchangesDb, setLoadingExchangesDb] = useState(false);
   const [errorExchangesDb, setErrorExchangesDb] = useState(null);
+  const [tokensDb, setTokensDb] = useState([]);
+  const [loadingTokensDb, setLoadingTokensDb] = useState(false);
+  const [errorTokensDb, setErrorTokensDb] = useState(null);
 
   const fetchExchangesDb = async () => {
     setLoadingExchangesDb(true);
@@ -396,6 +399,28 @@ function App() {
     }
   };
 
+  const fetchTokensDb = async () => {
+    setLoadingTokensDb(true);
+    setErrorTokensDb(null);
+    try {
+      const response = await fetch('http://localhost:5001/api/tokens-db');
+      if (!response.ok) {
+        throw new Error(`HTTP error ${response.status}`);
+      }
+      const data = await response.json();
+      const fetchedTokens = data.tokens || [];
+      setTokensDb(fetchedTokens);
+      if (fetchedTokens.length > 0) {
+        setSymbolsList(fetchedTokens.map(t => t.symbol));
+      }
+    } catch (err) {
+      console.error('Failed to fetch tokens from DB:', err);
+      setErrorTokensDb(err.message);
+    } finally {
+      setLoadingTokensDb(false);
+    }
+  };
+
   useEffect(() => {
     const fetchExchangeRate = async () => {
       try {
@@ -411,6 +436,7 @@ function App() {
       }
     };
     fetchExchangeRate();
+    fetchTokensDb();
   }, []);
 
   const [loading, setLoading] = useState(true);
@@ -425,6 +451,8 @@ function App() {
   useEffect(() => {
     if (activeTab === 'exchanges') {
       fetchExchangesDb();
+    } else if (activeTab === 'portfolio') {
+      fetchTokensDb();
     }
   }, [activeTab]);
   const [exchangesViewMode, setExchangesViewMode] = useUrlState('ex_mode', 'table');
@@ -498,13 +526,17 @@ function App() {
       Object.entries(info).forEach(([key, val]) => {
         if (['status', 'latency', 'type', 'network', 'apiStatus', 'fee'].includes(key)) return;
 
+        const dbToken = tokensDb.find(t => t.symbol === key);
+        const name = dbToken ? dbToken.name : (coinMeta[key]?.name || key);
+        const price = dbToken ? dbToken.price : (coinMeta[key]?.price || 1.0);
+
         if (!coins[key]) {
           coins[key] = {
             symbol: key,
-            name: coinMeta[key]?.name || key,
+            name: name,
             category: coinMeta[key]?.category || 'VOLATILE',
             icon: coinMeta[key]?.icon || COIN_ICONS.USDT || null,
-            price: coinMeta[key]?.price || 1.0,
+            price: price,
             total: 0,
             breakdown: []
           };
@@ -518,7 +550,7 @@ function App() {
     });
 
     return Object.values(coins);
-  }, [exchangeBalances]);
+  }, [exchangeBalances, tokensDb]);
 
   const mockAvailableCoins = useMemo(() => [
     { symbol: 'GIGA', name: 'GigaChad', spread: 2.84, buyEx: 'Bybit', sellEx: 'Gate.io', category: 'MICIN' },
@@ -722,40 +754,7 @@ function App() {
     setIsRefreshing(true);
     setError(null);
 
-    // Intercept mock coins discovered by AI Agent to return simulated prices locally
-    if (['GIGA', 'TURBO', 'FWOG', 'BRETT', 'NEIRO', 'MOG', 'FDUSD', 'USDE', 'PYUSD'].includes(symbol)) {
-      const mockRates = {
-        NEIRO: { price: 0.0034, spread: 3.45 },
-        MOG: { price: 0.00000185, spread: 3.12 },
-        GIGA: { price: 0.045, spread: 2.84 },
-        TURBO: { price: 0.0052, spread: 2.50 },
-        FWOG: { price: 0.0125, spread: 2.91 },
-        BRETT: { price: 0.085, spread: 1.85 },
-        FDUSD: { price: 1.00, spread: 0.12 },
-        USDE: { price: 0.998, spread: 0.45 },
-        PYUSD: { price: 1.001, spread: 0.28 }
-      };
 
-      const config = mockRates[symbol] || { price: 0.05, spread: 2.0 };
-      const p = config.price;
-      const s = config.spread / 100;
-
-      const mockData = [
-        { name: 'Binance', type: 'CEX', pair: `${symbol}/USDT`, price: p, bid: p * 0.999, ask: p * 1.001, status: 'success', source: 'direct' },
-        { name: 'Bybit', type: 'CEX', pair: `${symbol}/USDT`, price: p * (1 - s / 2), bid: p * (1 - s / 2) * 0.999, ask: p * (1 - s / 2) * 1.001, status: 'success', source: 'direct' },
-        { name: 'Gate.io', type: 'CEX', pair: `${symbol}/USDT`, price: p * (1 + s / 2), bid: p * (1 + s / 2) * 0.999, ask: p * (1 + s / 2) * 1.001, status: 'success', source: 'direct' },
-        { name: 'Raydium', type: 'DEX', pair: `${symbol}/USDT`, price: p, bid: p * 0.999, ask: p * 1.001, status: 'success', source: 'dexscreener' }
-      ];
-
-      setTimeout(() => {
-        setPrices(mockData);
-        setLastUpdated(new Date());
-        setRefreshCountdown(10);
-        setLoading(false);
-        setIsRefreshing(false);
-      }, 400);
-      return;
-    }
 
     try {
       const response = await fetch(`http://localhost:5001/api/prices?symbol=${symbol}`);

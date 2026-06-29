@@ -17,7 +17,8 @@ const priceCache = {};
 const CACHE_DURATION_MS = 5000; // 5 seconds cache
 const spreadCache = {
   USDT: 0, SOL: 0, ETH: 0, PEPE: 0, BONK: 0, WIF: 0, FLOKI: 0, SHIB: 0, JUP: 0, W: 0, RENDER: 0, POPCAT: 0, MEW: 0, ENA: 0, ONDO: 0,
-  LTC: 0, XRP: 0, ADA: 0, AVAX: 0, DOT: 0, LINK: 0, NEAR: 0, APT: 0, SUI: 0, FET: 0
+  LTC: 0, XRP: 0, ADA: 0, AVAX: 0, DOT: 0, LINK: 0, NEAR: 0, APT: 0, SUI: 0, FET: 0,
+  USDC: 0, BNB: 0, NEIRO: 0, MOG: 0, GIGA: 0, TURBO: 0, FWOG: 0, BRETT: 0, FDUSD: 0, USDE: 0, PYUSD: 0
 };
 
 // CoinGecko fallback caches
@@ -50,7 +51,18 @@ const COIN_IDS = {
   NEAR: 'near',
   APT: 'aptos',
   SUI: 'sui',
-  FET: 'fetch-ai'
+  FET: 'fetch-ai',
+  USDC: 'usd-coin',
+  BNB: 'binancecoin',
+  NEIRO: 'neiro-solana',
+  MOG: 'mog-coin',
+  GIGA: 'gigachad',
+  TURBO: 'turbo',
+  FWOG: 'fwog',
+  BRETT: 'brett',
+  FDUSD: 'first-digital-usd',
+  USDE: 'ethena-usde',
+  PYUSD: 'paypal-usd'
 };
 
 const ASSET_TOKENS = {
@@ -139,6 +151,45 @@ const ASSET_TOKENS = {
   },
   FET: {
     ethereum: '0xaeD2F71AB68f56fee5FC94919c1e17F38E6b6188'
+  },
+  USDC: {
+    ethereum: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+    bsc: '0x8AC76a51cc950d9822D68b83fE1Ad97B32CD580d',
+    solana: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
+  },
+  BNB: {
+    ethereum: '0xB8c77482e45F1F44dE1745F52C74426C631bDD52',
+    bsc: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',
+    solana: '9gP25tTX2rcVE1n4CwJajJ18o2k922nrrCjJ5kp6vjTi'
+  },
+  NEIRO: {
+    solana: 'CTtZCL937AM1ihmXhimwPM4jg6g6pcguNW97B6L2pump'
+  },
+  MOG: {
+    ethereum: '0x3eD3523c2330a05bb1F54358ccD21FD4ef1672Ee'
+  },
+  GIGA: {
+    solana: '63LfJyJixt4LM75cWnxeKWe2Eh5WbgQXj6b15F5GLump'
+  },
+  TURBO: {
+    ethereum: '0xA35923162C49C10f7252C1675B62DEca8A2D3Ccf'
+  },
+  FWOG: {
+    solana: 'A8Y2G474nvYwU2qYZi2sW33nbfKwW7zS3nbfKsd7pump'
+  },
+  BRETT: {
+    ethereum: '0x532f27101965dd16d83cfd5cedd4bb1907cbddbe'
+  },
+  FDUSD: {
+    ethereum: '0xc5f0f1b34d9a2637b4b1a457492c6c06a9d70081',
+    bsc: '0xc5f0f1b34d9a2637b4b1a457492c6c06a9d70081'
+  },
+  USDE: {
+    ethereum: '0x4c9edd5852cd1e873c9f38fccbfbf8dc9a70081'
+  },
+  PYUSD: {
+    ethereum: '0x6c3ea9036406852006290efefdec5a850587d559',
+    solana: '2b1a1c97c8ef4c29c8e8d2e68fccbefa1c38e11b'
   }
 };
 
@@ -592,6 +643,68 @@ app.get('/api/exchanges-db', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch exchanges from database', message: error.message });
   }
 });
+
+// Endpoint to fetch real token data from database including cached prices
+app.get('/api/tokens-db', async (req, res) => {
+  try {
+    const tokens = await db.Token.findAll({
+      include: [
+        { model: db.TokenAttribute, as: 'attributes' }
+      ]
+    });
+
+    const tokensWithPrices = tokens.map(t => {
+      const symbol = t.symbol;
+      let price = 0;
+
+      // Look up cached price in priceCache
+      const cached = priceCache[symbol];
+      if (cached && cached.data && cached.data.length > 0) {
+        const validPrices = cached.data.filter(d => d.status === 'success' && d.price > 0);
+        if (validPrices.length > 0) {
+          price = validPrices[0].price;
+        }
+      }
+
+      // Fallback to coingeckoCache
+      if (price === 0 && coingeckoCache[symbol]) {
+        price = coingeckoCache[symbol].price;
+      }
+
+      // Fallback default values
+      if (price === 0) {
+        const stablecoins = ['USDT', 'USDC', 'FDUSD', 'USDE', 'PYUSD'];
+        if (stablecoins.includes(symbol)) {
+          price = 1.0;
+        } else {
+          const fallbackPrices = {
+            SOL: 145.20, ETH: 3450.00, BNB: 580.00, PEPE: 0.0000125, BONK: 0.0000215,
+            POPCAT: 0.85, RENDER: 7.45, W: 0.35, FLOKI: 0.000175, NEIRO: 0.00145,
+            MOG: 0.0000018, GIGA: 0.042, TURBO: 0.0052, FWOG: 0.023, BRETT: 0.125,
+            LTC: 76.50, XRP: 0.585, ADA: 0.382, AVAX: 28.40, DOT: 6.15,
+            LINK: 14.20, NEAR: 5.12, APT: 7.85, SUI: 1.05, FET: 1.45
+          };
+          price = fallbackPrices[symbol] || 1.0;
+        }
+      }
+
+      return {
+        id: t.id,
+        symbol: t.symbol,
+        name: t.name,
+        coingeckoId: t.coingeckoId,
+        isActive: t.isActive,
+        attributes: t.attributes,
+        price
+      };
+    });
+
+    res.json({ tokens: tokensWithPrices });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch tokens from database', message: error.message });
+  }
+});
+
 
 // Background polling loop to stagger CEX/DEX fetches for all coins
 let currentPollIndex = 0;

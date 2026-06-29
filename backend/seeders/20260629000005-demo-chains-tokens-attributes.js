@@ -45,7 +45,18 @@ export async function up(queryInterface, Sequelize) {
     { id: 22, symbol: 'NEAR', name: 'Near Protocol', coingecko_id: 'near', is_active: true },
     { id: 23, symbol: 'APT', name: 'Aptos', coingecko_id: 'aptos', is_active: true },
     { id: 24, symbol: 'SUI', name: 'Sui', coingecko_id: 'sui', is_active: true },
-    { id: 25, symbol: 'FET', name: 'Fetch.ai', coingecko_id: 'fetch-ai', is_active: true }
+    { id: 25, symbol: 'FET', name: 'Fetch.ai', coingecko_id: 'fetch-ai', is_active: true },
+    { id: 26, symbol: 'USDC', name: 'USD Coin', coingecko_id: 'usd-coin', is_active: true },
+    { id: 27, symbol: 'BNB', name: 'Binance Coin', coingecko_id: 'binancecoin', is_active: true },
+    { id: 28, symbol: 'NEIRO', name: 'Neiro Solana', coingecko_id: 'neiro-solana', is_active: true },
+    { id: 29, symbol: 'MOG', name: 'Mog Coin', coingecko_id: 'mog-coin', is_active: true },
+    { id: 30, symbol: 'GIGA', name: 'GigaChad', coingecko_id: 'gigachad', is_active: true },
+    { id: 31, symbol: 'TURBO', name: 'Turbo', coingecko_id: 'turbo', is_active: true },
+    { id: 32, symbol: 'FWOG', name: 'Fwog', coingecko_id: 'fwog', is_active: true },
+    { id: 33, symbol: 'BRETT', name: 'Brett', coingecko_id: 'brett', is_active: true },
+    { id: 34, symbol: 'FDUSD', name: 'First Digital USD', coingecko_id: 'first-digital-usd', is_active: true },
+    { id: 35, symbol: 'USDE', name: 'Athena USDe', coingecko_id: 'ethena-usde', is_active: true },
+    { id: 36, symbol: 'PYUSD', name: 'PayPal USD', coingecko_id: 'paypal-usd', is_active: true }
   ];
   await queryInterface.bulkInsert('tokens', tokens);
 
@@ -172,6 +183,62 @@ export async function up(queryInterface, Sequelize) {
     // FET
     { token_id: 25, chain_id: 1, attribute_key: 'contract_address', attribute_value: '0xaeD2F71AB68f56fee5FC94919c1e17F38E6b6188', data_type: 'string' },
     { token_id: 25, chain_id: 1, attribute_key: 'decimals', attribute_value: '18', data_type: 'number' },
+    
+    // USDC (ID 26)
+    { token_id: 26, chain_id: 1, attribute_key: 'contract_address', attribute_value: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', data_type: 'string' },
+    { token_id: 26, chain_id: 1, attribute_key: 'decimals', attribute_value: '6', data_type: 'number' },
+    { token_id: 26, chain_id: 2, attribute_key: 'contract_address', attribute_value: '0x8AC76a51cc950d9822D68b83fE1Ad97B32CD580d', data_type: 'string' },
+    { token_id: 26, chain_id: 2, attribute_key: 'decimals', attribute_value: '18', data_type: 'number' },
+    { token_id: 26, chain_id: 3, attribute_key: 'contract_address', attribute_value: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', data_type: 'string' },
+    { token_id: 26, chain_id: 3, attribute_key: 'decimals', attribute_value: '6', data_type: 'number' },
+
+    // BNB (ID 27)
+    { token_id: 27, chain_id: 1, attribute_key: 'contract_address', attribute_value: '0xB8c77482e45F1F44dE1745F52C74426C631bDD52', data_type: 'string' },
+    { token_id: 27, chain_id: 1, attribute_key: 'decimals', attribute_value: '18', data_type: 'number' },
+    { token_id: 27, chain_id: 2, attribute_key: 'contract_address', attribute_value: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c', data_type: 'string' },
+    { token_id: 27, chain_id: 2, attribute_key: 'decimals', attribute_value: '18', data_type: 'number' },
+    { token_id: 27, chain_id: 3, attribute_key: 'contract_address', attribute_value: '9gP25tTX2rcVE1n4CwJajJ18o2k922nrrCjJ5kp6vjTi', data_type: 'string' },
+    { token_id: 27, chain_id: 3, attribute_key: 'decimals', attribute_value: '8', data_type: 'number' },
+
+    // NEIRO (ID 28)
+    { token_id: 28, chain_id: 3, attribute_key: 'contract_address', attribute_value: 'CTtZCL937AM1ihmXhimwPM4jg6g6pcguNW97B6L2pump', data_type: 'string' },
+    { token_id: 28, chain_id: 3, attribute_key: 'decimals', attribute_value: '9', data_type: 'number' },
+
+    // MOG (ID 29)
+    { token_id: 29, chain_id: 1, attribute_key: 'contract_address', attribute_value: '0x3eD3523c2330a05bb1F54358ccD21FD4ef1672Ee', data_type: 'string' },
+    { token_id: 29, chain_id: 1, attribute_key: 'decimals', attribute_value: '18', data_type: 'number' },
+
+    // GIGA (ID 30)
+    { token_id: 30, chain_id: 3, attribute_key: 'contract_address', attribute_value: '63LfJyJixt4LM75cWnxeKWe2Eh5WbgQXj6b15F5GLump', data_type: 'string' },
+    { token_id: 30, chain_id: 3, attribute_key: 'decimals', attribute_value: '9', data_type: 'number' },
+
+    // TURBO (ID 31)
+    { token_id: 31, chain_id: 1, attribute_key: 'contract_address', attribute_value: '0xA35923162C49C10f7252C1675B62DEca8A2D3Ccf', data_type: 'string' },
+    { token_id: 31, chain_id: 1, attribute_key: 'decimals', attribute_value: '18', data_type: 'number' },
+
+    // FWOG (ID 32)
+    { token_id: 32, chain_id: 3, attribute_key: 'contract_address', attribute_value: 'A8Y2G474nvYwU2qYZi2sW33nbfKwW7zS3nbfKsd7pump', data_type: 'string' },
+    { token_id: 32, chain_id: 3, attribute_key: 'decimals', attribute_value: '9', data_type: 'number' },
+
+    // BRETT (ID 33)
+    { token_id: 33, chain_id: 1, attribute_key: 'contract_address', attribute_value: '0x532f27101965dd16d83cfd5cedd4bb1907cbddbe', data_type: 'string' },
+    { token_id: 33, chain_id: 1, attribute_key: 'decimals', attribute_value: '18', data_type: 'number' },
+
+    // FDUSD (ID 34)
+    { token_id: 34, chain_id: 1, attribute_key: 'contract_address', attribute_value: '0xc5f0f1b34d9a2637b4b1a457492c6c06a9d70081', data_type: 'string' },
+    { token_id: 34, chain_id: 1, attribute_key: 'decimals', attribute_value: '18', data_type: 'number' },
+    { token_id: 34, chain_id: 2, attribute_key: 'contract_address', attribute_value: '0xc5f0f1b34d9a2637b4b1a457492c6c06a9d70081', data_type: 'string' },
+    { token_id: 34, chain_id: 2, attribute_key: 'decimals', attribute_value: '18', data_type: 'number' },
+
+    // USDE (ID 35)
+    { token_id: 35, chain_id: 1, attribute_key: 'contract_address', attribute_value: '0x4c9edd5852cd1e873c9f38fccbfbf8dc9a70081', data_type: 'string' },
+    { token_id: 35, chain_id: 1, attribute_key: 'decimals', attribute_value: '18', data_type: 'number' },
+
+    // PYUSD (ID 36)
+    { token_id: 36, chain_id: 1, attribute_key: 'contract_address', attribute_value: '0x6c3ea9036406852006290efefdec5a850587d559', data_type: 'string' },
+    { token_id: 36, chain_id: 1, attribute_key: 'decimals', attribute_value: '18', data_type: 'number' },
+    { token_id: 36, chain_id: 3, attribute_key: 'contract_address', attribute_value: '2b1a1c97c8ef4c29c8e8d2e68fccbefa1c38e11b', data_type: 'string' },
+    { token_id: 36, chain_id: 3, attribute_key: 'decimals', attribute_value: '6', data_type: 'number' },
     
     // Global website attributes (chain_id IS NULL)
     { token_id: 1, chain_id: null, attribute_key: 'website_url', attribute_value: 'https://tether.to', data_type: 'string' },

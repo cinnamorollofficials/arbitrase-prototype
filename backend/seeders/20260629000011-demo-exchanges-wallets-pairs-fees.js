@@ -72,7 +72,18 @@ export async function up(queryInterface, Sequelize) {
     { id: 22, symbol: 'NEAR' },
     { id: 23, symbol: 'APT' },
     { id: 24, symbol: 'SUI' },
-    { id: 25, symbol: 'FET' }
+    { id: 25, symbol: 'FET' },
+    { id: 26, symbol: 'USDC' },
+    { id: 27, symbol: 'BNB' },
+    { id: 28, symbol: 'NEIRO' },
+    { id: 29, symbol: 'MOG' },
+    { id: 30, symbol: 'GIGA' },
+    { id: 31, symbol: 'TURBO' },
+    { id: 32, symbol: 'FWOG' },
+    { id: 33, symbol: 'BRETT' },
+    { id: 34, symbol: 'FDUSD' },
+    { id: 35, symbol: 'USDE' },
+    { id: 36, symbol: 'PYUSD' }
   ];
 
   // Token Chain mapping: 1 = Ethereum, 2 = BSC, 3 = Solana
@@ -101,7 +112,18 @@ export async function up(queryInterface, Sequelize) {
     NEAR: [2],
     APT: [2],
     SUI: [2],
-    FET: [1]
+    FET: [1],
+    USDC: [1, 2, 3],
+    BNB: [1, 2, 3],
+    NEIRO: [3],
+    MOG: [1],
+    GIGA: [3],
+    TURBO: [1],
+    FWOG: [3],
+    BRETT: [1],
+    FDUSD: [1, 2],
+    USDE: [1],
+    PYUSD: [1, 3]
   };
 
   // 4. Generate Token Pairs programmatically
