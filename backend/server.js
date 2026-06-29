@@ -574,7 +574,7 @@ app.get('/api/exchanges-db', async (req, res) => {
           as: 'fees',
           include: [
             { model: db.Token, as: 'token', attributes: ['id', 'symbol', 'name'] },
-            { model: db.Chain, as: 'chain', attributes: ['id', 'name', 'type'] }
+            { model: db.Chain, as: 'chain', attributes: ['id', 'name', 'chainIdentifier'] }
           ]
         },
         {

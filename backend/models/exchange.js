@@ -57,6 +57,14 @@ export default (sequelize) => {
       allowNull: false,
       defaultValue: false,
       field: 'is_registered_indonesia'
+    },
+    rating: {
+      type: DataTypes.DECIMAL(3, 1),
+      allowNull: true
+    },
+    capital: {
+      type: DataTypes.DECIMAL(20, 2),
+      allowNull: true
     }
   }, {
     sequelize,

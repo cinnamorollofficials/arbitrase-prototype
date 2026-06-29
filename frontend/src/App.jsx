@@ -47,6 +47,46 @@ const formatRupiah = (usdVal, rate) => {
   }
 };
 
+const formatCapital = (usdVal) => {
+  if (usdVal === null || usdVal === undefined || isNaN(usdVal)) return '-';
+  const val = parseFloat(usdVal);
+  if (val >= 1e9) {
+    return `$${(val / 1e9).toFixed(1)}B USD`;
+  } else if (val >= 1e6) {
+    return `$${(val / 1e6).toFixed(1)}M USD`;
+  } else {
+    return `$${val.toLocaleString('en-US')}`;
+  }
+};
+
+const getCapitalTier = (usdVal) => {
+  if (usdVal === null || usdVal === undefined || isNaN(usdVal)) return { label: 'Unknown TVL', color: '#78909c' };
+  const val = parseFloat(usdVal);
+  if (val >= 10e9) {
+    return { label: 'Tier 1 Reserves', color: '#10b981' };
+  } else if (val >= 1e9) {
+    return { label: 'Tier 2 Reserves', color: '#3b82f6' };
+  } else if (val >= 100e6) {
+    return { label: 'Tier 3 Reserves', color: '#f59e0b' };
+  } else {
+    return { label: 'Tier 4 Reserves', color: '#ef5350' };
+  }
+};
+
+const getRatingStatus = (ratingVal) => {
+  if (ratingVal === null || ratingVal === undefined || isNaN(ratingVal)) return { label: 'Unrated', color: '#78909c' };
+  const val = parseFloat(ratingVal);
+  if (val >= 9.0) {
+    return { label: 'Highly Credible', color: '#10b981' };
+  } else if (val >= 8.0) {
+    return { label: 'Credible', color: '#3b82f6' };
+  } else if (val >= 7.0) {
+    return { label: 'Moderate', color: '#f59e0b' };
+  } else {
+    return { label: 'Risky / Low Trust', color: '#ef5350' };
+  }
+};
+
 const defaultSymbols = ['USDT', 'SOL', 'ETH', 'PEPE', 'BONK', 'WIF', 'FLOKI', 'SHIB', 'JUP', 'W', 'RENDER', 'POPCAT', 'MEW', 'ENA', 'ONDO', 'LTC', 'XRP', 'ADA', 'AVAX', 'DOT', 'LINK', 'NEAR', 'APT', 'SUI', 'FET'];
 
 const COIN_ICONS = {
@@ -2933,10 +2973,10 @@ function App() {
                     <thead>
                       <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', backgroundColor: 'rgba(255,255,255,0.02)' }}>
                         <th style={{ padding: '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700' }}>Bursa / Tipe</th>
+                        <th style={{ padding: '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700' }}>Rating / Kredibilitas</th>
+                        <th style={{ padding: '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700' }}>Reserved Capital / TVL</th>
                         <th style={{ padding: '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700' }}>Legalitas Indonesia</th>
                         <th style={{ padding: '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700' }}>Endpoint API / Router</th>
-                        <th style={{ padding: '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700' }}>Trading Fee (Spot/Pool)</th>
-                        <th style={{ padding: '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700' }}>Withdrawal Fees (Flat)</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -3007,6 +3047,52 @@ function App() {
                                     </a>
                                   )}
                                 </div>
+                              </div>
+                            </td>
+
+                            {/* Rating */}
+                            <td style={{ padding: '16px 20px' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <span style={{ color: '#ffb300', fontSize: '13px' }}>⭐</span>
+                                  <span style={{ fontWeight: '700', color: '#ffffff', fontSize: '13px' }}>
+                                    {ex.rating ? parseFloat(ex.rating).toFixed(1) : '-'} <span style={{ fontSize: '10px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: 'normal' }}>/ 10</span>
+                                  </span>
+                                </div>
+                                {ex.rating && (() => {
+                                  const status = getRatingStatus(ex.rating);
+                                  return (
+                                    <span style={{ fontSize: '10px', fontWeight: '700', color: status.color }}>
+                                      {status.label}
+                                    </span>
+                                  );
+                                })()}
+                              </div>
+                            </td>
+
+                            {/* Reserve Capital */}
+                            <td style={{ padding: '16px 20px' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                <span style={{ fontWeight: '700', color: '#ffffff', fontSize: '13px' }}>
+                                  {formatCapital(ex.capital)}
+                                </span>
+                                {ex.capital && (() => {
+                                  const tier = getCapitalTier(ex.capital);
+                                  return (
+                                    <span style={{
+                                      fontSize: '9px',
+                                      fontWeight: '700',
+                                      color: tier.color,
+                                      backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                                      border: `1px solid ${tier.color}33`,
+                                      padding: '1px 5px',
+                                      borderRadius: '3px',
+                                      width: 'fit-content'
+                                    }}>
+                                      {tier.label}
+                                    </span>
+                                  );
+                                })()}
                               </div>
                             </td>
 
@@ -3192,6 +3278,53 @@ function App() {
                               🌍 BURSA INTERNASIONAL
                             </div>
                           )}
+                        </div>
+
+                        {/* Rating & Reserves row */}
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', margin: '4px 0' }}>
+                          {ex.rating && (() => {
+                            const status = getRatingStatus(ex.rating);
+                            return (
+                              <div style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '5px',
+                                fontSize: '11px',
+                                fontWeight: '700',
+                                backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                                border: '1px solid rgba(255, 255, 255, 0.05)',
+                                padding: '4px 8px',
+                                borderRadius: '6px'
+                              }}>
+                                <span style={{ color: '#ffb300' }}>⭐</span>
+                                <span style={{ color: '#ffffff' }}>{parseFloat(ex.rating).toFixed(1)}</span>
+                                <span style={{ color: status.color, fontSize: '10px', marginLeft: '2px' }}>({status.label})</span>
+                              </div>
+                            );
+                          })()}
+
+                          {ex.capital && (() => {
+                            const tier = getCapitalTier(ex.capital);
+                            return (
+                              <div style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '5px',
+                                fontSize: '11px',
+                                fontWeight: '700',
+                                backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                                border: '1px solid rgba(255, 255, 255, 0.05)',
+                                padding: '4px 8px',
+                                borderRadius: '6px'
+                              }}>
+                                <span style={{ color: tier.color }}>💰</span>
+                                <span style={{ color: '#ffffff' }}>{formatCapital(ex.capital)}</span>
+                                <span style={{ color: tier.color, fontSize: '9px', marginLeft: '2px', backgroundColor: `${tier.color}15`, padding: '1px 4px', borderRadius: '3px' }}>
+                                  {tier.label.split(' ')[0]}
+                                </span>
+                              </div>
+                            );
+                          })()}
                         </div>
 
                         {/* Bottom Info: Config Attribute & Fees */}
@@ -3585,6 +3718,58 @@ function App() {
               </div>
             </div>
 
+            {/* Trust & Capital Summary Row */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+              <div style={{
+                backgroundColor: 'rgba(255,255,255,0.03)',
+                padding: '16px',
+                borderRadius: 'var(--md-shape-corner-medium)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '4px'
+              }}>
+                <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)', textTransform: 'uppercase', fontWeight: 'bold' }}>⭐ Kredibilitas & Trust Score</span>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '4px' }}>
+                  <span style={{ fontSize: '20px', fontWeight: '800', color: '#ffffff' }}>
+                    {selectedExchangeDb.rating ? parseFloat(selectedExchangeDb.rating).toFixed(1) : '-'}
+                  </span>
+                  <span style={{ fontSize: '12px', color: 'var(--md-sys-color-on-surface-variant)' }}>/ 10.0</span>
+                </div>
+                {selectedExchangeDb.rating && (() => {
+                  const status = getRatingStatus(selectedExchangeDb.rating);
+                  return (
+                    <span style={{ fontSize: '11px', fontWeight: '700', color: status.color, marginTop: '2px' }}>
+                      Status: {status.label}
+                    </span>
+                  );
+                })()}
+              </div>
+
+              <div style={{
+                backgroundColor: 'rgba(255,255,255,0.03)',
+                padding: '16px',
+                borderRadius: 'var(--md-shape-corner-medium)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '4px'
+              }}>
+                <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)', textTransform: 'uppercase', fontWeight: 'bold' }}>💰 Modal Cadangan (Proof of Reserves / TVL)</span>
+                <div style={{ fontSize: '20px', fontWeight: '800', color: 'var(--color-profit-green)', marginTop: '4px' }}>
+                  {formatCapital(selectedExchangeDb.capital)}
+                </div>
+                {selectedExchangeDb.capital && (() => {
+                  const tier = getCapitalTier(selectedExchangeDb.capital);
+                  return (
+                    <span style={{ fontSize: '11px', fontWeight: '700', color: tier.color, marginTop: '2px' }}>
+                      Kategori: {tier.label}
+                    </span>
+                  );
+                })()}
+              </div>
+            </div>
+
             {/* Content Details */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               {/* Endpoint API / Router */}
@@ -3627,7 +3812,7 @@ function App() {
                         className="badge badge-dex"
                         style={{ padding: '6px 12px', fontSize: '12px', fontWeight: '700', borderRadius: '6px' }}
                       >
-                        🌐 {c.name} ({c.type})
+                        🌐 {c.name} ({c.chainIdentifier || 'EVM'})
                       </span>
                     ));
                   })()}
