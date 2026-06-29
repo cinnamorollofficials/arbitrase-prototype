@@ -569,7 +569,22 @@ app.get('/api/exchanges-db', async (req, res) => {
     const exchanges = await db.Exchange.findAll({
       include: [
         { model: db.ExchangeAttribute, as: 'attributes' },
-        { model: db.Fee, as: 'fees' }
+        { 
+          model: db.Fee, 
+          as: 'fees',
+          include: [
+            { model: db.Token, as: 'token', attributes: ['id', 'symbol', 'name'] },
+            { model: db.Chain, as: 'chain', attributes: ['id', 'name', 'type'] }
+          ]
+        },
+        {
+          model: db.TokenPair,
+          as: 'tokenPairs',
+          include: [
+            { model: db.Token, as: 'baseToken', attributes: ['id', 'symbol', 'name'] },
+            { model: db.Token, as: 'quoteToken', attributes: ['id', 'symbol', 'name'] }
+          ]
+        }
       ]
     });
     res.json({ exchanges });

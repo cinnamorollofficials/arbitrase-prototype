@@ -388,6 +388,7 @@ function App() {
     }
   }, [activeTab]);
   const [exchangesViewMode, setExchangesViewMode] = useUrlState('ex_mode', 'table');
+  const [selectedExchangeDb, setSelectedExchangeDb] = useState(null);
   const [isCompact, setIsCompact] = useUrlState('compact', 'false');
   const [opportunities, setOpportunities] = useState([]);
   const [selectedExchange, setSelectedExchange] = useUrlState('ex', 'Binance');
@@ -2956,7 +2957,11 @@ function App() {
                           >
                             {/* Bursa name & icon */}
                             <td style={{ padding: '16px 20px', fontWeight: '700' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <div 
+                                style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}
+                                onClick={() => setSelectedExchangeDb(ex)}
+                                title="Klik untuk detail bursa (Database)"
+                              >
                                 {ex.logoUrl ? (
                                   <img
                                     src={ex.logoUrl}
@@ -3102,7 +3107,11 @@ function App() {
                         }}
                       >
                         {/* Top Row: Logo & Name & Type */}
-                        <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                        <div 
+                          style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', cursor: 'pointer' }}
+                          onClick={() => setSelectedExchangeDb(ex)}
+                          title="Klik untuk detail bursa (Database)"
+                        >
                           {ex.logoUrl ? (
                             <img
                               src={ex.logoUrl}
@@ -3477,6 +3486,237 @@ function App() {
                   <span>{sym}</span>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Real Database Exchange Detail Modal */}
+      {selectedExchangeDb && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(10, 11, 15, 0.75)',
+          backdropFilter: 'blur(16px)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999,
+          padding: '24px',
+          animation: 'fadeIn 0.3s ease'
+        }}>
+          <div className="md3-card" style={{
+            width: '100%',
+            maxWidth: '650px',
+            maxHeight: '85vh',
+            overflowY: 'auto',
+            position: 'relative',
+            padding: '30px',
+            backgroundColor: 'var(--md-sys-color-surface-container-high)',
+            borderRadius: 'var(--md-shape-corner-large)',
+            border: '1px solid var(--md-sys-color-outline-variant)',
+            boxShadow: '0 12px 48px rgba(0, 0, 0, 0.6)'
+          }}>
+            {/* Close Button */}
+            <button
+              onClick={() => setSelectedExchangeDb(null)}
+              style={{
+                position: 'absolute',
+                top: '20px',
+                right: '20px',
+                background: 'rgba(255,255,255,0.06)',
+                border: 'none',
+                borderRadius: '50%',
+                width: '32px',
+                height: '32px',
+                color: '#ffffff',
+                fontSize: '16px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'background-color 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(244, 63, 94, 0.2)'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.06)'}
+            >
+              ✕
+            </button>
+
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '16px' }}>
+              {selectedExchangeDb.logoUrl ? (
+                <img
+                  src={selectedExchangeDb.logoUrl}
+                  alt={selectedExchangeDb.name}
+                  style={{ width: '56px', height: '56px', borderRadius: '12px', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.1)' }}
+                />
+              ) : (
+                <div style={{
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #455a64, #607d8b)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '22px',
+                  fontWeight: '800',
+                  color: '#fff'
+                }}>
+                  {selectedExchangeDb.name.slice(0, 2).toUpperCase()}
+                </div>
+              )}
+              <div>
+                <h2 style={{ fontSize: '22px', margin: 0, fontWeight: '800', color: '#ffffff' }}>{selectedExchangeDb.name}</h2>
+                <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+                  <span className={`badge ${selectedExchangeDb.type === 'CEX' ? 'badge-cex' : 'badge-dex'}`}>
+                    {selectedExchangeDb.type}
+                  </span>
+                  {selectedExchangeDb.isRegisteredIndonesia ? (
+                    <span className="badge" style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#10b981', fontWeight: 'bold' }}>🛡️ TERDAFTAR BAPPEBTI</span>
+                  ) : (
+                    <span className="badge" style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'var(--md-sys-color-on-surface-variant)' }}>🌍 BURSA INTERNASIONAL</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Content Details */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {/* Endpoint API / Router */}
+              {selectedExchangeDb.attributes && selectedExchangeDb.attributes.length > 0 && (
+                <div>
+                  <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', color: 'var(--md-sys-color-on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Konfigurasi Jaringan API / Smart Contract
+                  </h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', backgroundColor: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    {selectedExchangeDb.attributes.map(attr => (
+                      <div key={attr.id} style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', fontSize: '12px' }}>
+                        <span style={{ color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '600' }}>{attr.attributeKey}:</span>
+                        <span style={{ fontFamily: 'monospace', wordBreak: 'break-all', textAlign: 'right', color: '#ffffff' }}>{attr.attributeValue}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Supported Chains */}
+              <div>
+                <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', color: 'var(--md-sys-color-on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Blockchain Jaringan yang Didukung (Chains)
+                </h4>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {(() => {
+                    const chains = [];
+                    // Extract unique chains from fees
+                    selectedExchangeDb.fees?.forEach(f => {
+                      if (f.chain && !chains.some(c => c.id === f.chain.id)) {
+                        chains.push(f.chain);
+                      }
+                    });
+                    if (chains.length === 0) {
+                      return <span style={{ fontSize: '12px', color: 'var(--md-sys-color-on-surface-variant)' }}>Tidak ada data jaringan blockchain khusus terdaftar.</span>;
+                    }
+                    return chains.map(c => (
+                      <span
+                        key={c.id}
+                        className="badge badge-dex"
+                        style={{ padding: '6px 12px', fontSize: '12px', fontWeight: '700', borderRadius: '6px' }}
+                      >
+                        🌐 {c.name} ({c.type})
+                      </span>
+                    ));
+                  })()}
+                </div>
+              </div>
+
+              {/* Supported Tokens */}
+              <div>
+                <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', color: 'var(--md-sys-color-on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Token Kripto Terdaftar & Aktif (Tokens)
+                </h4>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {(() => {
+                    const tokens = [];
+                    // Extract unique tokens from tokenPairs baseToken and quoteToken
+                    selectedExchangeDb.tokenPairs?.forEach(tp => {
+                      if (tp.baseToken && !tokens.some(t => t.id === tp.baseToken.id)) {
+                        tokens.push(tp.baseToken);
+                      }
+                      if (tp.quoteToken && !tokens.some(t => t.id === tp.quoteToken.id)) {
+                        tokens.push(tp.quoteToken);
+                      }
+                    });
+                    // Fallback to fees tokens
+                    selectedExchangeDb.fees?.forEach(f => {
+                      if (f.token && !tokens.some(t => t.id === f.token.id)) {
+                        tokens.push(f.token);
+                      }
+                    });
+
+                    if (tokens.length === 0) {
+                      return <span style={{ fontSize: '12px', color: 'var(--md-sys-color-on-surface-variant)' }}>Tidak ada token terdaftar.</span>;
+                    }
+                    return tokens.map(t => (
+                      <div
+                        key={t.id}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '6px 10px',
+                          backgroundColor: 'rgba(255,255,255,0.03)',
+                          borderRadius: '6px',
+                          border: '1px solid rgba(255,255,255,0.05)',
+                          fontSize: '12px',
+                          fontWeight: '700',
+                          color: '#ffffff'
+                        }}
+                      >
+                        <CoinIcon symbol={t.symbol} size={16} />
+                        <span>{t.symbol}</span>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </div>
+
+              {/* Fee Rules */}
+              {selectedExchangeDb.fees && selectedExchangeDb.fees.length > 0 && (
+                <div>
+                  <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', color: 'var(--md-sys-color-on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Rincian Tarif Biaya (Fees)
+                  </h4>
+                  <div style={{ overflowX: 'auto', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '11px' }}>
+                      <thead>
+                        <tr style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                          <th style={{ padding: '8px 12px', color: 'var(--md-sys-color-on-surface-variant)' }}>Tipe Biaya</th>
+                          <th style={{ padding: '8px 12px', color: 'var(--md-sys-color-on-surface-variant)' }}>Token</th>
+                          <th style={{ padding: '8px 12px', color: 'var(--md-sys-color-on-surface-variant)' }}>Jaringan</th>
+                          <th style={{ padding: '8px 12px', color: 'var(--md-sys-color-on-surface-variant)', textAlign: 'right' }}>Tarif</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedExchangeDb.fees.map(f => (
+                          <tr key={f.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                            <td style={{ padding: '8px 12px', fontWeight: 'bold' }}>{f.feeType}</td>
+                            <td style={{ padding: '8px 12px' }}>{f.token ? f.token.symbol : '-'}</td>
+                            <td style={{ padding: '8px 12px' }}>{f.chain ? f.chain.name : '-'}</td>
+                            <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 'bold', color: 'var(--color-profit-green)' }}>
+                              {f.feePercentage ? `${(parseFloat(f.feePercentage) * 100).toFixed(2)}%` : f.feeFlat ? `${parseFloat(f.feeFlat).toFixed(2)} ${f.token ? f.token.symbol : ''}` : '-'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
