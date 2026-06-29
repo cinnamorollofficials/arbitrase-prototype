@@ -1717,9 +1717,6 @@ function App() {
                     <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('deviation')}>
                       Deviasi Rata-Rata (Last) {getSortIndicator('deviation')}
                     </th>
-                    <th>
-                      Waktu Update
-                    </th>
                     <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('status')}>
                       Status {getSortIndicator('status')}
                     </th>
@@ -1805,16 +1802,21 @@ function App() {
                           </td>
 
                           {/* Data Source */}
-                          <td style={{ fontSize: '12px' }}>
-                            {item.source === 'direct' ? (
-                              <span style={{ color: '#10b981', fontWeight: '600' }}>Direct API</span>
-                            ) : item.source === 'coingecko' ? (
-                              <span style={{ color: '#f59e0b', fontWeight: '600' }}>CoinGecko</span>
-                            ) : item.source === 'dexscreener' ? (
-                              <span style={{ color: '#3b82f6', fontWeight: '600' }}>DexScreener</span>
-                            ) : (
-                              <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>-</span>
-                            )}
+                          <td>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                              {item.source === 'direct' ? (
+                                <span style={{ color: '#10b981', fontWeight: '600', fontSize: '12px' }}>Direct API</span>
+                              ) : item.source === 'coingecko' ? (
+                                <span style={{ color: '#f59e0b', fontWeight: '600', fontSize: '12px' }}>CoinGecko</span>
+                              ) : item.source === 'dexscreener' ? (
+                                <span style={{ color: '#3b82f6', fontWeight: '600', fontSize: '12px' }}>DexScreener</span>
+                              ) : (
+                                <span style={{ color: 'var(--md-sys-color-on-surface-variant)', fontSize: '12px' }}>-</span>
+                              )}
+                              <span style={{ fontSize: '10px', color: 'var(--md-sys-color-on-surface-variant)', opacity: 0.85 }}>
+                                {item.timestamp ? new Date(item.timestamp).toLocaleTimeString() : (lastUpdated ? lastUpdated.toLocaleTimeString() : '-')}
+                              </span>
+                            </div>
                           </td>
 
                           {/* Ask Price (Buy Price) */}
@@ -1862,11 +1864,6 @@ function App() {
                             ) : (
                               '-'
                             )}
-                          </td>
-
-                          {/* Price Timestamp */}
-                          <td style={{ color: 'var(--md-sys-color-on-surface-variant)', fontSize: '12px' }}>
-                            {item.timestamp ? new Date(item.timestamp).toLocaleTimeString() : (lastUpdated ? lastUpdated.toLocaleTimeString() : '-')}
                           </td>
 
                           {/* Action / Indicators */}
