@@ -20,6 +20,19 @@ export async function up(queryInterface, Sequelize) {
       allowNull: false,
       defaultValue: true
     },
+    website_url: {
+      type: Sequelize.STRING(255),
+      allowNull: true
+    },
+    logo_url: {
+      type: Sequelize.STRING(255),
+      allowNull: true
+    },
+    is_registered_indonesia: {
+      type: Sequelize.BOOLEAN,
+      allowNull: false,
+      defaultValue: false
+    },
     created_at: {
       type: Sequelize.DATE,
       allowNull: false,

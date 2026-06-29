@@ -41,6 +41,22 @@ export default (sequelize) => {
       allowNull: false,
       defaultValue: true,
       field: 'is_active'
+    },
+    websiteUrl: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      field: 'website_url'
+    },
+    logoUrl: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      field: 'logo_url'
+    },
+    isRegisteredIndonesia: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      field: 'is_registered_indonesia'
     }
   }, {
     sequelize,
