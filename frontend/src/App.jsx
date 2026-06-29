@@ -380,6 +380,11 @@ function App() {
   const [tokensDb, setTokensDb] = useState([]);
   const [loadingTokensDb, setLoadingTokensDb] = useState(false);
   const [errorTokensDb, setErrorTokensDb] = useState(null);
+  const tokensDbRef = React.useRef([]);
+
+  useEffect(() => {
+    tokensDbRef.current = tokensDb;
+  }, [tokensDb]);
 
   const fetchExchangesDb = async () => {
     setLoadingExchangesDb(true);
@@ -778,7 +783,7 @@ function App() {
       // Update spreads and sort symbols list dynamically
       if (json.spreads) {
         setSpreads(json.spreads);
-        const sourceSymbols = tokensDb.length > 0 ? tokensDb.map(t => t.symbol) : defaultSymbols;
+        const sourceSymbols = tokensDbRef.current.length > 0 ? tokensDbRef.current.map(t => t.symbol) : defaultSymbols;
         const sorted = [...sourceSymbols].sort((a, b) => {
           const spreadA = json.spreads[a] || 0;
           const spreadB = json.spreads[b] || 0;
