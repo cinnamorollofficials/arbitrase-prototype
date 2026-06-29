@@ -2957,9 +2957,9 @@ function App() {
                             {/* Bursa name & icon */}
                             <td style={{ padding: '16px 20px', fontWeight: '700' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                {ex.logo_url ? (
+                                {ex.logoUrl ? (
                                   <img
-                                    src={ex.logo_url}
+                                    src={ex.logoUrl}
                                     alt={ex.name}
                                     onError={(e) => {
                                       e.target.style.display = 'none';
@@ -2970,7 +2970,7 @@ function App() {
                                 ) : null}
                                 <div
                                   style={{
-                                    display: ex.logo_url ? 'none' : 'flex',
+                                    display: ex.logoUrl ? 'none' : 'flex',
                                     width: '28px',
                                     height: '28px',
                                     borderRadius: '6px',
@@ -2991,9 +2991,9 @@ function App() {
                                       {ex.type}
                                     </span>
                                   </div>
-                                  {ex.website_url && (
+                                  {ex.websiteUrl && (
                                     <a
-                                      href={ex.website_url}
+                                      href={ex.websiteUrl}
                                       target="_blank"
                                       rel="noreferrer"
                                       style={{ fontSize: '10px', color: 'var(--md-sys-color-primary)', textDecoration: 'none', fontWeight: 'normal' }}
@@ -3007,7 +3007,7 @@ function App() {
 
                             {/* Legalitas */}
                             <td style={{ padding: '16px 20px' }}>
-                              {ex.is_registered_indonesia ? (
+                              {ex.isRegisteredIndonesia ? (
                                 <span style={{
                                   fontSize: '10px',
                                   fontWeight: '700',
@@ -3103,9 +3103,9 @@ function App() {
                       >
                         {/* Top Row: Logo & Name & Type */}
                         <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                          {ex.logo_url ? (
+                          {ex.logoUrl ? (
                             <img
-                              src={ex.logo_url}
+                              src={ex.logoUrl}
                               alt={ex.name}
                               onError={(e) => {
                                 e.target.style.display = 'none';
@@ -3116,7 +3116,7 @@ function App() {
                           ) : null}
                           <div
                             style={{
-                              display: ex.logo_url ? 'none' : 'flex',
+                              display: ex.logoUrl ? 'none' : 'flex',
                               width: '40px',
                               height: '40px',
                               borderRadius: '8px',
@@ -3138,9 +3138,9 @@ function App() {
                                 {ex.type}
                               </span>
                             </div>
-                            {ex.website_url && (
+                            {ex.websiteUrl && (
                               <a
-                                href={ex.website_url}
+                                href={ex.websiteUrl}
                                 target="_blank"
                                 rel="noreferrer"
                                 style={{ fontSize: '11px', color: 'var(--md-sys-color-primary)', textDecoration: 'none' }}
@@ -3153,7 +3153,7 @@ function App() {
 
                         {/* Middle: Regulated Legal Badge */}
                         <div style={{ margin: '4px 0' }}>
-                          {ex.is_registered_indonesia ? (
+                          {ex.isRegisteredIndonesia ? (
                             <div style={{
                               display: 'inline-flex',
                               alignItems: 'center',
