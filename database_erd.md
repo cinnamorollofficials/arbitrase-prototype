@@ -26,6 +26,10 @@ erDiagram
 
     arbitrage_transactions ||--|{ transaction_steps : "executes"
 
+    chains ||--o{ chain_attributes : "configured by"
+    tokens ||--o{ token_attributes : "configured by"
+    chains ||--o{ token_attributes : "scopes"
+
     users {
         uuid id PK
         varchar email UK
@@ -136,6 +140,47 @@ erDiagram
         decimal net_profit_est
         timestamp timestamp
     }
+
+    chains {
+        integer id PK
+        varchar name UK
+        varchar chain_identifier UK
+        varchar native_symbol
+        boolean is_active
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    chain_attributes {
+        integer id PK
+        integer chain_id FK
+        varchar attribute_key
+        text attribute_value
+        varchar data_type
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    tokens {
+        integer id PK
+        varchar symbol UK
+        varchar name
+        varchar coingecko_id
+        boolean is_active
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    token_attributes {
+        integer id PK
+        integer token_id FK
+        integer chain_id FK
+        varchar attribute_key
+        text attribute_value
+        varchar data_type
+        timestamp created_at
+        timestamp updated_at
+    }
 ```
 
 ---
@@ -209,7 +254,54 @@ Tabel relasi many-to-many antara Bursa dan Koin yang menyimpan data harga orderb
 
 ---
 
-### 3. Modul Saldo & Transaksi (Portfolio & Queue)
+### 3. Modul Multi-Chain & Token Dinamis (Chains, Tokens, & Attributes)
+
+#### Tabel: `chains`
+Menyimpan metadata blockchain/network yang didukung oleh sistem (e.g., Ethereum, BSC, Solana).
+* `id` (INT, Auto Increment, Primary Key): Identifier unik chain.
+* `name` (VARCHAR(100), Unique): Nama blockchain (e.g., 'Ethereum Mainnet').
+* `chain_identifier` (VARCHAR(100), Unique): ID unik chain (misal: '1' untuk Ethereum EVM, '56' untuk BSC, 'solana' untuk non-EVM Solana).
+* `native_symbol` (VARCHAR(20)): Simbol koin native gas fee (e.g., 'ETH', 'BNB', 'SOL').
+* `is_active` (BOOLEAN): Status keaktifan chain di sistem.
+* `created_at` (TIMESTAMP): Waktu data dibuat.
+* `updated_at` (TIMESTAMP): Waktu data diperbarui.
+
+#### Tabel: `chain_attributes`
+Menyimpan konfigurasi parameter dinamis per blockchain menggunakan pola EAV (Entity-Attribute-Value).
+* `id` (INT, Auto Increment, Primary Key): Identifier unik.
+* `chain_id` (INT, Foreign Key -> `chains.id` ON DELETE CASCADE): ID blockchain terkait.
+* `attribute_key` (VARCHAR(100)): Kunci konfigurasi (e.g., 'rpc_url', 'explorer_url', 'block_time_seconds').
+* `attribute_value` (TEXT): Nilai konfigurasi.
+* `data_type` (VARCHAR(50)): Tipe data nilai (`string`, `number`, `boolean`, `json`).
+* `created_at` (TIMESTAMP): Waktu data dibuat.
+* `updated_at` (TIMESTAMP): Waktu data diperbarui.
+
+#### Tabel: `tokens`
+Daftar seluruh koin/token aset kripto abstrak (menggantikan/memetakan entitas `coins` agar dapat terhubung dengan multi-chain).
+* `id` (INT, Auto Increment, Primary Key): Identifier unik token.
+* `symbol` (VARCHAR(50), Unique): Kode token (e.g., 'USDT', 'SOL').
+* `name` (VARCHAR(150)): Nama lengkap token.
+* `coingecko_id` (VARCHAR(100)): Mapping ID CoinGecko untuk sync data harga.
+* `is_active` (BOOLEAN): Status apakah token aktif digunakan di platform.
+* `created_at` (TIMESTAMP): Waktu data dibuat.
+* `updated_at` (TIMESTAMP): Waktu data diperbarui.
+
+#### Tabel: `token_attributes`
+Menyimpan atribut dinamis dan konfigurasi spesifik per chain untuk masing-masing token menggunakan pola EAV.
+* Jika `chain_id` bernilai `NULL`, data tersebut adalah atribut global token (e.g., 'website_url', 'logo_url').
+* Jika `chain_id` bernilai `NOT NULL`, data tersebut adalah atribut spesifik pada blockchain tertentu (e.g., 'contract_address', 'decimals', 'transfer_fee_pct').
+* `id` (INT, Auto Increment, Primary Key): Identifier unik atribut.
+* `token_id` (INT, Foreign Key -> `tokens.id` ON DELETE CASCADE): Token terkait.
+* `chain_id` (INT, Nullable, Foreign Key -> `chains.id` ON DELETE CASCADE): Chain terkait (NULL untuk atribut global).
+* `attribute_key` (VARCHAR(100)): Kunci konfigurasi (e.g., 'contract_address', 'decimals').
+* `attribute_value` (TEXT): Nilai konfigurasi.
+* `data_type` (VARCHAR(50)): Tipe data nilai (`string`, `number`, `boolean`, `json`).
+* `created_at` (TIMESTAMP): Waktu data dibuat.
+* `updated_at` (TIMESTAMP): Waktu data diperbarui.
+
+---
+
+### 4. Modul Saldo & Transaksi (Portfolio & Queue)
 
 #### Tabel: `user_balances`
 Menyimpan data saldo aset kripto pengguna di masing-masing bursa.
@@ -250,7 +342,7 @@ Rincian langkah log teknis eksekusi rute yang sedang berjalan untuk monitoring p
 
 ---
 
-### 4. Modul Histori Peluang (Analytics)
+### 5. Modul Histori Peluang (Analytics)
 
 #### Tabel: `profitable_opportunities`
 Menyimpan riwayat peluang emas arbitrase yang terdeteksi oleh background scanner (untuk kebutuhan charts analytics & machine learning).
@@ -270,8 +362,14 @@ Guna menjamin skalabilitas query real-time di atas ribuan baris data per detik d
 
 1. **Unique Index**:
    * `exchange_tokens(exchange_id, coin_id)`: Mempercepat pembacaan data harga spesifik koin di bursa tertentu dan mencegah data duplikat.
+   * `chain_attributes(chain_id, attribute_key)`: Mencegah duplikasi kunci konfigurasi per blockchain.
+   * `token_attributes(token_id, attribute_key) WHERE chain_id IS NULL`: Menjamin keunikan atribut global untuk satu token.
+   * `token_attributes(token_id, chain_id, attribute_key) WHERE chain_id IS NOT NULL`: Menjamin keunikan atribut spesifik token per blockchain.
 2. **Search Indexes (B-Tree)**:
    * `coins(symbol)`: Digunakan untuk pencarian koin berkecepatan tinggi.
+   * `tokens(symbol)`: Digunakan untuk pencarian token berkecepatan tinggi.
    * `exchanges(name)`: Digunakan untuk pencarian nama bursa.
+   * `chains(is_active)`, `tokens(is_active)`: Filter keaktifan operasional.
+   * `token_attributes(token_id, chain_id)`: Mempercepat lookup contract address dan decimals token di chain tertentu.
    * `arbitrage_transactions(user_id, status)`: Mempercepat pengambilan daftar antrean aktif per pengguna.
    * `profitable_opportunities(timestamp, spread_pct)`: Digunakan untuk kueri analitik grafik trend profit dalam rentang waktu tertentu.
