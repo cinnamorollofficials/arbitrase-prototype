@@ -1,21 +1,21 @@
 export async function up(queryInterface, Sequelize) {
   // 1. Seed Exchanges
   const exchanges = [
-    { id: 1, name: 'Binance', type: 'CEX', is_active: true, website_url: 'https://binance.com', logo_url: 'https://cryptologos.cc/logos/binance-coin-bnb-logo.png', is_registered_indonesia: false },
-    { id: 2, name: 'OKX', type: 'CEX', is_active: true, website_url: 'https://okx.com', logo_url: 'https://cryptologos.cc/logos/okx-okb-logo.png', is_registered_indonesia: false },
+    { id: 1, name: 'Binance', type: 'CEX', is_active: true, website_url: 'https://binance.com', logo_url: 'https://static.vecteezy.com/system/resources/previews/054/061/035/non_2x/binance-logo-free-download-free-vector.jpg', is_registered_indonesia: false },
+    { id: 2, name: 'OKX', type: 'CEX', is_active: true, website_url: 'https://okx.com', logo_url: 'https://upload.wikimedia.org/wikipedia/commons/0/0a/Logo-OKX.png', is_registered_indonesia: false },
     { id: 3, name: 'Bybit', type: 'CEX', is_active: true, website_url: 'https://bybit.com', logo_url: 'https://cryptologos.cc/logos/bybit-logo.png', is_registered_indonesia: false },
-    { id: 4, name: 'Coinbase', type: 'CEX', is_active: true, website_url: 'https://coinbase.com', logo_url: 'https://cryptologos.cc/logos/coinbase-logo.png', is_registered_indonesia: false },
-    { id: 5, name: 'Kraken', type: 'CEX', is_active: true, website_url: 'https://kraken.com', logo_url: 'https://cryptologos.cc/logos/kraken-logo.png', is_registered_indonesia: false },
-    { id: 6, name: 'Gate.io', type: 'CEX', is_active: true, website_url: 'https://gate.io', logo_url: 'https://cryptologos.cc/logos/gate-io-logo.png', is_registered_indonesia: false },
-    { id: 7, name: 'Bitget', type: 'CEX', is_active: true, website_url: 'https://bitget.com', logo_url: 'https://cryptologos.cc/logos/bitget-logo.png', is_registered_indonesia: false },
-    { id: 8, name: 'MEXC', type: 'CEX', is_active: true, website_url: 'https://mexc.com', logo_url: 'https://cryptologos.cc/logos/mexc-logo.png', is_registered_indonesia: false },
-    { id: 9, name: 'Indodax', type: 'CEX', is_active: true, website_url: 'https://indodax.com', logo_url: 'https://indodax.com/logo.png', is_registered_indonesia: true },
-    { id: 10, name: 'Tokocrypto', type: 'CEX', is_active: true, website_url: 'https://tokocrypto.com', logo_url: 'https://tokocrypto.com/logo.png', is_registered_indonesia: true },
-    { id: 11, name: 'Reku', type: 'CEX', is_active: true, website_url: 'https://reku.id', logo_url: 'https://reku.id/logo.png', is_registered_indonesia: true },
+    { id: 4, name: 'Coinbase', type: 'CEX', is_active: true, website_url: 'https://coinbase.com', logo_url: 'https://i.pinimg.com/474x/d6/4a/59/d64a5981e74538459bfa3fa5beee2621.jpg', is_registered_indonesia: false },
+    { id: 5, name: 'Kraken', type: 'CEX', is_active: true, website_url: 'https://kraken.com', logo_url: 'https://zengo.com/wp-content/uploads/kraken_300x300@x2.png', is_registered_indonesia: false },
+    { id: 6, name: 'Gate.io', type: 'CEX', is_active: true, website_url: 'https://gate.io', logo_url: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTKa0AnIVYc2lanSMeFElaGsUpQQBpjUwK7fA&s', is_registered_indonesia: false },
+    { id: 7, name: 'Bitget', type: 'CEX', is_active: true, website_url: 'https://bitget.com', logo_url: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSP3NzvYDI_O7l1m-tP2P3o0lb7DjJKpwWL7A&s', is_registered_indonesia: false },
+    { id: 8, name: 'MEXC', type: 'CEX', is_active: true, website_url: 'https://mexc.com', logo_url: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTQ8PZO3MqMddk0QEct72-V5rdZG8wB4YGTMg&s', is_registered_indonesia: false },
+    { id: 9, name: 'Indodax', type: 'CEX', is_active: true, website_url: 'https://indodax.com', logo_url: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSeOR42JBjLsH3Zesz_VqTeTGi-hMZraznjGw&s', is_registered_indonesia: true },
+    { id: 10, name: 'Tokocrypto', type: 'CEX', is_active: true, website_url: 'https://tokocrypto.com', logo_url: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRVDirI-6MhGAcgt29NY7HR-WOPyVM86K-Ppw&s', is_registered_indonesia: true },
+    { id: 11, name: 'Reku', type: 'CEX', is_active: true, website_url: 'https://reku.id', logo_url: 'https://play-lh.googleusercontent.com/OXoqBZ-q2cmiv1ZXKds9ziXJB21AQfpksEC99HYUDCS82QggcKdMri1-lcw0epnmLxdH85pM_c381hwSPl9W', is_registered_indonesia: true },
     { id: 12, name: 'Uniswap V3', type: 'DEX', is_active: true, website_url: 'https://uniswap.org', logo_url: 'https://cryptologos.cc/logos/uniswap-uni-logo.png', is_registered_indonesia: false },
     { id: 13, name: 'PancakeSwap V3', type: 'DEX', is_active: true, website_url: 'https://pancakeswap.finance', logo_url: 'https://cryptologos.cc/logos/pancakeswap-cake-logo.png', is_registered_indonesia: false },
-    { id: 14, name: 'Raydium', type: 'DEX', is_active: true, website_url: 'https://raydium.io', logo_url: 'https://cryptologos.cc/logos/raydium-logo.png', is_registered_indonesia: false },
-    { id: 15, name: 'Orca', type: 'DEX', is_active: true, website_url: 'https://orca.so', logo_url: 'https://orca.so/logo.png', is_registered_indonesia: false }
+    { id: 14, name: 'Raydium', type: 'DEX', is_active: true, website_url: 'https://avatars.githubusercontent.com/u/78411976?s=280&v=4', logo_url: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSPaZ-gdOabOTEG23aVOPY_gLAFvhg4pC0cmg&s', is_registered_indonesia: false },
+    { id: 15, name: 'Orca', type: 'DEX', is_active: true, website_url: 'https://orca.so', logo_url: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQDdu_bh5yJc4fXMxsGEDyZ9_SxawifHtMh8A&s', is_registered_indonesia: false }
   ];
   await queryInterface.bulkInsert('exchanges', exchanges);
 
@@ -111,7 +111,7 @@ export async function up(queryInterface, Sequelize) {
   // CEX Token Pairs (Binance, OKX, Bybit, Coinbase, Kraken, Gate.io, Bitget, MEXC, Indodax, Tokocrypto, Reku)
   for (const token of tokens) {
     const sym = token.symbol;
-    
+
     // Binance (id 1)
     const binanceSym = sym === 'USDT' ? 'USDCUSDT' : `${sym}USDT`;
     tokenPairs.push({ id: pairId++, exchange_id: 1, base_token_id: token.id, quote_token_id: 1, symbol: binanceSym, is_active: true });
@@ -161,7 +161,7 @@ export async function up(queryInterface, Sequelize) {
   for (const token of tokens) {
     const sym = token.symbol;
     const chains = tokenChains[sym] || [];
-    
+
     // Uniswap V3 (id 12, Chain 1)
     if (chains.includes(1)) {
       const pairSym = sym === 'USDT' ? 'USDT/USDC' : `${sym}/USDT`;
@@ -191,7 +191,7 @@ export async function up(queryInterface, Sequelize) {
 
   // 5. Seed Fees (Trade fees, Pool fees, Withdrawal fees)
   const fees = [];
-  
+
   // A. Seed Trade Fees for all CEXes (Standard percentages matching CEX markets)
   const cexFeeRates = {
     1: 0.0010,  // Binance 0.1%
@@ -206,7 +206,7 @@ export async function up(queryInterface, Sequelize) {
     10: 0.0010, // Tokocrypto 0.1%
     11: 0.0010  // Reku 0.1%
   };
-  
+
   for (const [exId, rate] of Object.entries(cexFeeRates)) {
     fees.push({
       fee_type: 'CEX_TRADE',
