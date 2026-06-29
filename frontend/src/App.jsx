@@ -1873,12 +1873,25 @@ function App() {
                           <td>
                             {item.status === 'success' && item.ask !== null ? (
                               <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <span className="price-tag" style={{ color: isLowestAsk ? 'var(--color-profit-green)' : 'inherit', fontWeight: '700' }}>
-                                  ${item.ask.toFixed(5)}
-                                </span>
-                                <span style={{ fontSize: '9px', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '1px' }}>
-                                  {formatRupiah(item.ask, usdToIdrRate)}
-                                </span>
+                                {item.nativeCurrency === 'IDR' ? (
+                                  <>
+                                    <span className="price-tag" style={{ color: isLowestAsk ? 'var(--color-profit-green)' : 'inherit', fontWeight: '700' }}>
+                                      Rp {item.nativeAsk?.toLocaleString('id-ID')}
+                                    </span>
+                                    <span style={{ fontSize: '9px', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '1px' }}>
+                                      ${item.ask.toFixed(5)} USD
+                                    </span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <span className="price-tag" style={{ color: isLowestAsk ? 'var(--color-profit-green)' : 'inherit', fontWeight: '700' }}>
+                                      ${item.ask.toFixed(5)}
+                                    </span>
+                                    <span style={{ fontSize: '9px', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '1px' }}>
+                                      {formatRupiah(item.ask, usdToIdrRate)}
+                                    </span>
+                                  </>
+                                )}
                               </div>
                             ) : (
                               <span style={{ color: 'var(--md-sys-color-error)', fontStyle: 'italic' }}>
@@ -1891,12 +1904,25 @@ function App() {
                           <td>
                             {item.status === 'success' && item.bid !== null ? (
                               <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <span className="price-tag" style={{ color: isHighestBid ? 'var(--color-loss-red)' : 'inherit', fontWeight: '700' }}>
-                                  ${item.bid.toFixed(5)}
-                                </span>
-                                <span style={{ fontSize: '9px', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '1px' }}>
-                                  {formatRupiah(item.bid, usdToIdrRate)}
-                                </span>
+                                {item.nativeCurrency === 'IDR' ? (
+                                  <>
+                                    <span className="price-tag" style={{ color: isHighestBid ? 'var(--color-loss-red)' : 'inherit', fontWeight: '700' }}>
+                                      Rp {item.nativeBid?.toLocaleString('id-ID')}
+                                    </span>
+                                    <span style={{ fontSize: '9px', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '1px' }}>
+                                      ${item.bid.toFixed(5)} USD
+                                    </span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <span className="price-tag" style={{ color: isHighestBid ? 'var(--color-loss-red)' : 'inherit', fontWeight: '700' }}>
+                                      ${item.bid.toFixed(5)}
+                                    </span>
+                                    <span style={{ fontSize: '9px', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '1px' }}>
+                                      {formatRupiah(item.bid, usdToIdrRate)}
+                                    </span>
+                                  </>
+                                )}
                               </div>
                             ) : (
                               <span style={{ color: 'var(--md-sys-color-error)', fontStyle: 'italic' }}>

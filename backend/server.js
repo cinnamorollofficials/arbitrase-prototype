@@ -99,6 +99,24 @@ async function getRawPriceKeys() {
 const app = express();
 const PORT = process.env.PORT || 5001;
 
+// Global USD/IDR exchange rate updated dynamically from public API
+let usdToIdrRate = 16400;
+
+async function fetchUsdToIdrRate() {
+  try {
+    const res = await axios.get('https://open.er-api.com/v6/latest/USD', { timeout: 4000 });
+    if (res.data && res.data.rates && res.data.rates.IDR) {
+      usdToIdrRate = res.data.rates.IDR;
+    }
+  } catch (err) {
+    // Keep using current value if fetch fails
+  }
+}
+
+// Initial fetch and 15-minute interval
+fetchUsdToIdrRate();
+setInterval(fetchUsdToIdrRate, 900000);
+
 app.use(cors());
 app.use(express.json());
 
@@ -599,14 +617,19 @@ async function getPricesForSymbol(symbol) {
     getCexPrice('Indodax', symbol, `https://indodax.com/api/${symbol === 'USDT' ? 'usdt' : symbol.toLowerCase()}_idr/ticker`,
       d => {
         if (!d || !d.ticker) throw new Error('Invalid Indodax ticker');
-        const idrRate = 16500;
+        const idrRate = usdToIdrRate; // Dynamic rate fetched from public API
         const last = parseFloat(d.ticker.last);
         const buy = parseFloat(d.ticker.buy);
         const sell = parseFloat(d.ticker.sell);
         return {
+          pair: symbol === 'USDT' ? 'USDT/IDR' : `${symbol}/IDR`,
           price: symbol === 'USDT' ? 1.0 : last / idrRate,
           bid: buy / idrRate,
-          ask: sell / idrRate
+          ask: sell / idrRate,
+          nativePrice: last,
+          nativeBid: buy,
+          nativeAsk: sell,
+          nativeCurrency: 'IDR'
         };
       }, 'indodax'),
 
