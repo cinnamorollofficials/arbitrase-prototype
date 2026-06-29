@@ -2,9 +2,31 @@ import express from 'express';
 import cors from 'cors';
 import axios from 'axios';
 import dotenv from 'dotenv';
+import { createClient } from 'redis';
 import db from './models/index.js';
 
 dotenv.config();
+
+// Redis client setup with graceful connection fallback
+const redisClient = createClient({
+  url: process.env.REDIS_URL || 'redis://127.0.0.1:6379'
+});
+
+let isRedisConnected = false;
+
+redisClient.on('error', (err) => {
+  // Gracefully handle connection errors without crashing the app
+  isRedisConnected = false;
+});
+
+redisClient.on('connect', () => {
+  console.log('Redis connection established successfully');
+  isRedisConnected = true;
+});
+
+redisClient.connect().catch(err => {
+  console.warn('Could not connect to Redis, running with database/memory fallback mode.');
+});
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -291,6 +313,18 @@ function getPriceFromTickers(tickers, exchangeKey, symbol) {
 async function getCexPrice(name, symbol, url, parser, coingeckoKey) {
   try {
     const data = await fetchWithTimeout(url, {}, 4000);
+    
+    // Save raw response to Redis
+    if (isRedisConnected) {
+      redisClient.set(`raw_price:cex:${name.toLowerCase().replace(/\s+/g, '_')}:${symbol.toLowerCase()}`, JSON.stringify({
+        timestamp: Date.now(),
+        url,
+        raw: data
+      }), {
+        EX: 300 // 5 minutes expiration
+      }).catch(err => console.warn('Failed to save to Redis:', err.message));
+    }
+
     const parsed = parser(data);
     if (!parsed || !parsed.price || isNaN(parsed.price)) throw new Error('Invalid price parsed');
     return { name, type: 'CEX', pair: symbol === 'USDT' ? 'USDT/USDC' : `${symbol}/USDT`, ...parsed, status: 'success', source: 'direct' };
@@ -298,6 +332,17 @@ async function getCexPrice(name, symbol, url, parser, coingeckoKey) {
     // Fallback to CoinGecko
     try {
       const tickers = await getCoinGeckoTickers(symbol);
+      
+      // Save raw CoinGecko tickers to Redis
+      if (isRedisConnected && tickers) {
+        redisClient.set(`raw_price:coingecko:${symbol.toLowerCase()}`, JSON.stringify({
+          timestamp: Date.now(),
+          raw: tickers
+        }), {
+          EX: 300
+        }).catch(err => console.warn('Failed to save fallback tickers to Redis:', err.message));
+      }
+
       const parsed = getPriceFromTickers(tickers, coingeckoKey || name, symbol);
       if (parsed && parsed.price && !isNaN(parsed.price)) {
         return { name, type: 'CEX', pair: symbol === 'USDT' ? 'USDT/USDC' : `${symbol}/USDT`, ...parsed, status: 'success', source: 'coingecko' };
@@ -328,6 +373,18 @@ async function getDexPrices(symbol) {
       tokens.bsc ? fetchWithTimeout(`https://api.dexscreener.com/latest/dex/tokens/${tokens.bsc}`, {}, 4000).catch(() => ({ pairs: [] })) : { pairs: [] },
       tokens.solana ? fetchWithTimeout(`https://api.dexscreener.com/latest/dex/tokens/${tokens.solana}`, {}, 4000).catch(() => ({ pairs: [] })) : { pairs: [] }
     ]);
+
+    // Save raw DexScreener responses to Redis
+    if (isRedisConnected) {
+      redisClient.set(`raw_price:dex:${symbol.toLowerCase()}`, JSON.stringify({
+        timestamp: Date.now(),
+        ethereum: resEth,
+        bsc: resBsc,
+        solana: resSol
+      }), {
+        EX: 300 // 5 minutes expiration
+      }).catch(err => console.warn('Failed to save DEX raw to Redis:', err.message));
+    }
 
     const ethPairs = resEth.pairs || [];
     const bscPairs = resBsc.pairs || [];
@@ -707,6 +764,103 @@ app.get('/api/tokens-db', async (req, res) => {
     res.json({ tokens: tokensWithPrices });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch tokens from database', message: error.message });
+  }
+});
+
+
+// Endpoint to fetch raw prices from Redis
+app.get('/api/raw-prices', async (req, res) => {
+  if (!isRedisConnected) {
+    return res.status(503).json({ error: 'Redis is not connected or active' });
+  }
+
+  const { exchange, symbol } = req.query;
+
+  try {
+    if (exchange && symbol) {
+      // Clean name for Redis matching
+      const exKey = exchange.toLowerCase().replace(/\s+/g, '_');
+      const symKey = symbol.toLowerCase();
+
+      // CEX search
+      const key = `raw_price:cex:${exKey}:${symKey}`;
+      const data = await redisClient.get(key);
+      if (data) {
+        return res.json({ key, data: JSON.parse(data) });
+      }
+
+      // DEX search
+      const dexKey = `raw_price:dex:${symKey}`;
+      const dexData = await redisClient.get(dexKey);
+      if (dexData) {
+        const parsed = JSON.parse(dexData);
+        // Find if this specific DEX exists in the payload
+        const matchName = exchange.toLowerCase().replace(/\s+/g, '');
+        let specificDexRaw = parsed;
+        
+        if (matchName.includes('uniswap')) {
+          specificDexRaw = parsed.ethereum || parsed;
+        } else if (matchName.includes('pancakeswap')) {
+          specificDexRaw = parsed.bsc || parsed;
+        } else if (matchName.includes('raydium')) {
+          specificDexRaw = parsed.solana || parsed;
+        } else if (matchName.includes('orca')) {
+          specificDexRaw = parsed.solana || parsed;
+        }
+
+        return res.json({ key: dexKey, data: { ...parsed, specificDexRaw } });
+      }
+
+      // CoinGecko fallback search
+      const cgKey = `raw_price:coingecko:${symKey}`;
+      const cgData = await redisClient.get(cgKey);
+      if (cgData) {
+        return res.json({ key: cgKey, data: JSON.parse(cgData) });
+      }
+
+      return res.status(404).json({ error: 'Raw price data not found in Redis' });
+    }
+
+    // List all raw keys
+    const keys = await redisClient.keys('raw_price:*');
+    const list = [];
+    for (const key of keys) {
+      const val = await redisClient.get(key);
+      if (val) {
+        const parsed = JSON.parse(val);
+        list.push({
+          key,
+          timestamp: parsed.timestamp || Date.now(),
+          size: val.length
+        });
+      }
+    }
+    res.json({ keys: list });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch raw price details', message: error.message });
+  }
+});
+
+// Endpoint to view specific raw price details by key
+app.get('/api/raw-prices/detail', async (req, res) => {
+  if (!isRedisConnected) {
+    return res.status(503).json({ error: 'Redis is not connected or active' });
+  }
+
+  const { key } = req.query;
+  if (!key) {
+    return res.status(400).json({ error: 'Query parameter ?key=... is required' });
+  }
+
+  try {
+    const rawData = await redisClient.get(key);
+    if (!rawData) {
+      return res.status(404).json({ error: `Key '${key}' not found in Redis` });
+    }
+
+    res.json({ key, data: JSON.parse(rawData) });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to retrieve raw key details', message: error.message });
   }
 });
 
