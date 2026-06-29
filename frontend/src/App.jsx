@@ -778,7 +778,8 @@ function App() {
       // Update spreads and sort symbols list dynamically
       if (json.spreads) {
         setSpreads(json.spreads);
-        const sorted = [...defaultSymbols].sort((a, b) => {
+        const sourceSymbols = tokensDb.length > 0 ? tokensDb.map(t => t.symbol) : defaultSymbols;
+        const sorted = [...sourceSymbols].sort((a, b) => {
           const spreadA = json.spreads[a] || 0;
           const spreadB = json.spreads[b] || 0;
           return spreadB - spreadA;
