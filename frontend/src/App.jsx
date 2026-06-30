@@ -503,6 +503,7 @@ function App() {
   const [exchangeMarketRefreshCycle, setExchangeMarketRefreshCycle] = useState(0);
   const [exchangeMarketSortConfig, setExchangeMarketSortConfig] = useState({ key: 'baseToken', direction: 'asc' });
   const [exchangeMarketSearchQuery, setExchangeMarketSearchQuery] = useState('');
+  const [selectedExchangeMarketRows, setSelectedExchangeMarketRows] = useState(new Set());
   const [isCompact, setIsCompact] = useUrlState('compact', 'false');
   const [opportunities, setOpportunities] = useState([]);
   const [selectedExchange, setSelectedExchange] = useUrlState('ex', 'Binance');
@@ -1105,6 +1106,8 @@ function App() {
     setExchangeDbDetailTab('overview');
     setExchangeMarketData([]);
     setErrorExchangeMarketData(null);
+    setExchangeMarketSearchQuery('');
+    setSelectedExchangeMarketRows(new Set());
     setSelectedExchangeDb(exchange);
   };
 
@@ -1278,6 +1281,99 @@ function App() {
       return result * direction;
     });
   }, [filteredExchangeFiatPairs, exchangeMarketDataLookup, exchangeMarketSortConfig]);
+
+  const getExchangeMarketRowKey = (pair) => String(pair.id ?? pair.symbol);
+
+  const selectedExchangeMarketPairs = useMemo(() => {
+    return selectedExchangeFiatPairs.filter((pair) => selectedExchangeMarketRows.has(getExchangeMarketRowKey(pair)));
+  }, [selectedExchangeFiatPairs, selectedExchangeMarketRows]);
+
+  const allVisibleExchangeMarketRowsSelected = sortedExchangeFiatPairs.length > 0
+    && sortedExchangeFiatPairs.every((pair) => selectedExchangeMarketRows.has(getExchangeMarketRowKey(pair)));
+
+  const toggleExchangeMarketRowSelection = (pair) => {
+    const rowKey = getExchangeMarketRowKey(pair);
+    setSelectedExchangeMarketRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(rowKey)) {
+        next.delete(rowKey);
+      } else {
+        next.add(rowKey);
+      }
+      return next;
+    });
+  };
+
+  const toggleAllVisibleExchangeMarketRows = () => {
+    setSelectedExchangeMarketRows((prev) => {
+      const next = new Set(prev);
+      if (allVisibleExchangeMarketRowsSelected) {
+        sortedExchangeFiatPairs.forEach((pair) => next.delete(getExchangeMarketRowKey(pair)));
+      } else {
+        sortedExchangeFiatPairs.forEach((pair) => next.add(getExchangeMarketRowKey(pair)));
+      }
+      return next;
+    });
+  };
+
+  const escapeCsvValue = (value) => {
+    if (value === null || value === undefined) return '';
+    const stringValue = String(value);
+    return /[",\n\r]/.test(stringValue) ? `"${stringValue.replace(/"/g, '""')}"` : stringValue;
+  };
+
+  const handleExportExchangeMarketCsv = () => {
+    if (selectedExchangeMarketPairs.length === 0) return;
+
+    const headers = [
+      'Exchange',
+      'Pair',
+      'Base Symbol',
+      'Base Name',
+      'Quote Symbol',
+      'Last / Mid',
+      'Bid',
+      'Ask',
+      'Bid Qty',
+      'Ask Qty',
+      'Price Timestamp',
+      'Status',
+      'Source'
+    ];
+
+    const rows = selectedExchangeMarketPairs.map((pair) => {
+      const market = getExchangeMarketRow(pair);
+      const priceTimestamp = market?.priceTimestamp || market?.timestamp || null;
+      return [
+        selectedExchangeDb?.name || '',
+        pair.symbol || '',
+        pair.baseToken?.symbol || '',
+        pair.baseToken?.name || '',
+        pair.quoteToken?.symbol || '',
+        market?.mid ?? market?.last ?? market?.price ?? '',
+        market?.bid ?? market?.nativeBid ?? '',
+        market?.ask ?? market?.nativeAsk ?? '',
+        market?.bidQty ?? '',
+        market?.askQty ?? '',
+        priceTimestamp ? new Date(priceTimestamp).toISOString() : '',
+        market?.status || 'pending',
+        market?.source || ''
+      ];
+    });
+
+    const csv = [headers, ...rows]
+      .map((row) => row.map(escapeCsvValue).join(','))
+      .join('\n');
+    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const exchangeName = String(selectedExchangeDb?.name || 'exchange').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase();
+    const dateStamp = new Date().toISOString().slice(0, 10);
+    link.href = url;
+    link.download = `${exchangeName}-market-data-${dateStamp}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   const formatNativeMarketPrice = (value, currency = 'IDR') => {
     if (value === null || value === undefined || Number.isNaN(Number(value))) return '-';
@@ -4139,9 +4235,14 @@ function App() {
               {/* Fiat Pairs */}
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '8px', flexWrap: 'wrap' }}>
-                  <h4 style={{ margin: 0, fontSize: '13px', color: 'var(--md-sys-color-on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    Pair Token / Fiat dari Database
-                  </h4>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <h4 style={{ margin: 0, fontSize: '13px', color: 'var(--md-sys-color-on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      Pair Token / Fiat dari Database
+                    </h4>
+                    <span className="badge" style={{ backgroundColor: 'rgba(16,185,129,0.12)', color: '#10b981', fontWeight: '800' }}>
+                      {filteredExchangeFiatPairs.length}/{selectedExchangeFiatPairs.length} pair
+                    </span>
+                  </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <input
                       type="text"
@@ -4160,9 +4261,27 @@ function App() {
                         outline: 'none'
                       }}
                     />
-                    <span className="badge" style={{ backgroundColor: 'rgba(16,185,129,0.12)', color: '#10b981', fontWeight: '800' }}>
-                      {filteredExchangeFiatPairs.length}/{selectedExchangeFiatPairs.length} pair
-                    </span>
+                    {selectedExchangeMarketPairs.length > 0 && (
+                      <span className="badge" style={{ backgroundColor: 'rgba(59,130,246,0.12)', color: '#60a5fa', fontWeight: '800' }}>
+                        {selectedExchangeMarketPairs.length} selected
+                      </span>
+                    )}
+                    <button
+                      onClick={handleExportExchangeMarketCsv}
+                      disabled={selectedExchangeMarketPairs.length === 0}
+                      className="tab-btn"
+                      style={{
+                        padding: '7px 10px',
+                        fontSize: '12px',
+                        backgroundColor: selectedExchangeMarketPairs.length === 0 ? 'rgba(255,255,255,0.04)' : 'rgba(16,185,129,0.14)',
+                        color: selectedExchangeMarketPairs.length === 0 ? 'var(--md-sys-color-on-surface-variant)' : '#10b981',
+                        border: selectedExchangeMarketPairs.length === 0 ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(16,185,129,0.25)',
+                        cursor: selectedExchangeMarketPairs.length === 0 ? 'not-allowed' : 'pointer',
+                        fontWeight: '800'
+                      }}
+                    >
+                      Export CSV
+                    </button>
                     <div
                       key={exchangeMarketRefreshCycle}
                       title="Auto refresh setiap 10 detik"
@@ -4227,6 +4346,15 @@ function App() {
                     <table className={compactMode ? 'compact-table' : ''} style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
                       <thead>
                         <tr style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                          <th style={{ padding: '10px 12px', width: '36px' }}>
+                            <input
+                              type="checkbox"
+                              checked={allVisibleExchangeMarketRowsSelected}
+                              onChange={toggleAllVisibleExchangeMarketRows}
+                              aria-label="Select all visible market rows"
+                              style={{ cursor: 'pointer' }}
+                            />
+                          </th>
                           <th style={{ padding: '10px 12px', color: 'var(--md-sys-color-on-surface-variant)', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleExchangeMarketSort('baseToken')}>Base Token {getExchangeMarketSortIndicator('baseToken')}</th>
                           <th style={{ padding: '10px 12px', color: 'var(--md-sys-color-on-surface-variant)', textAlign: 'right', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleExchangeMarketSort('last')}>Last / Mid {getExchangeMarketSortIndicator('last')}</th>
                           <th style={{ padding: '10px 12px', color: 'var(--md-sys-color-on-surface-variant)', textAlign: 'right', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleExchangeMarketSort('bid')}>Bid {getExchangeMarketSortIndicator('bid')}</th>
@@ -4245,9 +4373,20 @@ function App() {
                           const bid = market?.bid ?? market?.nativeBid ?? null;
                           const ask = market?.ask ?? market?.nativeAsk ?? null;
                           const priceTimestamp = market?.priceTimestamp || market?.timestamp || null;
+                          const rowKey = getExchangeMarketRowKey(pair);
+                          const isSelected = selectedExchangeMarketRows.has(rowKey);
 
                           return (
-                          <tr key={pair.id || pair.symbol} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                          <tr key={pair.id || pair.symbol} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', backgroundColor: isSelected ? 'rgba(16,185,129,0.04)' : 'transparent' }}>
+                            <td style={{ padding: '10px 12px' }}>
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => toggleExchangeMarketRowSelection(pair)}
+                                aria-label={`Select ${pair.symbol}`}
+                                style={{ cursor: 'pointer' }}
+                              />
+                            </td>
                             <td style={{ padding: '10px 12px' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', fontWeight: '700' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
