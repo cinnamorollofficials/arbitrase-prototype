@@ -834,14 +834,22 @@ app.get('/api/exchanges-db/:exchangeId/market-data', async (req, res) => {
       .filter((pair) => fiatSymbols.has(pair.quoteToken?.symbol))
       .sort((a, b) => a.symbol.localeCompare(b.symbol));
 
+    const normalizePriceTimestamp = (value, fallback = Date.now()) => {
+      const parsed = Number(value);
+      if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+      return parsed < 10000000000 ? parsed * 1000 : parsed;
+    };
+
     const fetchTokocryptoDepth = async (pair) => {
       const url = `https://www.tokocrypto.com/open/v1/market/depth?symbol=${encodeURIComponent(pair.symbol)}&limit=5`;
       const data = await fetchWithTimeout(url, {}, 5000);
+      const fetchedAt = Date.now();
       const bid = parseFloat(data?.data?.bids?.[0]?.[0]);
       const bidQty = parseFloat(data?.data?.bids?.[0]?.[1]);
       const ask = parseFloat(data?.data?.asks?.[0]?.[0]);
       const askQty = parseFloat(data?.data?.asks?.[0]?.[1]);
       const mid = Number.isFinite(bid) && Number.isFinite(ask) ? (bid + ask) / 2 : null;
+      const priceTimestamp = normalizePriceTimestamp(data?.data?.time || data?.data?.ts || data?.timestamp || data?.ts, fetchedAt);
 
       return {
         pairId: pair.id,
@@ -856,7 +864,8 @@ app.get('/api/exchanges-db/:exchangeId/market-data', async (req, res) => {
         nativeCurrency: pair.quoteToken?.symbol || null,
         status: Number.isFinite(bid) || Number.isFinite(ask) ? 'success' : 'empty',
         source: 'tokocrypto_depth',
-        timestamp: Date.now()
+        priceTimestamp,
+        timestamp: fetchedAt
       };
     };
 
@@ -871,6 +880,7 @@ app.get('/api/exchanges-db/:exchangeId/market-data', async (req, res) => {
 
     const fetchIndodaxTicker = async (pair) => {
       const data = await getIndodaxTickerAll();
+      const fetchedAt = Date.now();
       const tickers = data?.tickers || {};
       const tickerKey = pair.symbol.toLowerCase();
       const ticker = tickers[tickerKey];
@@ -878,6 +888,7 @@ app.get('/api/exchanges-db/:exchangeId/market-data', async (req, res) => {
       const bid = parseFloat(ticker?.buy);
       const ask = parseFloat(ticker?.sell);
       const last = parseFloat(ticker?.last);
+      const priceTimestamp = normalizePriceTimestamp(ticker?.server_time || ticker?.timestamp || data?.server_time, fetchedAt);
       const mid = Number.isFinite(bid) && Number.isFinite(ask)
         ? (bid + ask) / 2
         : (Number.isFinite(last) ? last : null);
@@ -895,7 +906,8 @@ app.get('/api/exchanges-db/:exchangeId/market-data', async (req, res) => {
         nativeCurrency: pair.quoteToken?.symbol || null,
         status: Number.isFinite(bid) || Number.isFinite(ask) || Number.isFinite(last) ? 'success' : 'empty',
         source: 'indodax_ticker_all',
-        timestamp: Date.now()
+        priceTimestamp,
+        timestamp: fetchedAt
       };
     };
 

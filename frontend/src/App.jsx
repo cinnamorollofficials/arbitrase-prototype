@@ -501,6 +501,8 @@ function App() {
   const [loadingExchangeMarketData, setLoadingExchangeMarketData] = useState(false);
   const [errorExchangeMarketData, setErrorExchangeMarketData] = useState(null);
   const [exchangeMarketRefreshCycle, setExchangeMarketRefreshCycle] = useState(0);
+  const [exchangeMarketSortConfig, setExchangeMarketSortConfig] = useState({ key: 'baseToken', direction: 'asc' });
+  const [exchangeMarketSearchQuery, setExchangeMarketSearchQuery] = useState('');
   const [isCompact, setIsCompact] = useUrlState('compact', 'false');
   const [opportunities, setOpportunities] = useState([]);
   const [selectedExchange, setSelectedExchange] = useUrlState('ex', 'Binance');
@@ -709,6 +711,19 @@ function App() {
   const getSortIndicator = (key) => {
     if (sortConfig.key !== key) return ' ↕';
     return sortConfig.direction === 'asc' ? ' ▲' : ' ▼';
+  };
+
+  const handleExchangeMarketSort = (key) => {
+    let direction = 'asc';
+    if (exchangeMarketSortConfig.key === key && exchangeMarketSortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setExchangeMarketSortConfig({ key, direction });
+  };
+
+  const getExchangeMarketSortIndicator = (key) => {
+    if (exchangeMarketSortConfig.key !== key) return ' ↕';
+    return exchangeMarketSortConfig.direction === 'asc' ? ' ▲' : ' ▼';
   };
 
   const handleExecuteTransaction = () => {
@@ -1168,6 +1183,102 @@ function App() {
       || null;
   };
 
+  const filteredExchangeFiatPairs = useMemo(() => {
+    const query = exchangeMarketSearchQuery.trim().toLowerCase();
+    if (!query) return selectedExchangeFiatPairs;
+
+    return selectedExchangeFiatPairs.filter((pair) => {
+      const market = getExchangeMarketRow(pair);
+      const searchableText = [
+        pair.symbol,
+        pair.baseToken?.symbol,
+        pair.baseToken?.name,
+        pair.quoteToken?.symbol,
+        pair.quoteToken?.name,
+        market?.status,
+        market?.source,
+        market?.nativeCurrency
+      ].filter(Boolean).join(' ').toLowerCase();
+
+      return searchableText.includes(query);
+    });
+  }, [selectedExchangeFiatPairs, exchangeMarketSearchQuery, exchangeMarketDataLookup]);
+
+  const sortedExchangeFiatPairs = useMemo(() => {
+    const direction = exchangeMarketSortConfig.direction === 'asc' ? 1 : -1;
+    const getMarket = (pair) => exchangeMarketDataLookup.get(`id:${pair.id}`)
+      || exchangeMarketDataLookup.get(`symbol:${pair.symbol}`)
+      || exchangeMarketDataLookup.get(`symbol:${normalizeMarketSymbol(pair.symbol)}`)
+      || null;
+
+    const getNumberValue = (value) => {
+      const numericValue = Number(value);
+      return Number.isFinite(numericValue) ? numericValue : null;
+    };
+
+    const compareNullableNumbers = (a, b) => {
+      if (a === null && b === null) return 0;
+      if (a === null) return 1;
+      if (b === null) return -1;
+      return a - b;
+    };
+
+    const compareStrings = (a, b) => String(a || '').localeCompare(String(b || ''), 'id-ID', {
+      numeric: true,
+      sensitivity: 'base'
+    });
+
+    return [...filteredExchangeFiatPairs].sort((a, b) => {
+      const marketA = getMarket(a);
+      const marketB = getMarket(b);
+      let result = 0;
+
+      switch (exchangeMarketSortConfig.key) {
+        case 'baseToken':
+          result = compareStrings(a.baseToken?.symbol, b.baseToken?.symbol)
+            || compareStrings(a.baseToken?.name, b.baseToken?.name)
+            || compareStrings(a.symbol, b.symbol);
+          break;
+        case 'last':
+          result = compareNullableNumbers(
+            getNumberValue(marketA?.mid ?? marketA?.last ?? marketA?.price),
+            getNumberValue(marketB?.mid ?? marketB?.last ?? marketB?.price)
+          );
+          break;
+        case 'bid':
+          result = compareNullableNumbers(
+            getNumberValue(marketA?.bid ?? marketA?.nativeBid),
+            getNumberValue(marketB?.bid ?? marketB?.nativeBid)
+          );
+          break;
+        case 'ask':
+          result = compareNullableNumbers(
+            getNumberValue(marketA?.ask ?? marketA?.nativeAsk),
+            getNumberValue(marketB?.ask ?? marketB?.nativeAsk)
+          );
+          break;
+        case 'quantity':
+          result = compareNullableNumbers(getNumberValue(marketA?.bidQty), getNumberValue(marketB?.bidQty))
+            || compareNullableNumbers(getNumberValue(marketA?.askQty), getNumberValue(marketB?.askQty));
+          break;
+        case 'timestamp':
+          result = compareNullableNumbers(
+            getNumberValue(marketA?.priceTimestamp || marketA?.timestamp),
+            getNumberValue(marketB?.priceTimestamp || marketB?.timestamp)
+          );
+          break;
+        case 'status':
+          result = compareStrings(marketA?.status || 'pending', marketB?.status || 'pending');
+          break;
+        default:
+          result = compareStrings(a.symbol, b.symbol);
+          break;
+      }
+
+      return result * direction;
+    });
+  }, [filteredExchangeFiatPairs, exchangeMarketDataLookup, exchangeMarketSortConfig]);
+
   const formatNativeMarketPrice = (value, currency = 'IDR') => {
     if (value === null || value === undefined || Number.isNaN(Number(value))) return '-';
     const numericValue = Number(value);
@@ -1183,6 +1294,20 @@ function App() {
       minimumFractionDigits: numericValue < 1 ? 4 : 2,
       maximumFractionDigits: numericValue < 1 ? 8 : 6
     })}`;
+  };
+
+  const formatMarketPriceTimestamp = (timestamp) => {
+    if (!timestamp) return '-';
+    const date = new Date(timestamp);
+    if (Number.isNaN(date.getTime())) return '-';
+
+    return date.toLocaleString('id-ID', {
+      day: '2-digit',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
   };
 
   return (
@@ -4018,8 +4143,25 @@ function App() {
                     Pair Token / Fiat dari Database
                   </h4>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <input
+                      type="text"
+                      value={exchangeMarketSearchQuery}
+                      onChange={(e) => setExchangeMarketSearchQuery(e.target.value)}
+                      placeholder="Search pair/token/status..."
+                      style={{
+                        width: '220px',
+                        maxWidth: '42vw',
+                        padding: '7px 10px',
+                        borderRadius: '8px',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        backgroundColor: 'rgba(255,255,255,0.04)',
+                        color: '#ffffff',
+                        fontSize: '12px',
+                        outline: 'none'
+                      }}
+                    />
                     <span className="badge" style={{ backgroundColor: 'rgba(16,185,129,0.12)', color: '#10b981', fontWeight: '800' }}>
-                      {selectedExchangeFiatPairs.length} pair
+                      {filteredExchangeFiatPairs.length}/{selectedExchangeFiatPairs.length} pair
                     </span>
                     <div
                       key={exchangeMarketRefreshCycle}
@@ -4065,20 +4207,6 @@ function App() {
                         10s
                       </span>
                     </div>
-                    <button
-                      onClick={() => fetchExchangeMarketData(selectedExchangeDb)}
-                      disabled={loadingExchangeMarketData}
-                      className="tab-btn"
-                      style={{
-                        padding: '5px 10px',
-                        fontSize: '11px',
-                        backgroundColor: 'rgba(255,255,255,0.05)',
-                        color: '#ffffff',
-                        border: '1px solid rgba(255,255,255,0.08)'
-                      }}
-                    >
-                      {loadingExchangeMarketData ? 'Memuat...' : 'Refresh Harga'}
-                    </button>
                   </div>
                 </div>
                 {errorExchangeMarketData && (
@@ -4090,40 +4218,60 @@ function App() {
                   <div style={{ padding: '14px', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', color: 'var(--md-sys-color-on-surface-variant)', fontSize: '12px', backgroundColor: 'rgba(255,255,255,0.02)' }}>
                     Tidak ada pair token / fiat yang terdaftar di database untuk bursa ini.
                   </div>
+                ) : filteredExchangeFiatPairs.length === 0 ? (
+                  <div style={{ padding: '14px', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', color: 'var(--md-sys-color-on-surface-variant)', fontSize: '12px', backgroundColor: 'rgba(255,255,255,0.02)' }}>
+                    Tidak ada pair yang cocok dengan pencarian.
+                  </div>
                 ) : (
                   <div style={{ overflowX: 'auto', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px' }}>
                     <table className={compactMode ? 'compact-table' : ''} style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
                       <thead>
                         <tr style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                          <th style={{ padding: '10px 12px', color: 'var(--md-sys-color-on-surface-variant)' }}>Pair</th>
-                          <th style={{ padding: '10px 12px', color: 'var(--md-sys-color-on-surface-variant)' }}>Base Token</th>
-                          <th style={{ padding: '10px 12px', color: 'var(--md-sys-color-on-surface-variant)', textAlign: 'right' }}>Last / Mid</th>
-                          <th style={{ padding: '10px 12px', color: 'var(--md-sys-color-on-surface-variant)', textAlign: 'right' }}>Bid</th>
-                          <th style={{ padding: '10px 12px', color: 'var(--md-sys-color-on-surface-variant)', textAlign: 'right' }}>Ask</th>
-                          <th style={{ padding: '10px 12px', color: 'var(--md-sys-color-on-surface-variant)', textAlign: 'right' }}>Bid / Ask Qty</th>
-                          <th style={{ padding: '10px 12px', color: 'var(--md-sys-color-on-surface-variant)', textAlign: 'right' }}>Status</th>
+                          <th style={{ padding: '10px 12px', color: 'var(--md-sys-color-on-surface-variant)', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleExchangeMarketSort('baseToken')}>Base Token {getExchangeMarketSortIndicator('baseToken')}</th>
+                          <th style={{ padding: '10px 12px', color: 'var(--md-sys-color-on-surface-variant)', textAlign: 'right', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleExchangeMarketSort('last')}>Last / Mid {getExchangeMarketSortIndicator('last')}</th>
+                          <th style={{ padding: '10px 12px', color: 'var(--md-sys-color-on-surface-variant)', textAlign: 'right', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleExchangeMarketSort('bid')}>Bid {getExchangeMarketSortIndicator('bid')}</th>
+                          <th style={{ padding: '10px 12px', color: 'var(--md-sys-color-on-surface-variant)', textAlign: 'right', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleExchangeMarketSort('ask')}>Ask {getExchangeMarketSortIndicator('ask')}</th>
+                          <th style={{ padding: '10px 12px', color: 'var(--md-sys-color-on-surface-variant)', textAlign: 'right', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleExchangeMarketSort('quantity')}>Bid / Ask Qty {getExchangeMarketSortIndicator('quantity')}</th>
+                          <th style={{ padding: '10px 12px', color: 'var(--md-sys-color-on-surface-variant)', textAlign: 'right', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleExchangeMarketSort('timestamp')}>Waktu Harga {getExchangeMarketSortIndicator('timestamp')}</th>
+                          <th style={{ padding: '10px 12px', color: 'var(--md-sys-color-on-surface-variant)', textAlign: 'right', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleExchangeMarketSort('status')}>Status {getExchangeMarketSortIndicator('status')}</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {selectedExchangeFiatPairs.map((pair) => {
+                        {sortedExchangeFiatPairs.map((pair) => {
                           const market = getExchangeMarketRow(pair);
                           const quoteSymbol = market?.nativeCurrency || pair.quoteToken?.symbol || 'IDR';
                           const isLive = market?.status === 'success';
                           const lastOrMid = market?.mid ?? market?.last ?? market?.price ?? null;
                           const bid = market?.bid ?? market?.nativeBid ?? null;
                           const ask = market?.ask ?? market?.nativeAsk ?? null;
+                          const priceTimestamp = market?.priceTimestamp || market?.timestamp || null;
 
                           return (
                           <tr key={pair.id || pair.symbol} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                            <td style={{ padding: '10px 12px', fontWeight: '800', color: '#ffffff', fontFamily: 'Consolas, Monaco, monospace' }}>
-                              {pair.symbol}
-                            </td>
                             <td style={{ padding: '10px 12px' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700' }}>
-                                <CoinIcon symbol={pair.baseToken?.symbol} size={18} />
-                                <span>{pair.baseToken?.symbol || '-'}</span>
-                                <span style={{ color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '500', fontSize: '11px' }}>
-                                  {pair.baseToken?.name || ''}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', fontWeight: '700' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <CoinIcon symbol={pair.baseToken?.symbol} size={18} />
+                                  <span>{pair.baseToken?.symbol || '-'}</span>
+                                  <span style={{ color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '500', fontSize: '11px' }}>
+                                    {pair.baseToken?.name || ''}
+                                  </span>
+                                </div>
+                                <span style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  padding: '2px 7px',
+                                  borderRadius: '999px',
+                                  border: '1px solid rgba(255,255,255,0.08)',
+                                  backgroundColor: 'rgba(255,255,255,0.05)',
+                                  color: '#ffffff',
+                                  fontFamily: 'Consolas, Monaco, monospace',
+                                  fontSize: '10px',
+                                  fontWeight: '800',
+                                  lineHeight: 1.4,
+                                  whiteSpace: 'nowrap'
+                                }}>
+                                  {pair.symbol}
                                 </span>
                               </div>
                             </td>
@@ -4138,6 +4286,9 @@ function App() {
                             </td>
                             <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--md-sys-color-on-surface-variant)', fontSize: '11px' }}>
                               {market ? `${market.bidQty ?? '-'} / ${market.askQty ?? '-'}` : '-'}
+                            </td>
+                            <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--md-sys-color-on-surface-variant)', fontSize: '11px', whiteSpace: 'nowrap' }}>
+                              {loadingExchangeMarketData && !market ? '...' : formatMarketPriceTimestamp(priceTimestamp)}
                             </td>
                             <td style={{ padding: '10px 12px', textAlign: 'right' }}>
                               <span className="badge" style={{
