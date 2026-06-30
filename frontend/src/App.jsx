@@ -1,373 +1,20 @@
-import React, { useState, useEffect, useMemo } from 'react';
-
-const getHeaderGradient = (symbol) => {
-  switch (symbol) {
-    case 'SOL':
-      return 'linear-gradient(135deg, #14F195, #9945FF)';
-    case 'ETH':
-      return 'linear-gradient(135deg, #627EEA, #C0CEFF)';
-    case 'PEPE':
-      return 'linear-gradient(135deg, #4CAF50, #81C784)';
-    case 'BONK':
-      return 'linear-gradient(135deg, #F57C00, #FFB74D)';
-    case 'WIF':
-      return 'linear-gradient(135deg, #9E9E9E, #E0E0E0)';
-    case 'FLOKI':
-      return 'linear-gradient(135deg, #FFB300, #FFE082)';
-    case 'SHIB':
-      return 'linear-gradient(135deg, #FF5722, #FFAB91)';
-    case 'JUP':
-      return 'linear-gradient(135deg, #00B0FF, #00E5FF)';
-    case 'W':
-      return 'linear-gradient(135deg, #9C27B0, #E040FB)';
-    case 'RENDER':
-      return 'linear-gradient(135deg, #FF007A, #FF7BB8)';
-    case 'POPCAT':
-      return 'linear-gradient(135deg, #78909C, #B0BEC5)';
-    case 'MEW':
-      return 'linear-gradient(135deg, #00ACC1, #80DEEA)';
-    case 'ENA':
-      return 'linear-gradient(135deg, #212121, #757575)';
-    case 'ONDO':
-      return 'linear-gradient(135deg, #26A69A, #80CBC4)';
-    default:
-      return 'linear-gradient(135deg, #a2c9ff, #dcbce2)';
-  }
-};
-
-const formatRupiah = (usdVal, rate) => {
-  if (usdVal === null || usdVal === undefined || isNaN(usdVal)) return '';
-  const idrVal = usdVal * rate;
-  if (idrVal < 0.01) {
-    return 'Rp ' + idrVal.toLocaleString('id-ID', { minimumFractionDigits: 4, maximumFractionDigits: 6 });
-  } else if (idrVal < 10) {
-    return 'Rp ' + idrVal.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
-  } else {
-    return 'Rp ' + idrVal.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-  }
-};
-
-const formatCapital = (usdVal) => {
-  if (usdVal === null || usdVal === undefined || isNaN(usdVal)) return '-';
-  const val = parseFloat(usdVal);
-  if (val >= 1e9) {
-    return `$${(val / 1e9).toFixed(1)}B USD`;
-  } else if (val >= 1e6) {
-    return `$${(val / 1e6).toFixed(1)}M USD`;
-  } else {
-    return `$${val.toLocaleString('en-US')}`;
-  }
-};
-
-const getCapitalTier = (usdVal) => {
-  if (usdVal === null || usdVal === undefined || isNaN(usdVal)) return { label: 'Unknown TVL', color: '#78909c' };
-  const val = parseFloat(usdVal);
-  if (val >= 10e9) {
-    return { label: 'Tier 1 Reserves', color: '#10b981' };
-  } else if (val >= 1e9) {
-    return { label: 'Tier 2 Reserves', color: '#3b82f6' };
-  } else if (val >= 100e6) {
-    return { label: 'Tier 3 Reserves', color: '#f59e0b' };
-  } else {
-    return { label: 'Tier 4 Reserves', color: '#ef5350' };
-  }
-};
-
-const getRatingStatus = (ratingVal) => {
-  if (ratingVal === null || ratingVal === undefined || isNaN(ratingVal)) return { label: 'Unrated', color: '#78909c' };
-  const val = parseFloat(ratingVal);
-  if (val >= 9.0) {
-    return { label: 'Highly Credible', color: '#10b981' };
-  } else if (val >= 8.0) {
-    return { label: 'Credible', color: '#3b82f6' };
-  } else if (val >= 7.0) {
-    return { label: 'Moderate', color: '#f59e0b' };
-  } else {
-    return { label: 'Risky / Low Trust', color: '#ef5350' };
-  }
-};
-
-const defaultSymbols = ['USDT', 'SOL', 'ETH'];
-
-const COIN_ICONS = {
-  USDC: 'https://assets.coingecko.com/coins/images/6319/small/usdc.png',
-  USDT: 'https://assets.coingecko.com/coins/images/325/small/Tether.png',
-  SOL: 'https://assets.coingecko.com/coins/images/4128/small/solana.png',
-  ETH: 'https://assets.coingecko.com/coins/images/279/small/ethereum.png',
-  BNB: 'https://assets.coingecko.com/coins/images/825/small/bnb-icon2_2x.png',
-  PEPE: 'https://assets.coingecko.com/coins/images/29850/small/pepe-token.jpeg',
-  BONK: 'https://assets.coingecko.com/coins/images/28600/small/bonk.jpg',
-  POPCAT: 'https://assets.coingecko.com/coins/images/36766/small/popcat.png',
-  RENDER: 'https://assets.coingecko.com/coins/images/11636/small/rndr.png',
-  W: 'https://assets.coingecko.com/coins/images/35514/small/wormhole.png',
-  FLOKI: 'https://assets.coingecko.com/coins/images/16746/small/FLOKI.png',
-  NEIRO: 'https://assets.coingecko.com/coins/images/39392/small/NEIRO.png',
-  MOG: 'https://assets.coingecko.com/coins/images/31059/small/mog.png',
-  GIGA: 'https://assets.coingecko.com/coins/images/36477/small/gigachad.png',
-  TURBO: 'https://assets.coingecko.com/coins/images/29445/small/turbo.png',
-  FWOG: 'https://assets.coingecko.com/coins/images/39272/small/fwog.png',
-  BRETT: 'https://assets.coingecko.com/coins/images/36310/small/brett.png',
-  FDUSD: 'https://assets.coingecko.com/coins/images/31079/small/firstdigital.png',
-  USDE: 'https://assets.coingecko.com/coins/images/33613/small/USDE.png',
-  PYUSD: 'https://assets.coingecko.com/coins/images/31212/small/PYUSD.png',
-  LTC: 'https://assets.coingecko.com/coins/images/2/small/litecoin.png',
-  XRP: 'https://assets.coingecko.com/coins/images/44/small/xrp.png',
-  ADA: 'https://assets.coingecko.com/coins/images/975/small/cardano.png',
-  AVAX: 'https://assets.coingecko.com/coins/images/12559/small/Avalanche_Circle_RedWhite_Trans.png',
-  DOT: 'https://assets.coingecko.com/coins/images/12171/small/polkadot.png',
-  LINK: 'https://assets.coingecko.com/coins/images/877/small/chainlink-link.png',
-  NEAR: 'https://assets.coingecko.com/coins/images/10365/small/near.png',
-  APT: 'https://assets.coingecko.com/coins/images/26455/small/aptos_round.png',
-  SUI: 'https://assets.coingecko.com/coins/images/26375/small/sui_asset.png',
-  FET: 'https://assets.coingecko.com/coins/images/5681/small/Fetch.png',
-};
-
-const COIN_META_LOOKUP = {
-  USDC: { category: 'STABLE' },
-  USDT: { category: 'STABLE' },
-  SOL: { category: 'FLUKTUATIF' },
-  ETH: { category: 'FLUKTUATIF' },
-  BNB: { category: 'FLUKTUATIF' },
-  PEPE: { category: 'MICIN' },
-  BONK: { category: 'MICIN' },
-  POPCAT: { category: 'MICIN' },
-  RENDER: { category: 'FLUKTUATIF' },
-  W: { category: 'FLUKTUATIF' },
-  FLOKI: { category: 'MICIN' },
-  NEIRO: { category: 'MICIN' },
-  MOG: { category: 'MICIN' },
-  GIGA: { category: 'MICIN' },
-  TURBO: { category: 'FLUKTUATIF' },
-  FWOG: { category: 'MICIN' },
-  BRETT: { category: 'FLUKTUATIF' },
-  FDUSD: { category: 'STABLE' },
-  USDE: { category: 'STABLE' },
-  PYUSD: { category: 'STABLE' },
-  LTC: { category: 'FLUKTUATIF' },
-  XRP: { category: 'FLUKTUATIF' },
-  ADA: { category: 'FLUKTUATIF' },
-  AVAX: { category: 'FLUKTUATIF' },
-  DOT: { category: 'FLUKTUATIF' },
-  LINK: { category: 'FLUKTUATIF' },
-  NEAR: { category: 'FLUKTUATIF' },
-  APT: { category: 'FLUKTUATIF' },
-  SUI: { category: 'FLUKTUATIF' },
-  FET: { category: 'FLUKTUATIF' },
-};
-
-const EXCHANGE_ICONS = {
-  // CEX
-  'Binance': 'https://assets.coingecko.com/markets/images/52/small/binance.jpg',
-  'Bybit': 'https://assets.coingecko.com/markets/images/698/small/bybit_spot.png',
-  'Gate.io': 'https://assets.coingecko.com/markets/images/60/small/gate_io_logo1.jpg',
-  'OKX': 'https://assets.coingecko.com/markets/images/96/small/WeChat_Image_20220117220452.png',
-  'Kraken': 'https://assets.coingecko.com/markets/images/29/small/kraken.jpg',
-  'KuCoin': 'https://assets.coingecko.com/markets/images/61/small/kucoin.png',
-  'Coinbase': 'https://assets.coingecko.com/markets/images/23/small/Coinbase_Coin_Primary.png',
-  'HTX': 'https://assets.coingecko.com/markets/images/25/small/huobi.jpg',
-  'Indodax': 'https://coin-images.coingecko.com/markets/images/3/large/logogram-Indodax-new-_JPG_format.jpg',
-  'Tokocrypto': 'https://coin-images.coingecko.com/markets/images/635/large/tokocrypto.png',
-  'Reku': 'https://coin-images.coingecko.com/markets/images/1029/large/reku.png',
-  // DEX
-  'Raydium': 'https://assets.coingecko.com/coins/images/13928/small/PSigc4ie_400x400.jpg',
-  'Uniswap': 'https://assets.coingecko.com/coins/images/12504/small/uniswap-uni.png',
-  'PancakeSwap': 'https://assets.coingecko.com/coins/images/12632/small/pancakeswap-cake-logo.png',
-  'Orca': 'https://assets.coingecko.com/coins/images/17687/small/sunset-orca-icon.png',
-  'Curve': 'https://assets.coingecko.com/coins/images/12124/small/Curve.png',
-  'SushiSwap': 'https://assets.coingecko.com/coins/images/12271/small/512x512_Logo_no_chop.png',
-  'dYdX': 'https://assets.coingecko.com/coins/images/17500/small/hjnIm9bV.jpg',
-  'Jupiter': 'https://assets.coingecko.com/coins/images/34188/small/jup.png',
-};
-
-const SYMBOL_COLORS = {
-  USDC: '#2775CA', USDT: '#26A17B', SOL: '#9945FF', ETH: '#627EEA',
-  BNB: '#F0B90B', PEPE: '#4CAF50', BONK: '#F57C00', POPCAT: '#78909C',
-  RENDER: '#FF007A', W: '#9C27B0', FLOKI: '#FFB300', NEIRO: '#FF6F00',
-  MOG: '#E91E63', GIGA: '#3F51B5', TURBO: '#00BCD4', FWOG: '#388E3C',
-  BRETT: '#5D4037', FDUSD: '#1565C0', USDE: '#37474F', PYUSD: '#1976D2',
-};
-
-const EXCHANGES_LIST = [
-  { name: 'Binance', type: 'CEX', local: false },
-  { name: 'Bybit', type: 'CEX', local: false },
-  { name: 'Gate.io', type: 'CEX', local: false },
-  { name: 'OKX', type: 'CEX', local: false },
-  { name: 'Kraken', type: 'CEX', local: false },
-  { name: 'KuCoin', type: 'CEX', local: false },
-  { name: 'Coinbase', type: 'CEX', local: false },
-  { name: 'HTX', type: 'CEX', local: false },
-  { name: 'Bitget', type: 'CEX', local: false },
-  { name: 'MEXC', type: 'CEX', local: false },
-  { name: 'Indodax', type: 'CEX', local: true },
-  { name: 'Tokocrypto', type: 'CEX', local: true },
-  { name: 'Reku', type: 'CEX', local: true },
-  { name: 'Uniswap V3 (Ethereum)', type: 'DEX', local: false },
-  { name: 'PancakeSwap V3 (BSC)', type: 'DEX', local: false },
-  { name: 'Raydium (Solana)', type: 'DEX', local: false },
-  { name: 'Orca (Solana)', type: 'DEX', local: false }
-];
-
-const EXCHANGE_API_INFO = {
-  Binance: {
-    apis: 'REST API v3, Spot WebSocket Streams, Orderbook API',
-    latency: '45ms',
-    unlisted: ['BTC', 'ETH', 'BNB', 'ADA', 'XRP', 'DOGE', 'MATIC', 'DOT', 'TRX', 'LINK']
-  },
-  Bybit: {
-    apis: 'V5 REST Market, V5 WebSocket Spot, Private Order API',
-    latency: '62ms',
-    unlisted: ['BTC', 'ETH', 'DOGE', 'TON', 'XRP', 'SHIB', 'ADA', 'AVAX', 'DOT', 'LINK']
-  },
-  'Gate.io': {
-    apis: 'REST API v4, Spot WebSocket v4, Trading API v4',
-    latency: '110ms',
-    unlisted: ['BTC', 'ETH', 'DOGE', 'TON', 'XRP', 'SHIB', 'ADA', 'AVAX', 'DOT', 'LINK']
-  },
-  OKX: {
-    apis: 'REST API v5, Spot WS Public, WS Private Order',
-    latency: '58ms',
-    unlisted: ['BTC', 'ETH', 'BNB', 'SOL', 'ADA', 'XRP', 'DOGE', 'MATIC', 'DOT', 'TRX']
-  },
-  Kraken: {
-    apis: 'REST v1 Spot, WebSocket Spot v2',
-    latency: '95ms',
-    unlisted: ['BTC', 'ETH', 'DOGE', 'XRP', 'ADA', 'AVAX', 'DOT', 'LINK', 'MATIC', 'ATOM']
-  },
-  KuCoin: {
-    apis: 'REST Spot API v1, WebSocket Public feeds',
-    latency: '105ms',
-    unlisted: ['BTC', 'ETH', 'DOGE', 'SHIB', 'XRP', 'ADA', 'AVAX', 'DOT', 'LINK', 'TRX']
-  },
-  Coinbase: {
-    apis: 'Advanced Trade REST, WebSocket Feed v3',
-    latency: '78ms',
-    unlisted: ['BTC', 'ETH', 'ADA', 'XRP', 'DOGE', 'SOL', 'DOT', 'LINK', 'AVAX', 'MATIC']
-  },
-  HTX: {
-    apis: 'REST V1 Spot, WebSocket Spot feeds',
-    latency: '128ms',
-    unlisted: ['BTC', 'ETH', 'DOGE', 'SHIB', 'TRX', 'XRP', 'ADA', 'AVAX', 'DOT', 'LINK']
-  },
-  Indodax: {
-    apis: 'V2 Public API (Ticker/Orderbook), Private API (Rupiah Transact)',
-    latency: '24ms',
-    unlisted: ['BTC', 'ETH', 'DOGE', 'TRX', 'ADA', 'XRP', 'LTC', 'FIL', 'DOT', 'LINK']
-  },
-  Tokocrypto: {
-    apis: 'Tokocrypto Open API v1 (Binance Cloud), Spot WS',
-    latency: '30ms',
-    unlisted: ['BTC', 'ETH', 'BNB', 'DOGE', 'TRX', 'XRP', 'ADA', 'LTC', 'DOT', 'LINK']
-  },
-  Reku: {
-    apis: 'Reku Public API v1, Private Account API',
-    latency: '34ms',
-    unlisted: ['BTC', 'ETH', 'DOGE', 'ADA', 'XRP', 'LTC', 'DOT', 'LINK', 'UNI', 'ALGO']
-  },
-  Bitget: {
-    apis: 'REST Spot v2, WebSocket Spot Public',
-    latency: '78ms',
-    unlisted: ['BTC', 'ETH', 'BNB', 'ADA', 'XRP', 'DOGE', 'MATIC', 'DOT', 'TRX', 'LINK']
-  },
-  MEXC: {
-    apis: 'REST Spot v3, WebSocket Market Streams',
-    latency: '92ms',
-    unlisted: ['BTC', 'ETH', 'BNB', 'ADA', 'XRP', 'DOGE', 'MATIC', 'DOT', 'TRX', 'LINK']
-  },
-  'Uniswap V3 (Ethereum)': {
-    apis: 'Ethereum JSON-RPC Query, Uniswap V3 Smart Contract Router',
-    latency: '15ms (Ethereum RPC)',
-    unlisted: ['WBTC', 'DAI', 'UNI', 'LINK', 'AAVE', 'MKR', 'GRT', 'LDO', 'CRV', 'COMP']
-  },
-  'PancakeSwap V3 (BSC)': {
-    apis: 'BSC JSON-RPC Router, Pancake V3 Smart Contracts',
-    latency: '18ms (BSC RPC)',
-    unlisted: ['CAKE', 'BUSD', 'WBNB', 'DOT', 'XRP', 'ADA', 'LINK', 'LTC', 'DOGE', 'TRX']
-  },
-  'Raydium (Solana)': {
-    apis: 'Solana RPC JSON-RPC Node, Raydium AMM Contract Router',
-    latency: '22ms (Solana RPC)',
-    unlisted: ['PYTH', 'JITO', 'BOME', 'SLERF', 'WIF', 'BONK', 'POPCAT', 'MEW', 'JUP', 'W']
-  },
-  'Orca (Solana)': {
-    apis: 'Solana RPC JSON-RPC Node, Orca Whirlpool Smart Contracts',
-    latency: '24ms (Solana RPC)',
-    unlisted: ['PYTH', 'JITO', 'BOME', 'SLERF', 'WIF', 'BONK', 'POPCAT', 'MEW', 'JUP', 'W']
-  }
-};
-
-function CoinIcon({ symbol, size = 28, round = true }) {
-  const [failed, setFailed] = React.useState(false);
-  const src = COIN_ICONS[symbol];
-  const color = SYMBOL_COLORS[symbol] || '#607D8B';
-  const radius = round ? '50%' : '6px';
-  const style = { width: size, height: size, borderRadius: radius, objectFit: 'cover', border: '1px solid rgba(255,255,255,0.1)', flexShrink: 0 };
-
-  if (!src || failed) {
-    return (
-      <div style={{ ...style, backgroundColor: color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.42, fontWeight: '800', color: '#fff', letterSpacing: '-0.5px' }}>
-        {(symbol || '?').slice(0, 2)}
-      </div>
-    );
-  }
-  return <img src={src} alt={symbol} onError={() => setFailed(true)} style={style} />;
-}
-
-function ExchangeIcon({ name, size = 28 }) {
-  const [failed, setFailed] = React.useState(false);
-  const src = EXCHANGE_ICONS[name];
-  const style = { width: size, height: size, borderRadius: '6px', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.1)', flexShrink: 0 };
-
-  if (!src || failed) {
-    return (
-      <div style={{ ...style, background: 'linear-gradient(135deg, #455a64, #607d8b)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: size * 0.38, fontWeight: '800', color: '#fff' }}>
-        {(name || '?').slice(0, 2).toUpperCase()}
-      </div>
-    );
-  }
-  return <img src={src} alt={name} onError={() => setFailed(true)} style={style} />;
-}
-
-const TX_STEPS = [
-  { label: 'Inisiasi', desc: 'Antrean Terbuka' },
-  { label: 'Cek Saldo', desc: 'Verifikasi Modal' },
-  { label: 'Eksekusi Beli', desc: 'Beli di Bursa Murah' },
-  { label: 'Kirim Aset', desc: 'Transfer Lintas Bursa' },
-  { label: 'Eksekusi Jual', desc: 'Jual di Bursa Mahal' },
-  { label: 'Selesai', desc: 'Profit Masuk Dompet' }
-];
-
-// ── URL State Hook ──────────────────────────────────────────────────────────
-function useUrlState(key, defaultValue) {
-  const getFromUrl = () => {
-    const params = new URLSearchParams(window.location.search);
-    const raw = params.get(key);
-    if (raw === null) return defaultValue;
-    // attempt to coerce type to match default
-    if (typeof defaultValue === 'number') return isNaN(Number(raw)) ? defaultValue : Number(raw);
-    return raw;
-  };
-
-  const [state, _setState] = useState(getFromUrl);
-
-  const setState = (valueOrFn) => {
-    _setState(prev => {
-      const next = typeof valueOrFn === 'function' ? valueOrFn(prev) : valueOrFn;
-      const params = new URLSearchParams(window.location.search);
-      if (next === defaultValue || next === null || next === undefined) {
-        params.delete(key);
-      } else {
-        params.set(key, String(next));
-      }
-      const newUrl = params.toString() ? `${window.location.pathname}?${params}` : window.location.pathname;
-      window.history.replaceState(null, '', newUrl);
-      return next;
-    });
-  };
-
-  return [state, setState];
-}
-// ─────────────────────────────────────────────────────────────────────────────
-
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import CoinIcon from './components/CoinIcon';
+import ExchangeIcon from './components/ExchangeIcon';
+import { defaultSymbols, COIN_ICONS, COIN_META_LOOKUP, EXCHANGE_API_INFO } from './constants/marketData';
+import { TX_STEPS } from './constants/transactions';
+import useUrlState from './hooks/useUrlState';
+import useAgentSimulator from './hooks/useAgentSimulator';
+import useBalances from './hooks/useBalances';
+import useTransactions from './hooks/useTransactions';
+import { formatRupiah, formatCapital, getCapitalTier, getHeaderGradient, getRatingStatus } from './utils/formatters';
+import { escapeCsvValue } from './utils/csv';
+import { formatMarketPriceTimestamp, formatNativeMarketPrice, normalizeMarketSymbol } from './utils/market';
+import { getUsdIdrRate } from './api/exchangeRates';
+import { getExchangeDetails as fetchExchangeDetailsApi, getExchangeMarketData as fetchExchangeMarketDataApi, getExchangesDb as fetchExchangesDbApi } from './api/exchanges';
+import { getOpportunities, getPrices } from './api/prices';
+import { getRawPrices } from './api/rawPrices';
+import { getTokensDb as fetchTokensDbApi } from './api/tokens';
 
 function App() {
   const [prices, setPrices] = useState([]);
@@ -378,8 +25,8 @@ function App() {
   const [loadingExchangesDb, setLoadingExchangesDb] = useState(false);
   const [errorExchangesDb, setErrorExchangesDb] = useState(null);
   const [tokensDb, setTokensDb] = useState([]);
-  const [loadingTokensDb, setLoadingTokensDb] = useState(false);
-  const [errorTokensDb, setErrorTokensDb] = useState(null);
+  const [, setLoadingTokensDb] = useState(false);
+  const [, setErrorTokensDb] = useState(null);
   const tokensDbRef = React.useRef([]);
 
   // Redis Raw Price Modal state
@@ -399,14 +46,7 @@ function App() {
     setShowRawModal(true);
 
     try {
-      const response = await fetch(`http://localhost:5001/api/raw-prices?exchange=${encodeURIComponent(exchangeName)}&symbol=${encodeURIComponent(symbol)}`);
-      if (!response.ok) {
-        if (response.status === 503) {
-          throw new Error('Redis tidak aktif atau gagal terhubung di backend.');
-        }
-        throw new Error(`Gagal memuat data mentah dari Redis (HTTP ${response.status})`);
-      }
-      const data = await response.json();
+      const data = await getRawPrices(exchangeName, symbol);
       setRawModalData(data);
     } catch (err) {
       console.error('Error fetching raw price:', err);
@@ -424,11 +64,7 @@ function App() {
     setLoadingExchangesDb(true);
     setErrorExchangesDb(null);
     try {
-      const response = await fetch('http://localhost:5001/api/exchanges-db');
-      if (!response.ok) {
-        throw new Error(`HTTP error ${response.status}`);
-      }
-      const data = await response.json();
+      const data = await fetchExchangesDbApi();
       setExchangesDb(data.exchanges || []);
     } catch (err) {
       console.error('Failed to fetch exchanges from DB:', err);
@@ -442,11 +78,7 @@ function App() {
     setLoadingTokensDb(true);
     setErrorTokensDb(null);
     try {
-      const response = await fetch('http://localhost:5001/api/tokens-db');
-      if (!response.ok) {
-        throw new Error(`HTTP error ${response.status}`);
-      }
-      const data = await response.json();
+      const data = await fetchTokensDbApi();
       const fetchedTokens = data.tokens || [];
       setTokensDb(fetchedTokens);
       if (fetchedTokens.length > 0) {
@@ -463,12 +95,9 @@ function App() {
   useEffect(() => {
     const fetchExchangeRate = async () => {
       try {
-        const res = await fetch('https://open.er-api.com/v6/latest/USD');
-        if (res.ok) {
-          const data = await res.json();
-          if (data.rates && data.rates.IDR) {
-            setUsdToIdrRate(data.rates.IDR);
-          }
+        const rate = await getUsdIdrRate();
+        if (rate) {
+          setUsdToIdrRate(rate);
         }
       } catch (err) {
         console.error('Failed to fetch USD/IDR rate:', err);
@@ -516,54 +145,23 @@ function App() {
   const [searchQueryPortfolio, setSearchQueryPortfolio] = useState('');
   const [searchQueryModalTokens, setSearchQueryModalTokens] = useState('');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [transactions, setTransactions] = useState(() => {
-    const saved = localStorage.getItem('arbitrage_transactions');
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [expandedTxId, setExpandedTxId] = useState(null);
+  const { transactions, setTransactions, expandedTxId, setExpandedTxId } = useTransactions();
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [hoveredExchange, setHoveredExchange] = useState(null);
-  const [exchangeBalances, setExchangeBalances] = useState(() => {
-    const defaultBalances = {
-      Binance: { USDC: 15420.50, ETH: 0.45, PEPE: 12500000, status: 'Online', latency: '52ms', type: 'CEX', network: 'Ethereum / BSC / Solana', apiStatus: 'Terkoneksi', fee: 'Spot: 0.1% | Penarikan: $1.0' },
-      Bybit: { USDC: 10200.00, SOL: 12.40, BONK: 5600000, status: 'Online', latency: '84ms', type: 'CEX', network: 'Ethereum / BSC / Solana', apiStatus: 'Terkoneksi', fee: 'Spot: 0.1% | Penarikan: $1.0' },
-      'Gate.io': { USDC: 4150.25, RENDER: 12.0, POPCAT: 85000, status: 'Online', latency: '120ms', type: 'CEX', network: 'Ethereum / BSC / Solana', apiStatus: 'Terkoneksi', fee: 'Spot: 0.2% | Penarikan: $1.5' },
-      OKX: { USDC: 8750.00, SOL: 8.20, ETH: 0.30, BNB: 1.5, status: 'Online', latency: '65ms', type: 'CEX', network: 'Ethereum / BSC / Solana / TRON', apiStatus: 'Terkoneksi', fee: 'Spot: 0.08% | Penarikan: $1.0' },
-      Kraken: { USDC: 6200.00, ETH: 0.80, BNB: 0.50, status: 'Online', latency: '98ms', type: 'CEX', network: 'Ethereum / Bitcoin / Solana', apiStatus: 'Terkoneksi', fee: 'Spot: 0.16% | Penarikan: $0.90' },
-      KuCoin: { USDC: 3800.00, SOL: 5.40, FLOKI: 1200000, status: 'Online', latency: '110ms', type: 'CEX', network: 'Ethereum / BSC / KCC', apiStatus: 'Terkoneksi', fee: 'Spot: 0.1% | Penarikan: $1.2' },
-      Coinbase: { USDC: 12500.00, ETH: 1.20, RENDER: 8.0, status: 'Online', latency: '75ms', type: 'CEX', network: 'Ethereum / Base / Solana', apiStatus: 'Terkoneksi', fee: 'Spot: 0.6% (taker) | Penarikan: $0.50' },
-      HTX: { USDC: 2900.00, SOL: 3.10, PEPE: 8000000, status: 'Online', latency: '140ms', type: 'CEX', network: 'Ethereum / BSC / TRON', apiStatus: 'Terkoneksi', fee: 'Spot: 0.2% | Penarikan: $1.5' },
-      Indodax: { USDC: 7500.00, SOL: 15.00, ETH: 0.50, BONK: 4500000, status: 'Online', latency: '35ms', type: 'CEX', network: 'Indonesian Rupiah / TRON / SOL', apiStatus: 'Terkoneksi (API)', fee: 'Spot: 0.21% | Penarikan: Rp 25.000' },
-      Tokocrypto: { USDC: 9200.00, SOL: 10.50, PEPE: 6000000, status: 'Online', latency: '42ms', type: 'CEX', network: 'Indonesian Rupiah / BSC / SOL', apiStatus: 'Terkoneksi (API)', fee: 'Spot: 0.1% | Penarikan: Rp 10.000' },
-      Reku: { USDC: 4800.00, ETH: 0.65, POPCAT: 40000, status: 'Online', latency: '48ms', type: 'CEX', network: 'Indonesian Rupiah / ERC20 / SOL', apiStatus: 'Terkoneksi (API)', fee: 'Spot: 0.1% | Penarikan: Rp 6.500' },
-      Raydium: { USDC: 12850.10, SOL: 45.82, BONK: 15400000, status: 'Online', latency: '8ms', type: 'DEX', network: 'Solana (SPL)', apiStatus: 'Phantom Connected', fee: 'Swap: 0.25% | Gas: ~0.00005 SOL' },
-      Uniswap: { USDC: 3450.00, ETH: 1.15, W: 500000, status: 'Online', latency: '15ms', type: 'DEX', network: 'Ethereum / Arbitrum / Base', apiStatus: 'MetaMask Connected', fee: 'Swap: 0.3% | Gas: ~0.002 ETH' },
-      PancakeSwap: { USDC: 1820.75, BNB: 2.40, FLOKI: 2500000, status: 'Online', latency: '22ms', type: 'DEX', network: 'BNB Chain (BEP20)', apiStatus: 'MetaMask Connected', fee: 'Swap: 0.25% | Gas: ~0.0008 BNB' },
-      Orca: { USDC: 5200.00, SOL: 18.50, BONK: 6000000, status: 'Online', latency: '6ms', type: 'DEX', network: 'Solana (SPL)', apiStatus: 'Phantom Connected', fee: 'Swap: 0.3% | Gas: ~0.00003 SOL' },
-      Curve: { USDC: 9800.00, USDE: 4500, FDUSD: 3100, PYUSD: 2200, status: 'Online', latency: '18ms', type: 'DEX', network: 'Ethereum / Arbitrum / Polygon', apiStatus: 'MetaMask Connected', fee: 'Swap: 0.04% | Gas: ~0.001 ETH' },
-      SushiSwap: { USDC: 2100.00, ETH: 0.60, RENDER: 5.0, status: 'Online', latency: '20ms', type: 'DEX', network: 'Ethereum / Arbitrum / BSC', apiStatus: 'MetaMask Connected', fee: 'Swap: 0.3% | Gas: ~0.0018 ETH' },
-      dYdX: { USDC: 7400.00, ETH: 0.90, status: 'Online', latency: '12ms', type: 'DEX', network: 'StarkEx / Cosmos (dYdX Chain)', apiStatus: 'MetaMask Connected', fee: 'Taker: 0.05% | Maker: 0.0%' },
-      Jupiter: { USDC: 6600.00, SOL: 22.00, BONK: 9000000, status: 'Online', latency: '5ms', type: 'DEX', network: 'Solana (SPL)', apiStatus: 'Phantom Connected', fee: 'Swap: 0.2% | Gas: ~0.00004 SOL' },
-    };
-    const saved = localStorage.getItem('arbitrage_balances');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      return { ...defaultBalances, ...parsed };
-    }
-    return defaultBalances;
-  });
-  const [agentStatus, setAgentStatus] = useState('running');
-  const [minSpreadCriteria, setMinSpreadCriteria] = useUrlState('spread', 1.5);
-  const [numAgents, setNumAgents] = useUrlState('agents', 1);
-  const [coinCategory, setCoinCategory] = useUrlState('cat', 'ALL');
-  const [agentLogs, setAgentLogs] = useState([
-    `[${new Date().toLocaleTimeString()}] [SYSTEM] Memulai agen AI pemindai spreads...`,
-    `[${new Date().toLocaleTimeString()}] [INFO] Kriteria: Min Spread > 1.50%`
-  ]);
-  const [discoveredCoins, setDiscoveredCoins] = useState([
-    { symbol: 'NEIRO', name: 'Neiro Solana', spread: 3.45, buyEx: 'Bybit', sellEx: 'Gate.io', category: 'MICIN', added: false },
-    { symbol: 'MOG', name: 'Mog Coin', spread: 3.12, buyEx: 'Bybit', sellEx: 'Gate.io', category: 'MICIN', added: false }
-  ]);
+  const { exchangeBalances, setExchangeBalances } = useBalances();
+  const {
+    agentStatus,
+    setAgentStatus,
+    minSpreadCriteria,
+    setMinSpreadCriteria,
+    numAgents,
+    setNumAgents,
+    coinCategory,
+    setCoinCategory,
+    agentLogs,
+    discoveredCoins,
+    handleAddMockCoin
+  } = useAgentSimulator({ symbolsList, setSymbolsList, setSpreads });
 
   const coinAssets = useMemo(() => {
     const coins = {};
@@ -599,107 +197,7 @@ function App() {
     return Object.values(coins);
   }, [exchangeBalances, tokensDb]);
 
-  const mockAvailableCoins = useMemo(() => [
-    { symbol: 'GIGA', name: 'GigaChad', spread: 2.84, buyEx: 'Bybit', sellEx: 'Gate.io', category: 'MICIN' },
-    { symbol: 'TURBO', name: 'Turbo', spread: 2.50, buyEx: 'Bybit', sellEx: 'Gate.io', category: 'VOLATILE' },
-    { symbol: 'FWOG', name: 'Fwog', spread: 2.91, buyEx: 'Bybit', sellEx: 'Gate.io', category: 'MICIN' },
-    { symbol: 'BRETT', name: 'Brett', spread: 1.85, buyEx: 'Bybit', sellEx: 'Gate.io', category: 'VOLATILE' },
-    { symbol: 'FDUSD', name: 'First Digital USD', spread: 0.12, buyEx: 'Binance', sellEx: 'Bybit', category: 'STABLE' },
-    { symbol: 'USDE', name: 'Athena USDe', spread: 0.45, buyEx: 'Gate.io', sellEx: 'Bybit', category: 'STABLE' },
-    { symbol: 'PYUSD', name: 'PayPal USD', spread: 0.28, buyEx: 'Bybit', sellEx: 'Gate.io', category: 'STABLE' }
-  ], []);
-
   const compactMode = isCompact === 'true';
-
-  // AI Agent Log & Discovery Simulator
-  useEffect(() => {
-    if (agentStatus !== 'running') return;
-
-    let logCounter = 0;
-    const intervalSpeed = Math.max(1200, 6000 / numAgents);
-
-    const interval = setInterval(() => {
-      const time = new Date().toLocaleTimeString();
-      const agentId = Math.floor(Math.random() * numAgents) + 1;
-
-      let logOptions = [];
-      if (coinCategory === 'MICIN') {
-        logOptions = [
-          `Menelusuri token micin di blockchain Solana via Raydium...`,
-          `Memeriksa volume likuiditas meme pools baru di Raydium...`,
-          `Menganalisis transaksi paus (whale tracker) koin meme...`,
-          `Menghitung deviasi harga DEX vs CEX MEXC...`
-        ];
-      } else if (coinCategory === 'STABLE') {
-        logOptions = [
-          `Memindai de-pegging minor stablecoin di Curve pools...`,
-          `Memeriksa selisih harga USDC/USDT lintas bursa...`,
-          `Menganalisis order book kedalaman besar di Binance...`,
-          `Menghitung arbitrase aman pasangan stablecoin fiat...`
-        ];
-      } else if (coinCategory === 'VOLATILE') {
-        logOptions = [
-          `Memindai pasangan baru listing di Gate.io & OKX...`,
-          `Menganalisis fluktuasi harga ekstrim koin lapis kedua...`,
-          `Mendeteksi volatilitas tinggi pasangan token BNB Chain...`,
-          `Menghitung spread arbitrase cepat pasca peluncuran koin...`
-        ];
-      } else {
-        logOptions = [
-          `Menelusuri koin baru terdaftar di Raydium & Uniswap...`,
-          `Memeriksa pasangan token baru di Gate.io & MEXC...`,
-          `Menganalisis likuiditas & volume perdagangan token micin...`,
-          `Menghitung penyimpangan harga antar bursa...`,
-          `Memindai de-pegging minor stablecoin di Curve pools...`,
-          `Memeriksa selisih harga USDC/USDT lintas bursa...`
-        ];
-      }
-
-      const randomLog = logOptions[Math.floor(Math.random() * logOptions.length)];
-      setAgentLogs(prev => [`[${time}] [AGENT #${agentId}] [SCAN] ${randomLog}`, ...prev.slice(0, 49)]);
-
-      if (logCounter > 0 && logCounter % 3 === 0) {
-        const nextCoin = mockAvailableCoins.find(
-          c => !discoveredCoins.some(d => d.symbol === c.symbol) &&
-            c.spread >= minSpreadCriteria &&
-            (coinCategory === 'ALL' || c.category === coinCategory)
-        );
-        if (nextCoin) {
-          setDiscoveredCoins(prev => [
-            { ...nextCoin, added: false },
-            ...prev
-          ]);
-          setAgentLogs(prev => [
-            `[${time}] [AGENT #${agentId}] [🏆 MATCH] Menemukan koin potensial: ${nextCoin.symbol} (${nextCoin.category}) dengan spread +${nextCoin.spread.toFixed(2)}%!`,
-            ...prev
-          ]);
-        }
-      }
-
-      logCounter++;
-    }, intervalSpeed);
-
-    return () => clearInterval(interval);
-  }, [agentStatus, discoveredCoins, minSpreadCriteria, mockAvailableCoins, numAgents, coinCategory]);
-
-  const handleAddMockCoin = (coin) => {
-    if (!symbolsList.includes(coin.symbol)) {
-      const updatedSymbols = [...symbolsList, coin.symbol];
-      setSymbolsList(updatedSymbols);
-
-      setSpreads(prev => ({
-        ...prev,
-        [coin.symbol]: coin.spread
-      }));
-
-      setDiscoveredCoins(prev => prev.map(c => c.symbol === coin.symbol ? { ...c, added: true } : c));
-
-      setAgentLogs(prev => [
-        `[${new Date().toLocaleTimeString()}] [SYSTEM] Token ${coin.symbol} berhasil ditambahkan ke Daftar Utama!`,
-        ...prev
-      ]);
-    }
-  };
 
   const handleSort = (key) => {
     let direction = 'asc';
@@ -775,39 +273,6 @@ function App() {
     setActiveTab('queue');
   };
 
-  // Background transaction pipeline simulator
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTransactions((prevTxs) => {
-        let changed = false;
-        const updated = prevTxs.map((tx) => {
-          const currentStep = tx.stepIndex !== undefined ? tx.stepIndex : 0;
-          if (currentStep < 5) {
-            changed = true;
-            const nextStep = currentStep + 1;
-            let newStatus = 'Diproses';
-            if (nextStep === 5) {
-              newStatus = 'Selesai';
-            }
-            return {
-              ...tx,
-              stepIndex: nextStep,
-              status: newStatus
-            };
-          }
-          return tx;
-        });
-        if (changed) {
-          localStorage.setItem('arbitrage_transactions', JSON.stringify(updated));
-          return updated;
-        }
-        return prevTxs;
-      });
-    }, 4000); // Progress every 4 seconds
-
-    return () => clearInterval(interval);
-  }, []);
-
   // Fetch prices from backend
   const fetchPrices = async (symbol = activeSymbol, silent = false) => {
     if (!silent) setLoading(true);
@@ -817,11 +282,7 @@ function App() {
 
 
     try {
-      const response = await fetch(`http://localhost:5001/api/prices?symbol=${symbol}`);
-      if (!response.ok) {
-        throw new Error(`Server returned HTTP ${response.status}`);
-      }
-      const json = await response.json();
+      const json = await getPrices(symbol);
 
       // Filter out any exchanges that failed to fetch price
       const validPrices = (json.data || []).map(item => ({
@@ -849,11 +310,8 @@ function App() {
 
       // Fetch all profitable opportunities across all tokens
       try {
-        const oppResponse = await fetch('http://localhost:5001/api/opportunities');
-        if (oppResponse.ok) {
-          const oppJson = await oppResponse.json();
-          setOpportunities(oppJson.opportunities || []);
-        }
+        const oppJson = await getOpportunities();
+        setOpportunities(oppJson.opportunities || []);
       } catch (oppErr) {
         console.error('Error fetching opportunities:', oppErr);
       }
@@ -889,11 +347,8 @@ function App() {
   const fetchExchangeDetails = async (name) => {
     setLoadingExchange(true);
     try {
-      const response = await fetch(`http://localhost:5001/api/exchanges/${encodeURIComponent(name)}`);
-      if (response.ok) {
-        const data = await response.json();
-        setExchangeDetails(data);
-      }
+      const data = await fetchExchangeDetailsApi(name);
+      setExchangeDetails(data);
     } catch (err) {
       console.error('Error fetching exchange details:', err);
     } finally {
@@ -1083,12 +538,7 @@ function App() {
     setLoadingExchangeMarketData(true);
     setErrorExchangeMarketData(null);
     try {
-      const response = await fetch(`http://localhost:5001/api/exchanges-db/${exchange.id}/market-data`);
-      if (!response.ok) {
-        throw new Error(`HTTP error ${response.status}`);
-      }
-
-      const data = await response.json();
+      const data = await fetchExchangeMarketDataApi(exchange.id);
       const rows = Array.isArray(data.data)
         ? data.data
         : (Array.isArray(data.marketData) ? data.marketData : []);
@@ -1156,12 +606,6 @@ function App() {
     return () => clearInterval(interval);
   }, [selectedExchangeDb, exchangeDbDetailTab]);
 
-  const normalizeMarketSymbol = (symbol) => String(symbol || '')
-    .trim()
-    .toUpperCase()
-    .replace('/', '_')
-    .replace('-', '_');
-
   const exchangeMarketDataLookup = useMemo(() => {
     const lookup = new Map();
 
@@ -1179,12 +623,12 @@ function App() {
     return lookup;
   }, [exchangeMarketData]);
 
-  const getExchangeMarketRow = (pair) => {
+  const getExchangeMarketRow = useCallback((pair) => {
     return exchangeMarketDataLookup.get(`id:${pair.id}`)
       || exchangeMarketDataLookup.get(`symbol:${pair.symbol}`)
       || exchangeMarketDataLookup.get(`symbol:${normalizeMarketSymbol(pair.symbol)}`)
       || null;
-  };
+  }, [exchangeMarketDataLookup]);
 
   const filteredExchangeFiatPairs = useMemo(() => {
     const query = exchangeMarketSearchQuery.trim().toLowerCase();
@@ -1205,7 +649,7 @@ function App() {
 
       return searchableText.includes(query);
     });
-  }, [selectedExchangeFiatPairs, exchangeMarketSearchQuery, exchangeMarketDataLookup]);
+  }, [selectedExchangeFiatPairs, exchangeMarketSearchQuery, getExchangeMarketRow]);
 
   const sortedExchangeFiatPairs = useMemo(() => {
     const direction = exchangeMarketSortConfig.direction === 'asc' ? 1 : -1;
@@ -1316,12 +760,6 @@ function App() {
     });
   };
 
-  const escapeCsvValue = (value) => {
-    if (value === null || value === undefined) return '';
-    const stringValue = String(value);
-    return /[",\n\r]/.test(stringValue) ? `"${stringValue.replace(/"/g, '""')}"` : stringValue;
-  };
-
   const handleExportExchangeMarketCsv = () => {
     if (selectedExchangeMarketPairs.length === 0) return;
 
@@ -1373,37 +811,6 @@ function App() {
     link.download = `${exchangeName}-market-data-${dateStamp}.csv`;
     link.click();
     URL.revokeObjectURL(url);
-  };
-
-  const formatNativeMarketPrice = (value, currency = 'IDR') => {
-    if (value === null || value === undefined || Number.isNaN(Number(value))) return '-';
-    const numericValue = Number(value);
-
-    if (currency === 'IDR') {
-      return 'Rp ' + numericValue.toLocaleString('id-ID', {
-        minimumFractionDigits: numericValue < 1 ? 4 : 0,
-        maximumFractionDigits: numericValue < 1 ? 8 : 2
-      });
-    }
-
-    return `${currency} ${numericValue.toLocaleString('en-US', {
-      minimumFractionDigits: numericValue < 1 ? 4 : 2,
-      maximumFractionDigits: numericValue < 1 ? 8 : 6
-    })}`;
-  };
-
-  const formatMarketPriceTimestamp = (timestamp) => {
-    if (!timestamp) return '-';
-    const date = new Date(timestamp);
-    if (Number.isNaN(date.getTime())) return '-';
-
-    return date.toLocaleString('id-ID', {
-      day: '2-digit',
-      month: 'short',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    });
   };
 
   return (
