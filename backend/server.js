@@ -34,6 +34,7 @@ const rawPriceFallbackCache = new Map();
 const FALLBACK_CACHE_TTL_MS = 300000; // 5 minutes TTL
 const PRICE_HISTORY_TTL_SECONDS = 3600;
 const PRICE_HISTORY_MAX_POINTS = 360;
+const MARKET_DATA_STALE_AFTER_MS = Number(process.env.MARKET_DATA_STALE_AFTER_MS || 30000);
 const priceHistoryFallbackCache = new Map();
 
 function parsePositiveInt(value, fallback, max = 500) {
@@ -116,6 +117,14 @@ function getPriceHistoryKey(exchangeId, pairId) {
   return `price_history:${exchangeId}:${pairId}`;
 }
 
+function getMarketLatestKey(exchangeId, pairId) {
+  return `market:latest:${exchangeId}:${pairId}`;
+}
+
+function getMarketHistoryKey(exchangeId, pairId) {
+  return `market:history:${exchangeId}:${pairId}`;
+}
+
 function parsePriceHistoryPoint(payload) {
   try {
     return JSON.parse(payload);
@@ -192,6 +201,85 @@ async function getPriceHistory(exchangeId, pairId) {
   }
 
   return cached.points.slice().reverse();
+}
+
+function parseJsonOrNull(payload) {
+  if (!payload) return null;
+  try {
+    return JSON.parse(payload);
+  } catch (err) {
+    return null;
+  }
+}
+
+async function getWorkerMarketLatest(exchangeId, pairId) {
+  if (!isRedisConnected) return null;
+
+  try {
+    const payload = await redisClient.get(getMarketLatestKey(exchangeId, pairId));
+    return parseJsonOrNull(payload);
+  } catch (err) {
+    return null;
+  }
+}
+
+async function getWorkerMarketHistory(exchangeId, pairId) {
+  if (!isRedisConnected) return [];
+
+  try {
+    const values = await redisClient.lRange(getMarketHistoryKey(exchangeId, pairId), 0, PRICE_HISTORY_MAX_POINTS - 1);
+    return values
+      .map(parseJsonOrNull)
+      .filter(Boolean)
+      .reverse();
+  } catch (err) {
+    return [];
+  }
+}
+
+function serializeToken(token) {
+  if (!token) return null;
+  return {
+    id: token.id,
+    symbol: token.symbol,
+    name: token.name
+  };
+}
+
+function getWorkerBackedMarketStatus(latest) {
+  if (!latest) return 'pending';
+  if (latest.status !== 'success') return latest.status || 'error';
+
+  const fetchedAt = Number(latest.fetchedAt || latest.timestamp || latest.priceTimestamp);
+  if (Number.isFinite(fetchedAt) && Date.now() - fetchedAt > MARKET_DATA_STALE_AFTER_MS) {
+    return 'stale';
+  }
+
+  return 'success';
+}
+
+function buildPendingMarketRow(exchange, pair, status = 'pending', message = 'Waiting for price worker data.') {
+  return {
+    pairId: pair.id,
+    symbol: pair.symbol,
+    baseToken: serializeToken(pair.baseToken),
+    quoteToken: serializeToken(pair.quoteToken),
+    bid: null,
+    bidQty: null,
+    ask: null,
+    askQty: null,
+    last: null,
+    mid: null,
+    nativeCurrency: pair.quoteToken?.symbol || null,
+    status,
+    source: null,
+    priceTimestamp: null,
+    timestamp: Date.now(),
+    history: [],
+    message: exchange.name === 'Indodax' || exchange.name === 'Tokocrypto'
+      ? message
+      : 'Live market data is not configured for this exchange yet.'
+  };
 }
 
 const app = express();
@@ -919,151 +1007,49 @@ app.get('/api/exchanges-db/:exchangeId/market-data', async (req, res) => {
       .filter((pair) => fiatSymbols.has(pair.quoteToken?.symbol))
       .sort((a, b) => a.symbol.localeCompare(b.symbol));
 
-    const normalizePriceTimestamp = (value, fallback = Date.now()) => {
-      const parsed = Number(value);
-      if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
-      return parsed < 10000000000 ? parsed * 1000 : parsed;
-    };
-
-    const fetchTokocryptoDepth = async (pair) => {
-      const url = `https://www.tokocrypto.com/open/v1/market/depth?symbol=${encodeURIComponent(pair.symbol)}&limit=5`;
-      const data = await fetchWithTimeout(url, {}, 5000);
-      const fetchedAt = Date.now();
-      const bid = parseFloat(data?.data?.bids?.[0]?.[0]);
-      const bidQty = parseFloat(data?.data?.bids?.[0]?.[1]);
-      const ask = parseFloat(data?.data?.asks?.[0]?.[0]);
-      const askQty = parseFloat(data?.data?.asks?.[0]?.[1]);
-      const mid = Number.isFinite(bid) && Number.isFinite(ask) ? (bid + ask) / 2 : null;
-      const priceTimestamp = normalizePriceTimestamp(data?.data?.time || data?.data?.ts || data?.timestamp || data?.ts, fetchedAt);
-
-      return {
-        pairId: pair.id,
-        symbol: pair.symbol,
-        baseToken: pair.baseToken,
-        quoteToken: pair.quoteToken,
-        bid: Number.isFinite(bid) ? bid : null,
-        bidQty: Number.isFinite(bidQty) ? bidQty : null,
-        ask: Number.isFinite(ask) ? ask : null,
-        askQty: Number.isFinite(askQty) ? askQty : null,
-        mid,
-        nativeCurrency: pair.quoteToken?.symbol || null,
-        status: Number.isFinite(bid) || Number.isFinite(ask) ? 'success' : 'empty',
-        source: 'tokocrypto_depth',
-        priceTimestamp,
-        timestamp: fetchedAt
-      };
-    };
-
-    let indodaxTickerAllPromise = null;
-    const getIndodaxTickerAll = async () => {
-      if (!indodaxTickerAllPromise) {
-        indodaxTickerAllPromise = fetchWithTimeout('https://indodax.com/api/ticker_all', {}, 5000);
-      }
-
-      return indodaxTickerAllPromise;
-    };
-
-    const fetchIndodaxTicker = async (pair) => {
-      const data = await getIndodaxTickerAll();
-      const fetchedAt = Date.now();
-      const tickers = data?.tickers || {};
-      const tickerKey = pair.symbol.toLowerCase();
-      const ticker = tickers[tickerKey];
-
-      const bid = parseFloat(ticker?.buy);
-      const ask = parseFloat(ticker?.sell);
-      const last = parseFloat(ticker?.last);
-      const priceTimestamp = normalizePriceTimestamp(ticker?.server_time || ticker?.timestamp || data?.server_time, fetchedAt);
-      const mid = Number.isFinite(bid) && Number.isFinite(ask)
-        ? (bid + ask) / 2
-        : (Number.isFinite(last) ? last : null);
-
-      return {
-        pairId: pair.id,
-        symbol: pair.symbol,
-        baseToken: pair.baseToken,
-        quoteToken: pair.quoteToken,
-        bid: Number.isFinite(bid) ? bid : null,
-        bidQty: null,
-        ask: Number.isFinite(ask) ? ask : null,
-        askQty: null,
-        mid,
-        nativeCurrency: pair.quoteToken?.symbol || null,
-        status: Number.isFinite(bid) || Number.isFinite(ask) || Number.isFinite(last) ? 'success' : 'empty',
-        source: 'indodax_ticker_all',
-        priceTimestamp,
-        timestamp: fetchedAt
-      };
-    };
-
-    const fetchUnsupported = async (pair) => ({
-      pairId: pair.id,
-      symbol: pair.symbol,
-      baseToken: pair.baseToken,
-      quoteToken: pair.quoteToken,
-      bid: null,
-      bidQty: null,
-      ask: null,
-      askQty: null,
-      mid: null,
-      nativeCurrency: pair.quoteToken?.symbol || null,
-      status: 'unsupported',
-      source: null,
-      timestamp: Date.now(),
-      message: 'Live market data is not configured for this exchange yet.'
-    });
-
-    const fetchers = {
-      Indodax: fetchIndodaxTicker,
-      Tokocrypto: fetchTokocryptoDepth
-    };
-    const fetcherSources = {
-      Indodax: 'indodax_ticker_all',
-      Tokocrypto: 'tokocrypto_depth'
-    };
-    const fetchPair = fetchers[exchange.name] || fetchUnsupported;
-
     const marketDataRows = await Promise.all(
       fiatPairs.map(async (pair) => {
-        try {
-          return await fetchPair(pair);
-        } catch (error) {
-          return {
-            pairId: pair.id,
-            symbol: pair.symbol,
-            baseToken: pair.baseToken,
-            quoteToken: pair.quoteToken,
-            bid: null,
-            bidQty: null,
-            ask: null,
-            askQty: null,
-            mid: null,
-            nativeCurrency: pair.quoteToken?.symbol || null,
-            status: 'error',
-            source: fetcherSources[exchange.name] || null,
-            timestamp: Date.now(),
-            message: error.message
-          };
-        }
-      })
-    );
+        const latest = await getWorkerMarketLatest(exchange.id, pair.id);
+        const history = await getWorkerMarketHistory(exchange.id, pair.id);
 
-    const marketData = await Promise.all(
-      marketDataRows.map(async (row) => {
-        await savePriceHistoryPoint(exchange.id, row.pairId, row);
-        const history = await getPriceHistory(exchange.id, row.pairId);
+        if (!latest) {
+          return buildPendingMarketRow(
+            exchange,
+            pair,
+            exchange.name === 'Indodax' || exchange.name === 'Tokocrypto' ? 'pending' : 'unsupported'
+          );
+        }
+
+        const status = getWorkerBackedMarketStatus(latest);
         return {
-          ...row,
-          history
+          pairId: pair.id,
+          symbol: pair.symbol,
+          baseToken: serializeToken(pair.baseToken),
+          quoteToken: serializeToken(pair.quoteToken),
+          bid: Number.isFinite(Number(latest.bid)) ? Number(latest.bid) : null,
+          bidQty: Number.isFinite(Number(latest.bidQty)) ? Number(latest.bidQty) : null,
+          ask: Number.isFinite(Number(latest.ask)) ? Number(latest.ask) : null,
+          askQty: Number.isFinite(Number(latest.askQty)) ? Number(latest.askQty) : null,
+          last: Number.isFinite(Number(latest.last)) ? Number(latest.last) : null,
+          mid: Number.isFinite(Number(latest.mid)) ? Number(latest.mid) : null,
+          nativeCurrency: latest.nativeCurrency || pair.quoteToken?.symbol || null,
+          status,
+          source: latest.source || null,
+          priceTimestamp: latest.priceTimestamp || null,
+          timestamp: latest.fetchedAt || latest.timestamp || null,
+          history,
+          message: status === 'stale'
+            ? `Price worker data is stale by more than ${Math.round(MARKET_DATA_STALE_AFTER_MS / 1000)} seconds.`
+            : latest.error || null
         };
       })
     );
 
     res.json({
       exchange: { id: exchange.id, name: exchange.name },
-      pairCount: marketData.length,
+      pairCount: marketDataRows.length,
       timestamp: Date.now(),
-      data: marketData
+      data: marketDataRows
     });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch exchange market data', message: error.message });
