@@ -1,9 +1,12 @@
 package config
 
 import (
+	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -19,6 +22,8 @@ type Config struct {
 }
 
 func Load() Config {
+	loadEnvFiles()
+
 	return Config{
 		DatabaseURL:           databaseURL(),
 		RedisURL:              envString("REDIS_URL", "redis://127.0.0.1:6379"),
@@ -28,6 +33,50 @@ func Load() Config {
 		StaleAfter:            time.Duration(envInt("STALE_AFTER_SECONDS", 30)) * time.Second,
 		TokocryptoConcurrency: envInt("TOKOCRYPTO_CONCURRENCY", 5),
 		HTTPTimeout:           time.Duration(envInt("HTTP_TIMEOUT_SECONDS", 5)) * time.Second,
+	}
+}
+
+func loadEnvFiles() {
+	candidates := []string{
+		".env",
+		filepath.Join("..", ".env"),
+		filepath.Join("..", "backend", ".env"),
+	}
+
+	for _, path := range candidates {
+		loadEnvFile(path)
+	}
+}
+
+func loadEnvFile(path string) {
+	file, err := os.Open(path)
+	if err != nil {
+		return
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+
+		key, value, ok := strings.Cut(line, "=")
+		if !ok {
+			continue
+		}
+
+		key = strings.TrimSpace(key)
+		value = strings.TrimSpace(value)
+		value = strings.Trim(value, `"'`)
+		if key == "" {
+			continue
+		}
+
+		if _, exists := os.LookupEnv(key); !exists {
+			_ = os.Setenv(key, value)
+		}
 	}
 }
 

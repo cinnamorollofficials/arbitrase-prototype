@@ -29,6 +29,9 @@ STALE_AFTER_SECONDS=30
 HTTP_TIMEOUT_SECONDS=5
 ```
 
+Saat dijalankan dari folder `price-worker`, worker juga otomatis mencoba memuat `../backend/.env`.
+Env dari shell tetap memiliki prioritas lebih tinggi daripada file.
+
 ## Run
 
 ```bash
