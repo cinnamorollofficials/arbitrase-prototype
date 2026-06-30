@@ -32,6 +32,9 @@ redisClient.connect().catch(err => {
 // Graceful fallback in-memory cache for raw price logger
 const rawPriceFallbackCache = new Map();
 const FALLBACK_CACHE_TTL_MS = 300000; // 5 minutes TTL
+const PRICE_HISTORY_TTL_SECONDS = 3600;
+const PRICE_HISTORY_MAX_POINTS = 360;
+const priceHistoryFallbackCache = new Map();
 
 function parsePositiveInt(value, fallback, max = 500) {
   const parsed = Number.parseInt(value, 10);
@@ -107,6 +110,88 @@ async function getRawPriceKeys() {
     }
   }
   return validKeys;
+}
+
+function getPriceHistoryKey(exchangeId, pairId) {
+  return `price_history:${exchangeId}:${pairId}`;
+}
+
+function parsePriceHistoryPoint(payload) {
+  try {
+    return JSON.parse(payload);
+  } catch (err) {
+    return null;
+  }
+}
+
+function normalizePriceHistoryPoint(row) {
+  const price = Number(row?.mid ?? row?.last ?? row?.price);
+  if (!Number.isFinite(price) || price <= 0) return null;
+
+  const bid = Number(row?.bid ?? row?.nativeBid);
+  const ask = Number(row?.ask ?? row?.nativeAsk);
+  const timestamp = Number(row?.priceTimestamp || row?.timestamp || Date.now());
+
+  return {
+    t: Number.isFinite(timestamp) && timestamp > 0 ? timestamp : Date.now(),
+    price,
+    bid: Number.isFinite(bid) ? bid : null,
+    ask: Number.isFinite(ask) ? ask : null
+  };
+}
+
+async function savePriceHistoryPoint(exchangeId, pairId, row) {
+  const point = normalizePriceHistoryPoint(row);
+  if (!point || row?.status !== 'success') return;
+
+  const key = getPriceHistoryKey(exchangeId, pairId);
+  const payload = JSON.stringify(point);
+
+  if (isRedisConnected) {
+    try {
+      await redisClient.lPush(key, payload);
+      await redisClient.lTrim(key, 0, PRICE_HISTORY_MAX_POINTS - 1);
+      await redisClient.expire(key, PRICE_HISTORY_TTL_SECONDS);
+      return;
+    } catch (err) {
+      // Fallback to memory on failure
+    }
+  }
+
+  const now = Date.now();
+  const cached = priceHistoryFallbackCache.get(key);
+  const points = cached && now < cached.expiresAt ? cached.points : [];
+  points.unshift(point);
+  priceHistoryFallbackCache.set(key, {
+    points: points.slice(0, PRICE_HISTORY_MAX_POINTS),
+    expiresAt: now + (PRICE_HISTORY_TTL_SECONDS * 1000)
+  });
+}
+
+async function getPriceHistory(exchangeId, pairId) {
+  const key = getPriceHistoryKey(exchangeId, pairId);
+
+  if (isRedisConnected) {
+    try {
+      const values = await redisClient.lRange(key, 0, PRICE_HISTORY_MAX_POINTS - 1);
+      return values
+        .map(parsePriceHistoryPoint)
+        .filter(Boolean)
+        .reverse();
+    } catch (err) {
+      // Fallback to memory on failure
+    }
+  }
+
+  const cached = priceHistoryFallbackCache.get(key);
+  if (!cached) return [];
+
+  if (Date.now() >= cached.expiresAt) {
+    priceHistoryFallbackCache.delete(key);
+    return [];
+  }
+
+  return cached.points.slice().reverse();
 }
 
 const app = express();
@@ -938,7 +1023,7 @@ app.get('/api/exchanges-db/:exchangeId/market-data', async (req, res) => {
     };
     const fetchPair = fetchers[exchange.name] || fetchUnsupported;
 
-    const marketData = await Promise.all(
+    const marketDataRows = await Promise.all(
       fiatPairs.map(async (pair) => {
         try {
           return await fetchPair(pair);
@@ -960,6 +1045,17 @@ app.get('/api/exchanges-db/:exchangeId/market-data', async (req, res) => {
             message: error.message
           };
         }
+      })
+    );
+
+    const marketData = await Promise.all(
+      marketDataRows.map(async (row) => {
+        await savePriceHistoryPoint(exchange.id, row.pairId, row);
+        const history = await getPriceHistory(exchange.id, row.pairId);
+        return {
+          ...row,
+          history
+        };
       })
     );
 

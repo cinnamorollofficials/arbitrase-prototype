@@ -16,6 +16,55 @@ import { getOpportunities, getPrices } from './api/prices';
 import { getRawPrices } from './api/rawPrices';
 import { getTokensDb as fetchTokensDbApi } from './api/tokens';
 
+function PriceSparkline({ history }) {
+  const points = Array.isArray(history)
+    ? history
+        .map((point) => ({
+          t: Number(point.t),
+          price: Number(point.price)
+        }))
+        .filter((point) => Number.isFinite(point.t) && Number.isFinite(point.price) && point.price > 0)
+        .sort((a, b) => a.t - b.t)
+    : [];
+
+  if (points.length < 2) {
+    return (
+      <div className="price-sparkline is-empty" title="Menunggu minimal 2 titik harga">
+        <span>Mengumpulkan</span>
+      </div>
+    );
+  }
+
+  const width = 104;
+  const height = 34;
+  const padding = 3;
+  const prices = points.map((point) => point.price);
+  const minPrice = Math.min(...prices);
+  const maxPrice = Math.max(...prices);
+  const range = maxPrice - minPrice || Math.max(maxPrice * 0.0001, 1);
+  const xStep = points.length > 1 ? (width - padding * 2) / (points.length - 1) : 0;
+  const path = points.map((point, index) => {
+    const x = padding + index * xStep;
+    const y = height - padding - ((point.price - minPrice) / range) * (height - padding * 2);
+    return `${index === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`;
+  }).join(' ');
+  const firstPrice = points[0].price;
+  const lastPrice = points[points.length - 1].price;
+  const changePct = firstPrice > 0 ? ((lastPrice - firstPrice) / firstPrice) * 100 : 0;
+  const trendClass = changePct > 0 ? 'is-up' : changePct < 0 ? 'is-down' : 'is-flat';
+  const title = `${points.length} titik harga, perubahan ${changePct.toFixed(2)}%`;
+
+  return (
+    <div className={`price-sparkline ${trendClass}`} title={title}>
+      <svg viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
+        <path className="price-sparkline-baseline" d={`M ${padding} ${height - padding} L ${width - padding} ${height - padding}`} />
+        <path className="price-sparkline-line" d={path} />
+      </svg>
+      <span>{changePct >= 0 ? '+' : ''}{changePct.toFixed(2)}%</span>
+    </div>
+  );
+}
+
 function App() {
   const [prices, setPrices] = useState([]);
   const [usdToIdrRate, setUsdToIdrRate] = useState(16500);
@@ -3750,7 +3799,7 @@ function App() {
                   </div>
                 ) : (
                   <div style={{ overflowX: 'auto', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px' }}>
-                    <table className={compactMode ? 'compact-table' : ''} style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
+                    <table className={`exchange-market-table ${compactMode ? 'compact-table' : ''}`} style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
                       <thead>
                         <tr style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
                           <th style={{ padding: '10px 12px', width: '36px' }}>
@@ -3764,18 +3813,17 @@ function App() {
                           </th>
                           <th style={{ padding: '10px 12px', color: 'var(--md-sys-color-on-surface-variant)', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleExchangeMarketSort('baseToken')}>Base Token {getExchangeMarketSortIndicator('baseToken')}</th>
                           <th style={{ padding: '10px 12px', color: 'var(--md-sys-color-on-surface-variant)', textAlign: 'right', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleExchangeMarketSort('last')}>Last / Mid {getExchangeMarketSortIndicator('last')}</th>
+                          <th style={{ padding: '10px 12px', color: 'var(--md-sys-color-on-surface-variant)', textAlign: 'center', minWidth: '132px' }}>1 Jam</th>
                           <th style={{ padding: '10px 12px', color: 'var(--md-sys-color-on-surface-variant)', textAlign: 'right', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleExchangeMarketSort('bid')}>Bid {getExchangeMarketSortIndicator('bid')}</th>
                           <th style={{ padding: '10px 12px', color: 'var(--md-sys-color-on-surface-variant)', textAlign: 'right', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleExchangeMarketSort('ask')}>Ask {getExchangeMarketSortIndicator('ask')}</th>
                           <th style={{ padding: '10px 12px', color: 'var(--md-sys-color-on-surface-variant)', textAlign: 'right', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleExchangeMarketSort('quantity')}>Bid / Ask Qty {getExchangeMarketSortIndicator('quantity')}</th>
                           <th style={{ padding: '10px 12px', color: 'var(--md-sys-color-on-surface-variant)', textAlign: 'right', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleExchangeMarketSort('timestamp')}>Waktu Harga {getExchangeMarketSortIndicator('timestamp')}</th>
-                          <th style={{ padding: '10px 12px', color: 'var(--md-sys-color-on-surface-variant)', textAlign: 'right', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleExchangeMarketSort('status')}>Status {getExchangeMarketSortIndicator('status')}</th>
                         </tr>
                       </thead>
                       <tbody>
                         {sortedExchangeFiatPairs.map((pair) => {
                           const market = getExchangeMarketRow(pair);
                           const quoteSymbol = market?.nativeCurrency || pair.quoteToken?.symbol || 'IDR';
-                          const isLive = market?.status === 'success';
                           const lastOrMid = market?.mid ?? market?.last ?? market?.price ?? null;
                           const bid = market?.bid ?? market?.nativeBid ?? null;
                           const ask = market?.ask ?? market?.nativeAsk ?? null;
@@ -3795,11 +3843,11 @@ function App() {
                               />
                             </td>
                             <td style={{ padding: '10px 12px' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', fontWeight: '700' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <div className="exchange-market-token-cell" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'nowrap', fontWeight: '700' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
                                   <CoinIcon symbol={pair.baseToken?.symbol} size={18} />
                                   <span>{pair.baseToken?.symbol || '-'}</span>
-                                  <span style={{ color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '500', fontSize: '11px' }}>
+                                  <span className="exchange-market-token-name" style={{ color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '500', fontSize: '11px' }}>
                                     {pair.baseToken?.name || ''}
                                   </span>
                                 </div>
@@ -3824,6 +3872,9 @@ function App() {
                             <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: '800', color: '#ffffff' }}>
                               {loadingExchangeMarketData && !market ? '...' : formatNativeMarketPrice(lastOrMid, quoteSymbol)}
                             </td>
+                            <td style={{ padding: '8px 12px', textAlign: 'center' }}>
+                              {loadingExchangeMarketData && !market ? '...' : <PriceSparkline history={market?.history} />}
+                            </td>
                             <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--md-sys-color-primary)', fontWeight: '700' }}>
                               {loadingExchangeMarketData && !market ? '...' : formatNativeMarketPrice(bid, quoteSymbol)}
                             </td>
@@ -3835,15 +3886,6 @@ function App() {
                             </td>
                             <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--md-sys-color-on-surface-variant)', fontSize: '11px', whiteSpace: 'nowrap' }}>
                               {loadingExchangeMarketData && !market ? '...' : formatMarketPriceTimestamp(priceTimestamp)}
-                            </td>
-                            <td style={{ padding: '10px 12px', textAlign: 'right' }}>
-                              <span className="badge" style={{
-                                backgroundColor: isLive ? 'rgba(16,185,129,0.12)' : market?.status === 'error' ? 'rgba(239,83,80,0.12)' : 'rgba(255,255,255,0.06)',
-                                color: isLive ? '#10b981' : market?.status === 'error' ? 'var(--md-sys-color-error)' : 'var(--md-sys-color-on-surface-variant)',
-                                fontWeight: '800'
-                              }}>
-                                {isLive ? 'Live' : market?.status || (loadingExchangeMarketData ? 'Loading' : 'Pending')}
-                              </span>
                             </td>
                           </tr>
                           );

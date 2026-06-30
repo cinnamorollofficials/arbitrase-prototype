@@ -741,6 +741,114 @@ h1, h2, h3, h4 {
   animation: market-refresh-ring-fill 10s linear forwards;
 }
 
+.price-sparkline {
+  width: 124px;
+  height: 42px;
+  display: inline-grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 28px 12px;
+  align-items: center;
+  justify-items: center;
+  gap: 1px;
+  color: var(--md-sys-color-on-surface-variant);
+  vertical-align: middle;
+}
+
+.price-sparkline svg {
+  width: 104px;
+  height: 34px;
+  overflow: visible;
+}
+
+.price-sparkline span {
+  font-size: 10px !important;
+  line-height: 1;
+  font-weight: 800;
+  color: currentColor;
+  white-space: nowrap;
+}
+
+.price-sparkline-line {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.price-sparkline-baseline {
+  fill: none;
+  stroke: rgba(255,255,255,0.08);
+  stroke-width: 1;
+}
+
+.price-sparkline.is-up {
+  color: #10b981;
+}
+
+.price-sparkline.is-down {
+  color: #ef5350;
+}
+
+.price-sparkline.is-flat,
+.price-sparkline.is-empty {
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.price-sparkline.is-empty {
+  height: 28px;
+  grid-template-rows: 1fr;
+}
+
+.exchange-market-table {
+  min-width: max-content;
+}
+
+.exchange-market-table th,
+.exchange-market-table td {
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.exchange-market-token-cell {
+  min-width: 250px;
+  max-width: 360px;
+  white-space: nowrap;
+}
+
+.exchange-market-token-name {
+  display: inline-block;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+.compact-ui .price-sparkline {
+  width: 104px;
+  height: 30px !important;
+  grid-template-rows: 20px 9px;
+}
+
+.compact-ui .price-sparkline svg {
+  width: 88px;
+  height: 24px;
+}
+
+.compact-ui .price-sparkline span {
+  font-size: 8px !important;
+}
+
+.compact-ui .exchange-market-token-cell {
+  min-width: 210px;
+  max-width: 300px;
+}
+
+.compact-ui .exchange-market-token-name {
+  max-width: 110px;
+}
+
 @keyframes market-refresh-ring-fill {
   from {
     stroke-dashoffset: 75.4;
