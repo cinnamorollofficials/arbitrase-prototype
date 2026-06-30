@@ -58,13 +58,7 @@ export default (sequelize) => {
     sequelize,
     modelName: 'TokenAttribute',
     tableName: 'token_attributes',
-    underscored: true,
-    indexes: [
-      {
-        unique: true,
-        fields: ['token_id', 'chain_id', 'attribute_key']
-      }
-    ]
+    underscored: true
   });
 
   return TokenAttribute;
