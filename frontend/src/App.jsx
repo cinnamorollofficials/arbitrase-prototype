@@ -496,6 +496,11 @@ function App() {
   }, [activeTab]);
   const [exchangesViewMode, setExchangesViewMode] = useUrlState('ex_mode', 'table');
   const [selectedExchangeDb, setSelectedExchangeDb] = useState(null);
+  const [exchangeDbDetailTab, setExchangeDbDetailTab] = useState('overview');
+  const [exchangeMarketData, setExchangeMarketData] = useState([]);
+  const [loadingExchangeMarketData, setLoadingExchangeMarketData] = useState(false);
+  const [errorExchangeMarketData, setErrorExchangeMarketData] = useState(null);
+  const [exchangeMarketRefreshCycle, setExchangeMarketRefreshCycle] = useState(0);
   const [isCompact, setIsCompact] = useUrlState('compact', 'false');
   const [opportunities, setOpportunities] = useState([]);
   const [selectedExchange, setSelectedExchange] = useUrlState('ex', 'Binance');
@@ -1055,6 +1060,36 @@ function App() {
     fetchPrices();
   };
 
+  const fetchExchangeMarketData = async (exchange) => {
+    if (!exchange?.id) return;
+
+    setExchangeMarketRefreshCycle((cycle) => cycle + 1);
+    setLoadingExchangeMarketData(true);
+    setErrorExchangeMarketData(null);
+    try {
+      const response = await fetch(`http://localhost:5001/api/exchanges-db/${exchange.id}/market-data`);
+      if (!response.ok) {
+        throw new Error(`HTTP error ${response.status}`);
+      }
+
+      const data = await response.json();
+      setExchangeMarketData(data.data || []);
+    } catch (err) {
+      console.error('Failed to fetch exchange market data:', err);
+      setErrorExchangeMarketData(err.message);
+      setExchangeMarketData([]);
+    } finally {
+      setLoadingExchangeMarketData(false);
+    }
+  };
+
+  const openExchangeDbModal = (exchange) => {
+    setExchangeDbDetailTab('overview');
+    setExchangeMarketData([]);
+    setErrorExchangeMarketData(null);
+    setSelectedExchangeDb(exchange);
+  };
+
   const renderInfoIcon = (tooltipContent) => (
     <span className="tooltip-icon" style={{
       display: 'inline-flex',
@@ -1075,6 +1110,51 @@ function App() {
       <span className="tooltip-text">{tooltipContent}</span>
     </span>
   );
+
+  const selectedExchangeFiatPairs = useMemo(() => {
+    const fiatSymbols = new Set(['IDR', 'USD']);
+
+    return (selectedExchangeDb?.tokenPairs || [])
+      .filter((pair) => fiatSymbols.has(pair.quoteToken?.symbol))
+      .sort((a, b) => a.symbol.localeCompare(b.symbol));
+  }, [selectedExchangeDb]);
+
+  useEffect(() => {
+    if (selectedExchangeDb && exchangeDbDetailTab === 'market') {
+      fetchExchangeMarketData(selectedExchangeDb);
+    }
+  }, [selectedExchangeDb, exchangeDbDetailTab]);
+
+  useEffect(() => {
+    if (!selectedExchangeDb || exchangeDbDetailTab !== 'market') return undefined;
+
+    const interval = setInterval(() => {
+      fetchExchangeMarketData(selectedExchangeDb);
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [selectedExchangeDb, exchangeDbDetailTab]);
+
+  const exchangeMarketDataBySymbol = useMemo(() => {
+    return new Map(exchangeMarketData.map((item) => [item.symbol, item]));
+  }, [exchangeMarketData]);
+
+  const formatNativeMarketPrice = (value, currency = 'IDR') => {
+    if (value === null || value === undefined || Number.isNaN(Number(value))) return '-';
+    const numericValue = Number(value);
+
+    if (currency === 'IDR') {
+      return 'Rp ' + numericValue.toLocaleString('id-ID', {
+        minimumFractionDigits: numericValue < 1 ? 4 : 0,
+        maximumFractionDigits: numericValue < 1 ? 8 : 2
+      });
+    }
+
+    return `${currency} ${numericValue.toLocaleString('en-US', {
+      minimumFractionDigits: numericValue < 1 ? 4 : 2,
+      maximumFractionDigits: numericValue < 1 ? 8 : 6
+    })}`;
+  };
 
   return (
     <div className={`app-container ${compactMode ? 'compact-ui' : ''}`}>
@@ -3098,7 +3178,7 @@ function App() {
                             <td style={{ padding: '16px 20px', fontWeight: '700' }}>
                               <div 
                                 style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}
-                                onClick={() => setSelectedExchangeDb(ex)}
+                                onClick={() => openExchangeDbModal(ex)}
                                 title="Klik untuk detail bursa (Database)"
                               >
                                 {ex.logoUrl ? (
@@ -3294,7 +3374,7 @@ function App() {
                         {/* Top Row: Logo & Name & Type */}
                         <div 
                           style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', cursor: 'pointer' }}
-                          onClick={() => setSelectedExchangeDb(ex)}
+                          onClick={() => openExchangeDbModal(ex)}
                           title="Klik untuk detail bursa (Database)"
                         >
                           {ex.logoUrl ? (
@@ -3735,30 +3815,33 @@ function App() {
           backdropFilter: 'blur(16px)',
           display: 'flex',
           justifyContent: 'center',
-          alignItems: 'center',
+          alignItems: 'stretch',
           zIndex: 9999,
-          padding: '24px',
+          padding: 0,
           animation: 'fadeIn 0.3s ease'
         }}>
           <div className="md3-card" style={{
-            width: '100%',
-            maxWidth: '650px',
-            maxHeight: '85vh',
-            overflowY: 'auto',
+            width: '100vw',
+            height: '100vh',
+            maxWidth: 'none',
+            maxHeight: 'none',
+            overflow: 'hidden',
             position: 'relative',
-            padding: '30px',
+            padding: 0,
             backgroundColor: 'var(--md-sys-color-surface-container-high)',
-            borderRadius: 'var(--md-shape-corner-large)',
-            border: '1px solid var(--md-sys-color-outline-variant)',
-            boxShadow: '0 12px 48px rgba(0, 0, 0, 0.6)'
+            borderRadius: 0,
+            border: 'none',
+            boxShadow: 'none',
+            display: 'flex',
+            flexDirection: 'column'
           }}>
             {/* Close Button */}
             <button
               onClick={() => setSelectedExchangeDb(null)}
               style={{
                 position: 'absolute',
-                top: '20px',
-                right: '20px',
+                top: '18px',
+                right: '18px',
                 background: 'rgba(255,255,255,0.06)',
                 border: 'none',
                 borderRadius: '50%',
@@ -3778,6 +3861,7 @@ function App() {
               ✕
             </button>
 
+            <div style={{ flex: 1, overflowY: 'auto', padding: '28px', paddingRight: '72px' }}>
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '16px' }}>
               {selectedExchangeDb.logoUrl ? (
@@ -3818,7 +3902,7 @@ function App() {
             </div>
 
             {/* Trust & Capital Summary Row */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px', marginBottom: '24px' }}>
               <div style={{
                 backgroundColor: 'rgba(255,255,255,0.03)',
                 padding: '16px',
@@ -3870,7 +3954,181 @@ function App() {
             </div>
 
             {/* Content Details */}
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px' }}>
+              <button
+                onClick={() => setExchangeDbDetailTab('overview')}
+                className={`tab-btn ${exchangeDbDetailTab === 'overview' ? 'active' : ''}`}
+                style={{
+                  backgroundColor: exchangeDbDetailTab === 'overview' ? 'var(--md-sys-color-primary-container)' : 'rgba(255,255,255,0.04)',
+                  color: exchangeDbDetailTab === 'overview' ? 'var(--md-sys-color-on-primary-container)' : 'var(--md-sys-color-on-surface-variant)',
+                  border: exchangeDbDetailTab === 'overview' ? '1px solid var(--md-sys-color-primary)' : '1px solid rgba(255,255,255,0.08)'
+                }}
+              >
+                Overview
+              </button>
+              <button
+                onClick={() => setExchangeDbDetailTab('market')}
+                className={`tab-btn ${exchangeDbDetailTab === 'market' ? 'active' : ''}`}
+                style={{
+                  backgroundColor: exchangeDbDetailTab === 'market' ? 'var(--md-sys-color-primary-container)' : 'rgba(255,255,255,0.04)',
+                  color: exchangeDbDetailTab === 'market' ? 'var(--md-sys-color-on-primary-container)' : 'var(--md-sys-color-on-surface-variant)',
+                  border: exchangeDbDetailTab === 'market' ? '1px solid var(--md-sys-color-primary)' : '1px solid rgba(255,255,255,0.08)'
+                }}
+              >
+                Market Data
+              </button>
+            </div>
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {exchangeDbDetailTab === 'market' && (
+              <>
+              {/* Fiat Pairs */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '8px', flexWrap: 'wrap' }}>
+                  <h4 style={{ margin: 0, fontSize: '13px', color: 'var(--md-sys-color-on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Pair Token / Fiat dari Database
+                  </h4>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span className="badge" style={{ backgroundColor: 'rgba(16,185,129,0.12)', color: '#10b981', fontWeight: '800' }}>
+                      {selectedExchangeFiatPairs.length} pair
+                    </span>
+                    <div
+                      key={exchangeMarketRefreshCycle}
+                      title="Auto refresh setiap 10 detik"
+                      style={{
+                        width: '30px',
+                        height: '30px',
+                        position: 'relative',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0
+                      }}
+                    >
+                      <svg viewBox="0 0 32 32" style={{ width: '30px', height: '30px' }}>
+                        <circle
+                          cx="16"
+                          cy="16"
+                          r="12"
+                          fill="none"
+                          stroke="rgba(255,255,255,0.12)"
+                          strokeWidth="3"
+                        />
+                        <circle
+                          className="market-refresh-ring-progress"
+                          cx="16"
+                          cy="16"
+                          r="12"
+                          fill="none"
+                          stroke="var(--md-sys-color-primary)"
+                          strokeWidth="3"
+                          strokeLinecap="round"
+                          strokeDasharray="75.4"
+                          strokeDashoffset="75.4"
+                        />
+                      </svg>
+                      <span style={{
+                        position: 'absolute',
+                        fontSize: '8px',
+                        fontWeight: '800',
+                        color: 'var(--md-sys-color-on-surface-variant)'
+                      }}>
+                        10s
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => fetchExchangeMarketData(selectedExchangeDb)}
+                      disabled={loadingExchangeMarketData}
+                      className="tab-btn"
+                      style={{
+                        padding: '5px 10px',
+                        fontSize: '11px',
+                        backgroundColor: 'rgba(255,255,255,0.05)',
+                        color: '#ffffff',
+                        border: '1px solid rgba(255,255,255,0.08)'
+                      }}
+                    >
+                      {loadingExchangeMarketData ? 'Memuat...' : 'Refresh Harga'}
+                    </button>
+                  </div>
+                </div>
+                {errorExchangeMarketData && (
+                  <div style={{ padding: '10px 12px', marginBottom: '8px', border: '1px solid var(--md-sys-color-error)', borderRadius: '8px', color: 'var(--md-sys-color-error)', fontSize: '12px', backgroundColor: 'rgba(239,83,80,0.08)' }}>
+                    Gagal memuat harga market: {errorExchangeMarketData}
+                  </div>
+                )}
+                {selectedExchangeFiatPairs.length === 0 ? (
+                  <div style={{ padding: '14px', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', color: 'var(--md-sys-color-on-surface-variant)', fontSize: '12px', backgroundColor: 'rgba(255,255,255,0.02)' }}>
+                    Tidak ada pair token / fiat yang terdaftar di database untuk bursa ini.
+                  </div>
+                ) : (
+                  <div style={{ overflowX: 'auto', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px' }}>
+                    <table className={compactMode ? 'compact-table' : ''} style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
+                      <thead>
+                        <tr style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                          <th style={{ padding: '10px 12px', color: 'var(--md-sys-color-on-surface-variant)' }}>Pair</th>
+                          <th style={{ padding: '10px 12px', color: 'var(--md-sys-color-on-surface-variant)' }}>Base Token</th>
+                          <th style={{ padding: '10px 12px', color: 'var(--md-sys-color-on-surface-variant)', textAlign: 'right' }}>Last / Mid</th>
+                          <th style={{ padding: '10px 12px', color: 'var(--md-sys-color-on-surface-variant)', textAlign: 'right' }}>Bid</th>
+                          <th style={{ padding: '10px 12px', color: 'var(--md-sys-color-on-surface-variant)', textAlign: 'right' }}>Ask</th>
+                          <th style={{ padding: '10px 12px', color: 'var(--md-sys-color-on-surface-variant)', textAlign: 'right' }}>Bid / Ask Qty</th>
+                          <th style={{ padding: '10px 12px', color: 'var(--md-sys-color-on-surface-variant)', textAlign: 'right' }}>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedExchangeFiatPairs.map((pair) => {
+                          const market = exchangeMarketDataBySymbol.get(pair.symbol);
+                          const quoteSymbol = market?.nativeCurrency || pair.quoteToken?.symbol || 'IDR';
+                          const isLive = market?.status === 'success';
+
+                          return (
+                          <tr key={pair.id || pair.symbol} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                            <td style={{ padding: '10px 12px', fontWeight: '800', color: '#ffffff', fontFamily: 'Consolas, Monaco, monospace' }}>
+                              {pair.symbol}
+                            </td>
+                            <td style={{ padding: '10px 12px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700' }}>
+                                <CoinIcon symbol={pair.baseToken?.symbol} size={18} />
+                                <span>{pair.baseToken?.symbol || '-'}</span>
+                                <span style={{ color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '500', fontSize: '11px' }}>
+                                  {pair.baseToken?.name || ''}
+                                </span>
+                              </div>
+                            </td>
+                            <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: '800', color: '#ffffff' }}>
+                              {loadingExchangeMarketData && !market ? '...' : formatNativeMarketPrice(market?.mid, quoteSymbol)}
+                            </td>
+                            <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--md-sys-color-primary)', fontWeight: '700' }}>
+                              {loadingExchangeMarketData && !market ? '...' : formatNativeMarketPrice(market?.bid, quoteSymbol)}
+                            </td>
+                            <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--color-profit-green)', fontWeight: '700' }}>
+                              {loadingExchangeMarketData && !market ? '...' : formatNativeMarketPrice(market?.ask, quoteSymbol)}
+                            </td>
+                            <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--md-sys-color-on-surface-variant)', fontSize: '11px' }}>
+                              {market ? `${market.bidQty ?? '-'} / ${market.askQty ?? '-'}` : '-'}
+                            </td>
+                            <td style={{ padding: '10px 12px', textAlign: 'right' }}>
+                              <span className="badge" style={{
+                                backgroundColor: isLive ? 'rgba(16,185,129,0.12)' : market?.status === 'error' ? 'rgba(239,83,80,0.12)' : 'rgba(255,255,255,0.06)',
+                                color: isLive ? '#10b981' : market?.status === 'error' ? 'var(--md-sys-color-error)' : 'var(--md-sys-color-on-surface-variant)',
+                                fontWeight: '800'
+                              }}>
+                                {isLive ? 'Live' : market?.status || (loadingExchangeMarketData ? 'Loading' : 'Pending')}
+                              </span>
+                            </td>
+                          </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+              </>
+              )}
+
+              {exchangeDbDetailTab === 'overview' && (
+              <>
               {/* Endpoint API / Router */}
               {selectedExchangeDb.attributes && selectedExchangeDb.attributes.length > 0 && (
                 <div>
@@ -4001,8 +4259,11 @@ function App() {
                   </div>
                 </div>
               )}
+              </>
+              )}
             </div>
           </div>
+        </div>
         </div>
       )}
 

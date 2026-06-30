@@ -784,6 +784,115 @@ app.get('/api/exchanges-db', async (req, res) => {
   }
 });
 
+// Endpoint to fetch live market data for fiat pairs stored in token_pairs.
+app.get('/api/exchanges-db/:exchangeId/market-data', async (req, res) => {
+  try {
+    const exchange = await db.Exchange.findByPk(req.params.exchangeId, {
+      include: [
+        {
+          model: db.TokenPair,
+          as: 'tokenPairs',
+          include: [
+            { model: db.Token, as: 'baseToken', attributes: ['id', 'symbol', 'name'] },
+            { model: db.Token, as: 'quoteToken', attributes: ['id', 'symbol', 'name'] }
+          ]
+        }
+      ]
+    });
+
+    if (!exchange) {
+      return res.status(404).json({ error: 'Exchange not found' });
+    }
+
+    const fiatSymbols = new Set(['IDR', 'USD']);
+    const fiatPairs = (exchange.tokenPairs || [])
+      .filter((pair) => fiatSymbols.has(pair.quoteToken?.symbol))
+      .sort((a, b) => a.symbol.localeCompare(b.symbol));
+
+    const fetchTokocryptoDepth = async (pair) => {
+      const url = `https://www.tokocrypto.com/open/v1/market/depth?symbol=${encodeURIComponent(pair.symbol)}&limit=5`;
+      const data = await fetchWithTimeout(url, {}, 5000);
+      const bid = parseFloat(data?.data?.bids?.[0]?.[0]);
+      const bidQty = parseFloat(data?.data?.bids?.[0]?.[1]);
+      const ask = parseFloat(data?.data?.asks?.[0]?.[0]);
+      const askQty = parseFloat(data?.data?.asks?.[0]?.[1]);
+      const mid = Number.isFinite(bid) && Number.isFinite(ask) ? (bid + ask) / 2 : null;
+
+      return {
+        pairId: pair.id,
+        symbol: pair.symbol,
+        baseToken: pair.baseToken,
+        quoteToken: pair.quoteToken,
+        bid: Number.isFinite(bid) ? bid : null,
+        bidQty: Number.isFinite(bidQty) ? bidQty : null,
+        ask: Number.isFinite(ask) ? ask : null,
+        askQty: Number.isFinite(askQty) ? askQty : null,
+        mid,
+        nativeCurrency: pair.quoteToken?.symbol || null,
+        status: Number.isFinite(bid) || Number.isFinite(ask) ? 'success' : 'empty',
+        source: 'tokocrypto_depth',
+        timestamp: Date.now()
+      };
+    };
+
+    const fetchUnsupported = async (pair) => ({
+      pairId: pair.id,
+      symbol: pair.symbol,
+      baseToken: pair.baseToken,
+      quoteToken: pair.quoteToken,
+      bid: null,
+      bidQty: null,
+      ask: null,
+      askQty: null,
+      mid: null,
+      nativeCurrency: pair.quoteToken?.symbol || null,
+      status: 'unsupported',
+      source: null,
+      timestamp: Date.now(),
+      message: 'Live market data is not configured for this exchange yet.'
+    });
+
+    const fetchers = {
+      Tokocrypto: fetchTokocryptoDepth
+    };
+    const fetchPair = fetchers[exchange.name] || fetchUnsupported;
+
+    const marketData = await Promise.all(
+      fiatPairs.map(async (pair) => {
+        try {
+          return await fetchPair(pair);
+        } catch (error) {
+          return {
+            pairId: pair.id,
+            symbol: pair.symbol,
+            baseToken: pair.baseToken,
+            quoteToken: pair.quoteToken,
+            bid: null,
+            bidQty: null,
+            ask: null,
+            askQty: null,
+            mid: null,
+            nativeCurrency: pair.quoteToken?.symbol || null,
+            status: 'error',
+            source: exchange.name === 'Tokocrypto' ? 'tokocrypto_depth' : null,
+            timestamp: Date.now(),
+            message: error.message
+          };
+        }
+      })
+    );
+
+    res.json({
+      exchange: { id: exchange.id, name: exchange.name },
+      pairCount: marketData.length,
+      timestamp: Date.now(),
+      data: marketData
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch exchange market data', message: error.message });
+  }
+});
+
 // Endpoint to fetch real token data from database including cached prices
 app.get('/api/tokens-db', async (req, res) => {
   try {

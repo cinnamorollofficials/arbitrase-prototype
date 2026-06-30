@@ -734,3 +734,19 @@ h1, h2, h3, h4 {
   opacity: 1;
   transform: translateY(0);
 }
+
+.market-refresh-ring-progress {
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+  animation: market-refresh-ring-fill 10s linear forwards;
+}
+
+@keyframes market-refresh-ring-fill {
+  from {
+    stroke-dashoffset: 75.4;
+  }
+
+  to {
+    stroke-dashoffset: 0;
+  }
+}

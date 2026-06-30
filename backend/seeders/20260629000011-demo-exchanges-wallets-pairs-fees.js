@@ -1,3 +1,9 @@
+import { readFileSync } from 'node:fs';
+
+const tokocryptoIdrPairs = JSON.parse(
+  readFileSync(new URL('../data/tokocrypto-pairs.json', import.meta.url), 'utf8')
+);
+
 export async function up(queryInterface, Sequelize) {
   // 1. Seed Exchanges
   const exchanges = [
@@ -83,8 +89,37 @@ export async function up(queryInterface, Sequelize) {
     { id: 33, symbol: 'BRETT' },
     { id: 34, symbol: 'FDUSD' },
     { id: 35, symbol: 'USDE' },
-    { id: 36, symbol: 'PYUSD' }
+    { id: 36, symbol: 'PYUSD' },
+    { id: 37, symbol: 'ALCH' },
+    { id: 38, symbol: 'ARB' },
+    { id: 39, symbol: 'ASTER' },
+    { id: 40, symbol: 'BTC' },
+    { id: 41, symbol: 'CARV' },
+    { id: 42, symbol: 'DOGE' },
+    { id: 43, symbol: 'DOGS' },
+    { id: 44, symbol: 'DRX' },
+    { id: 45, symbol: 'GOAT' },
+    { id: 46, symbol: 'HBAR' },
+    { id: 47, symbol: 'JELLYJELLY' },
+    { id: 48, symbol: 'MANTA' },
+    { id: 49, symbol: 'MOODENG' },
+    { id: 50, symbol: 'NBT' },
+    { id: 51, symbol: 'POL' },
+    { id: 52, symbol: 'SCR' },
+    { id: 53, symbol: 'SKYA' },
+    { id: 54, symbol: 'SOON' },
+    { id: 55, symbol: 'SPX' },
+    { id: 56, symbol: 'TAO' },
+    { id: 57, symbol: 'TKO' },
+    { id: 58, symbol: 'U' },
+    { id: 59, symbol: 'VELO' },
+    { id: 60, symbol: 'VIRTUAL' },
+    { id: 61, symbol: 'WLD' },
+    { id: 62, symbol: 'ZIL' },
+    { id: 63, symbol: 'IDR' }
   ];
+  const tokenBySymbol = new Map(tokens.map((token) => [token.symbol, token]));
+  const demoTokens = tokens.filter((token) => token.id <= 36);
 
   // Token Chain mapping: 1 = Ethereum, 2 = BSC, 3 = Solana
   const tokenChains = {
@@ -131,7 +166,7 @@ export async function up(queryInterface, Sequelize) {
   let pairId = 1;
 
   // CEX Token Pairs (Binance, OKX, Bybit, Coinbase, Kraken, Gate.io, Bitget, MEXC, Indodax, Tokocrypto, Reku)
-  for (const token of tokens) {
+  for (const token of demoTokens) {
     const sym = token.symbol;
 
     // Binance (id 1)
@@ -170,17 +205,33 @@ export async function up(queryInterface, Sequelize) {
     const indodaxSym = sym === 'USDT' ? 'usdt_idr' : `${sym.toLowerCase()}_idr`;
     tokenPairs.push({ id: pairId++, exchange_id: 9, base_token_id: token.id, quote_token_id: 1, symbol: indodaxSym, is_active: true });
 
-    // Tokocrypto (id 10)
-    const tokoSym = `${sym}USDT`;
-    tokenPairs.push({ id: pairId++, exchange_id: 10, base_token_id: token.id, quote_token_id: 1, symbol: tokoSym, is_active: true });
-
     // Reku (id 11)
     const rekuSym = `${sym}USDT`;
     tokenPairs.push({ id: pairId++, exchange_id: 11, base_token_id: token.id, quote_token_id: 1, symbol: rekuSym, is_active: true });
   }
 
+  // Tokocrypto (id 10) IDR market pairs from backend/data/tokocrypto-pairs.json.
+  for (const symbol of tokocryptoIdrPairs) {
+    const [baseSymbol, quoteSymbol] = symbol.split('_');
+    const baseToken = tokenBySymbol.get(baseSymbol);
+    const quoteToken = tokenBySymbol.get(quoteSymbol);
+
+    if (!baseToken || !quoteToken) {
+      throw new Error(`Missing token seed for Tokocrypto pair ${symbol}`);
+    }
+
+    tokenPairs.push({
+      id: pairId++,
+      exchange_id: 10,
+      base_token_id: baseToken.id,
+      quote_token_id: quoteToken.id,
+      symbol,
+      is_active: true
+    });
+  }
+
   // DEX Token Pairs
-  for (const token of tokens) {
+  for (const token of demoTokens) {
     const sym = token.symbol;
     const chains = tokenChains[sym] || [];
 
