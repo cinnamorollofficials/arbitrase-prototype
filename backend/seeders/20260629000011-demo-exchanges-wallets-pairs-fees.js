@@ -6,6 +6,9 @@ const tokocryptoIdrPairs = JSON.parse(
 const indodaxIdrPairs = JSON.parse(
   readFileSync(new URL('../data/indodax-pairs.json', import.meta.url), 'utf8')
 );
+const rekuIdrPairs = JSON.parse(
+  readFileSync(new URL('../data/reku-pairs.json', import.meta.url), 'utf8')
+);
 
 export async function up(queryInterface, Sequelize) {
   // 1. Seed Exchanges
@@ -124,7 +127,9 @@ export async function up(queryInterface, Sequelize) {
   const tokenBySymbol = new Map(tokens.map((token) => [token.symbol, token]));
   let nextTokenId = Math.max(...tokens.map((token) => token.id)) + 1;
 
-  for (const symbol of indodaxIdrPairs) {
+  const marketPairs = [...indodaxIdrPairs, ...rekuIdrPairs];
+
+  for (const symbol of marketPairs) {
     const [baseSymbol] = symbol.split('_');
 
     if (tokenBySymbol.has(baseSymbol)) {
@@ -217,10 +222,6 @@ export async function up(queryInterface, Sequelize) {
     // MEXC (id 8)
     const mexcSym = sym === 'USDT' ? 'USDCUSDT' : `${sym}USDT`;
     tokenPairs.push({ id: pairId++, exchange_id: 8, base_token_id: token.id, quote_token_id: 1, symbol: mexcSym, is_active: true });
-
-    // Reku (id 11)
-    const rekuSym = `${sym}USDT`;
-    tokenPairs.push({ id: pairId++, exchange_id: 11, base_token_id: token.id, quote_token_id: 1, symbol: rekuSym, is_active: true });
   }
 
   // Indodax (id 9) IDR market pairs from backend/data/indodax-pairs.json.
@@ -256,6 +257,26 @@ export async function up(queryInterface, Sequelize) {
     tokenPairs.push({
       id: pairId++,
       exchange_id: 10,
+      base_token_id: baseToken.id,
+      quote_token_id: quoteToken.id,
+      symbol,
+      is_active: true
+    });
+  }
+
+  // Reku (id 11) IDR market pairs from backend/data/reku-pairs.json.
+  for (const symbol of rekuIdrPairs) {
+    const [baseSymbol, quoteSymbol] = symbol.split('_');
+    const baseToken = tokenBySymbol.get(baseSymbol);
+    const quoteToken = tokenBySymbol.get(quoteSymbol);
+
+    if (!baseToken || !quoteToken) {
+      throw new Error(`Missing token seed for Reku pair ${symbol}`);
+    }
+
+    tokenPairs.push({
+      id: pairId++,
+      exchange_id: 11,
       base_token_id: baseToken.id,
       quote_token_id: quoteToken.id,
       symbol,

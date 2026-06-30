@@ -10,6 +10,7 @@ Go background worker untuk mengambil harga `token_pairs` secara berkala dan menu
 ## Supported Exchanges
 
 - Indodax: `ticker_all`, satu request per interval.
+- Reku: `v2/bidask`, satu request per interval.
 - Tokocrypto: order book depth per pair, dengan concurrency limit.
 
 Exchange lain tetap dibaca dari Postgres oleh API, tetapi akan tampil sebagai `unsupported` sampai adapter worker dibuat.

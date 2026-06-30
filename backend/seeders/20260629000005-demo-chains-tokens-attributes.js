@@ -3,6 +3,9 @@ import { readFileSync } from 'node:fs';
 const indodaxIdrPairs = JSON.parse(
   readFileSync(new URL('../data/indodax-pairs.json', import.meta.url), 'utf8')
 );
+const rekuIdrPairs = JSON.parse(
+  readFileSync(new URL('../data/reku-pairs.json', import.meta.url), 'utf8')
+);
 
 export async function up(queryInterface, Sequelize) {
   // 1. Insert Chains
@@ -94,7 +97,9 @@ export async function up(queryInterface, Sequelize) {
   const tokenSymbols = new Set(tokens.map((token) => token.symbol));
   let nextTokenId = Math.max(...tokens.map((token) => token.id)) + 1;
 
-  for (const symbol of indodaxIdrPairs) {
+  const marketPairs = [...indodaxIdrPairs, ...rekuIdrPairs];
+
+  for (const symbol of marketPairs) {
     const [baseSymbol] = symbol.split('_');
 
     if (tokenSymbols.has(baseSymbol)) {

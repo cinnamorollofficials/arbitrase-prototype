@@ -14,6 +14,7 @@ type Fetcher interface {
 func SupportedFetchers(client *http.Client, tokocryptoConcurrency int) map[string]Fetcher {
 	return map[string]Fetcher{
 		"Indodax":    NewIndodax(client),
+		"Reku":       NewReku(client),
 		"Tokocrypto": NewTokocrypto(client, tokocryptoConcurrency),
 	}
 }
