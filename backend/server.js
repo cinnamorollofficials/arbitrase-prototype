@@ -3,6 +3,7 @@ import cors from 'cors';
 import axios from 'axios';
 import dotenv from 'dotenv';
 import { createClient } from 'redis';
+import { Op } from 'sequelize';
 import db from './models/index.js';
 
 dotenv.config();
@@ -31,6 +32,18 @@ redisClient.connect().catch(err => {
 // Graceful fallback in-memory cache for raw price logger
 const rawPriceFallbackCache = new Map();
 const FALLBACK_CACHE_TTL_MS = 300000; // 5 minutes TTL
+
+function parsePositiveInt(value, fallback, max = 500) {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed < 1) return fallback;
+  return Math.min(parsed, max);
+}
+
+function parseIncludeParam(value, defaults = []) {
+  if (!value) return new Set(defaults);
+  if (value === 'none') return new Set();
+  return new Set(value.split(',').map((item) => item.trim()).filter(Boolean));
+}
 
 async function saveRawPriceToCache(key, data) {
   const payload = JSON.stringify({
@@ -757,28 +770,40 @@ app.get('/api/exchanges/:exchangeName', (req, res) => {
 // Endpoint to fetch real exchange data from database
 app.get('/api/exchanges-db', async (req, res) => {
   try {
+    const includes = parseIncludeParam(req.query.include, ['attributes', 'fees', 'tokenPairs']);
+    const include = [];
+
+    if (includes.has('attributes')) {
+      include.push({ model: db.ExchangeAttribute, as: 'attributes' });
+    }
+
+    if (includes.has('fees')) {
+      include.push({
+        model: db.Fee,
+        as: 'fees',
+        include: [
+          { model: db.Token, as: 'token', attributes: ['id', 'symbol', 'name'] },
+          { model: db.Chain, as: 'chain', attributes: ['id', 'name', 'chainIdentifier'] }
+        ]
+      });
+    }
+
+    if (includes.has('tokenPairs')) {
+      include.push({
+        model: db.TokenPair,
+        as: 'tokenPairs',
+        include: [
+          { model: db.Token, as: 'baseToken', attributes: ['id', 'symbol', 'name'] },
+          { model: db.Token, as: 'quoteToken', attributes: ['id', 'symbol', 'name'] }
+        ]
+      });
+    }
+
     const exchanges = await db.Exchange.findAll({
-      include: [
-        { model: db.ExchangeAttribute, as: 'attributes' },
-        { 
-          model: db.Fee, 
-          as: 'fees',
-          include: [
-            { model: db.Token, as: 'token', attributes: ['id', 'symbol', 'name'] },
-            { model: db.Chain, as: 'chain', attributes: ['id', 'name', 'chainIdentifier'] }
-          ]
-        },
-        {
-          model: db.TokenPair,
-          as: 'tokenPairs',
-          include: [
-            { model: db.Token, as: 'baseToken', attributes: ['id', 'symbol', 'name'] },
-            { model: db.Token, as: 'quoteToken', attributes: ['id', 'symbol', 'name'] }
-          ]
-        }
-      ]
+      include,
+      order: [['name', 'ASC']]
     });
-    res.json({ exchanges });
+    res.json({ exchanges, include: [...includes] });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch exchanges from database', message: error.message });
   }
@@ -940,10 +965,31 @@ app.get('/api/exchanges-db/:exchangeId/market-data', async (req, res) => {
 // Endpoint to fetch real token data from database including cached prices
 app.get('/api/tokens-db', async (req, res) => {
   try {
-    const tokens = await db.Token.findAll({
-      include: [
-        { model: db.TokenAttribute, as: 'attributes' }
-      ]
+    const page = parsePositiveInt(req.query.page, 1, 10000);
+    const limit = parsePositiveInt(req.query.limit, 100, 500);
+    const offset = (page - 1) * limit;
+    const includes = parseIncludeParam(req.query.include, ['attributes']);
+    const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
+    const where = search
+      ? {
+          [Op.or]: [
+            { symbol: { [Op.iLike]: `%${search}%` } },
+            { name: { [Op.iLike]: `%${search}%` } }
+          ]
+        }
+      : {};
+
+    const include = includes.has('attributes')
+      ? [{ model: db.TokenAttribute, as: 'attributes' }]
+      : [];
+
+    const { count, rows: tokens } = await db.Token.findAndCountAll({
+      where,
+      include,
+      order: [['symbol', 'ASC']],
+      limit,
+      offset,
+      distinct: true
     });
 
     const tokensWithPrices = tokens.map(t => {
@@ -981,18 +1027,32 @@ app.get('/api/tokens-db', async (req, res) => {
         }
       }
 
-      return {
+      const token = {
         id: t.id,
         symbol: t.symbol,
         name: t.name,
         coingeckoId: t.coingeckoId,
         isActive: t.isActive,
-        attributes: t.attributes,
         price
       };
+
+      if (includes.has('attributes')) {
+        token.attributes = t.attributes || [];
+      }
+
+      return token;
     });
 
-    res.json({ tokens: tokensWithPrices });
+    res.json({
+      tokens: tokensWithPrices,
+      pagination: {
+        page,
+        limit,
+        total: count,
+        totalPages: Math.ceil(count / limit)
+      },
+      include: [...includes]
+    });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch tokens from database', message: error.message });
   }

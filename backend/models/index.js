@@ -14,7 +14,9 @@ import FeeModel from './fee.js';
 const env = process.env.NODE_ENV || 'development';
 const config = dbConfig[env];
 
-const sequelize = new Sequelize(config.database, config.username, config.password, config);
+const sequelize = config.url
+  ? new Sequelize(config.url, config)
+  : new Sequelize(config.database, config.username, config.password, config);
 
 const db = {
   sequelize,
