@@ -835,6 +835,45 @@ app.get('/api/exchanges-db/:exchangeId/market-data', async (req, res) => {
       };
     };
 
+    let indodaxTickerAllPromise = null;
+    const getIndodaxTickerAll = async () => {
+      if (!indodaxTickerAllPromise) {
+        indodaxTickerAllPromise = fetchWithTimeout('https://indodax.com/api/ticker_all', {}, 5000);
+      }
+
+      return indodaxTickerAllPromise;
+    };
+
+    const fetchIndodaxTicker = async (pair) => {
+      const data = await getIndodaxTickerAll();
+      const tickers = data?.tickers || {};
+      const tickerKey = pair.symbol.toLowerCase();
+      const ticker = tickers[tickerKey];
+
+      const bid = parseFloat(ticker?.buy);
+      const ask = parseFloat(ticker?.sell);
+      const last = parseFloat(ticker?.last);
+      const mid = Number.isFinite(bid) && Number.isFinite(ask)
+        ? (bid + ask) / 2
+        : (Number.isFinite(last) ? last : null);
+
+      return {
+        pairId: pair.id,
+        symbol: pair.symbol,
+        baseToken: pair.baseToken,
+        quoteToken: pair.quoteToken,
+        bid: Number.isFinite(bid) ? bid : null,
+        bidQty: null,
+        ask: Number.isFinite(ask) ? ask : null,
+        askQty: null,
+        mid,
+        nativeCurrency: pair.quoteToken?.symbol || null,
+        status: Number.isFinite(bid) || Number.isFinite(ask) || Number.isFinite(last) ? 'success' : 'empty',
+        source: 'indodax_ticker_all',
+        timestamp: Date.now()
+      };
+    };
+
     const fetchUnsupported = async (pair) => ({
       pairId: pair.id,
       symbol: pair.symbol,
@@ -853,7 +892,12 @@ app.get('/api/exchanges-db/:exchangeId/market-data', async (req, res) => {
     });
 
     const fetchers = {
+      Indodax: fetchIndodaxTicker,
       Tokocrypto: fetchTokocryptoDepth
+    };
+    const fetcherSources = {
+      Indodax: 'indodax_ticker_all',
+      Tokocrypto: 'tokocrypto_depth'
     };
     const fetchPair = fetchers[exchange.name] || fetchUnsupported;
 
@@ -874,7 +918,7 @@ app.get('/api/exchanges-db/:exchangeId/market-data', async (req, res) => {
             mid: null,
             nativeCurrency: pair.quoteToken?.symbol || null,
             status: 'error',
-            source: exchange.name === 'Tokocrypto' ? 'tokocrypto_depth' : null,
+            source: fetcherSources[exchange.name] || null,
             timestamp: Date.now(),
             message: error.message
           };

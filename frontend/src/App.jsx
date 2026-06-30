@@ -1073,7 +1073,10 @@ function App() {
       }
 
       const data = await response.json();
-      setExchangeMarketData(data.data || []);
+      const rows = Array.isArray(data.data)
+        ? data.data
+        : (Array.isArray(data.marketData) ? data.marketData : []);
+      setExchangeMarketData(rows);
     } catch (err) {
       console.error('Failed to fetch exchange market data:', err);
       setErrorExchangeMarketData(err.message);
@@ -1135,9 +1138,35 @@ function App() {
     return () => clearInterval(interval);
   }, [selectedExchangeDb, exchangeDbDetailTab]);
 
-  const exchangeMarketDataBySymbol = useMemo(() => {
-    return new Map(exchangeMarketData.map((item) => [item.symbol, item]));
+  const normalizeMarketSymbol = (symbol) => String(symbol || '')
+    .trim()
+    .toUpperCase()
+    .replace('/', '_')
+    .replace('-', '_');
+
+  const exchangeMarketDataLookup = useMemo(() => {
+    const lookup = new Map();
+
+    exchangeMarketData.forEach((item) => {
+      if (item.pairId !== undefined && item.pairId !== null) {
+        lookup.set(`id:${item.pairId}`, item);
+      }
+
+      if (item.symbol) {
+        lookup.set(`symbol:${item.symbol}`, item);
+        lookup.set(`symbol:${normalizeMarketSymbol(item.symbol)}`, item);
+      }
+    });
+
+    return lookup;
   }, [exchangeMarketData]);
+
+  const getExchangeMarketRow = (pair) => {
+    return exchangeMarketDataLookup.get(`id:${pair.id}`)
+      || exchangeMarketDataLookup.get(`symbol:${pair.symbol}`)
+      || exchangeMarketDataLookup.get(`symbol:${normalizeMarketSymbol(pair.symbol)}`)
+      || null;
+  };
 
   const formatNativeMarketPrice = (value, currency = 'IDR') => {
     if (value === null || value === undefined || Number.isNaN(Number(value))) return '-';
@@ -4077,9 +4106,12 @@ function App() {
                       </thead>
                       <tbody>
                         {selectedExchangeFiatPairs.map((pair) => {
-                          const market = exchangeMarketDataBySymbol.get(pair.symbol);
+                          const market = getExchangeMarketRow(pair);
                           const quoteSymbol = market?.nativeCurrency || pair.quoteToken?.symbol || 'IDR';
                           const isLive = market?.status === 'success';
+                          const lastOrMid = market?.mid ?? market?.last ?? market?.price ?? null;
+                          const bid = market?.bid ?? market?.nativeBid ?? null;
+                          const ask = market?.ask ?? market?.nativeAsk ?? null;
 
                           return (
                           <tr key={pair.id || pair.symbol} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
@@ -4096,13 +4128,13 @@ function App() {
                               </div>
                             </td>
                             <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: '800', color: '#ffffff' }}>
-                              {loadingExchangeMarketData && !market ? '...' : formatNativeMarketPrice(market?.mid, quoteSymbol)}
+                              {loadingExchangeMarketData && !market ? '...' : formatNativeMarketPrice(lastOrMid, quoteSymbol)}
                             </td>
                             <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--md-sys-color-primary)', fontWeight: '700' }}>
-                              {loadingExchangeMarketData && !market ? '...' : formatNativeMarketPrice(market?.bid, quoteSymbol)}
+                              {loadingExchangeMarketData && !market ? '...' : formatNativeMarketPrice(bid, quoteSymbol)}
                             </td>
                             <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--color-profit-green)', fontWeight: '700' }}>
-                              {loadingExchangeMarketData && !market ? '...' : formatNativeMarketPrice(market?.ask, quoteSymbol)}
+                              {loadingExchangeMarketData && !market ? '...' : formatNativeMarketPrice(ask, quoteSymbol)}
                             </td>
                             <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--md-sys-color-on-surface-variant)', fontSize: '11px' }}>
                               {market ? `${market.bidQty ?? '-'} / ${market.askQty ?? '-'}` : '-'}

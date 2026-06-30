@@ -1,3 +1,9 @@
+import { readFileSync } from 'node:fs';
+
+const indodaxIdrPairs = JSON.parse(
+  readFileSync(new URL('../data/indodax-pairs.json', import.meta.url), 'utf8')
+);
+
 export async function up(queryInterface, Sequelize) {
   // 1. Insert Chains
   await queryInterface.bulkInsert('chains', [
@@ -85,6 +91,26 @@ export async function up(queryInterface, Sequelize) {
     { id: 62, symbol: 'ZIL', name: 'Zilliqa', coingecko_id: 'zilliqa', is_active: true },
     { id: 63, symbol: 'IDR', name: 'Indonesian Rupiah', coingecko_id: null, is_active: true }
   ];
+  const tokenSymbols = new Set(tokens.map((token) => token.symbol));
+  let nextTokenId = Math.max(...tokens.map((token) => token.id)) + 1;
+
+  for (const symbol of indodaxIdrPairs) {
+    const [baseSymbol] = symbol.split('_');
+
+    if (tokenSymbols.has(baseSymbol)) {
+      continue;
+    }
+
+    tokens.push({
+      id: nextTokenId++,
+      symbol: baseSymbol,
+      name: baseSymbol,
+      coingecko_id: null,
+      is_active: true
+    });
+    tokenSymbols.add(baseSymbol);
+  }
+
   await queryInterface.bulkInsert('tokens', tokens);
 
   // 4. Insert Token Attributes
