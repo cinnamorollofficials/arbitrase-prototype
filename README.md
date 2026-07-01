@@ -53,7 +53,7 @@ DB_USER=postgres
 DB_PASSWORD=
 DB_NAME=arbitrage_db
 DB_SSL=false
-REDIS_URL=redis://127.0.0.1:6379
+REDIS_URL=redis://localhost:6379
 MARKET_DATA_STALE_AFTER_MS=30000
 ```
 
@@ -69,8 +69,8 @@ make install
 
 Command ini akan menjalankan:
 
-- `npm --prefix backend install`
-- `cd frontend && bun install`
+- `cd backend && npm install`
+- `cd frontend && bun install` jika Bun tersedia, atau `npm install` sebagai fallback
 - `cd price-worker && go mod download`
 
 ## Migrasi dan Seeder
@@ -103,8 +103,8 @@ make run
 
 Proses yang dijalankan:
 
-- Backend API: `npm --prefix backend run dev`
-- Frontend: `cd frontend && bun run dev`
+- Backend API: `cd backend && npm run dev`
+- Frontend: `cd frontend && bun run dev` jika Bun tersedia, atau `npm run dev` sebagai fallback
 - Price worker: `cd price-worker && go run ./cmd/price-worker`
 
 Secara default backend berjalan di:
