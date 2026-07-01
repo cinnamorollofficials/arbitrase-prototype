@@ -27,7 +27,7 @@ func New(cfg config.Config, dbStore *db.Store, redisStore *redisstore.Store) *Sc
 		config:   cfg,
 		db:       dbStore,
 		redis:    redisStore,
-		fetchers: exchanges.SupportedFetchers(client, cfg.TokocryptoConcurrency),
+		fetchers: exchanges.SupportedFetchers(client, cfg.TokocryptoConcurrency, cfg.MobeeAPIKey, cfg.MobeeConcurrency),
 	}
 }
 

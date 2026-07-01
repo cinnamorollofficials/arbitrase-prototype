@@ -18,6 +18,8 @@ type Config struct {
 	HistoryMaxPoints      int64
 	StaleAfter            time.Duration
 	TokocryptoConcurrency int
+	MobeeAPIKey           string
+	MobeeConcurrency      int
 	HTTPTimeout           time.Duration
 }
 
@@ -32,6 +34,8 @@ func Load() Config {
 		HistoryMaxPoints:      int64(envInt("HISTORY_MAX_POINTS", 360)),
 		StaleAfter:            time.Duration(envInt("STALE_AFTER_SECONDS", 30)) * time.Second,
 		TokocryptoConcurrency: envInt("TOKOCRYPTO_CONCURRENCY", 5),
+		MobeeAPIKey:           envString("MOBEE_API_KEY", ""),
+		MobeeConcurrency:      envInt("MOBEE_CONCURRENCY", 5),
 		HTTPTimeout:           time.Duration(envInt("HTTP_TIMEOUT_SECONDS", 5)) * time.Second,
 	}
 }

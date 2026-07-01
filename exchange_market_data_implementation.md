@@ -300,6 +300,29 @@ Perlu adapter symbol dari `BTC_IDR` menjadi `btc_idr`.
 - Perlu verifikasi endpoint publik yang stabil.
 - Jika belum tersedia, return `unsupported` sampai fetcher resmi ditambahkan.
 
+### Mobee
+
+- Pair API memakai format `BASE-QUOTE`, contoh `BTC-IDR`.
+- Fixture aplikasi tetap memakai format internal `BASE_IDR`.
+- Daftar pair bisa diperbarui dari API Mobee setelah `MOBEE_API_KEY` diisi:
+
+```bash
+cd backend
+npm run update:mobee-pairs
+```
+
+- Worker memakai endpoint summary per pair:
+
+```text
+https://open-api.mobee.io/v1/markets/BTC-IDR/summary
+```
+
+- Header wajib:
+
+```text
+X-API-Key: <MOBEE_API_KEY>
+```
+
 ## Prinsip Desain
 
 - Database tetap menjadi sumber daftar pair.
@@ -309,4 +332,3 @@ Perlu adapter symbol dari `BTC_IDR` menjadi `btc_idr`.
   - fixture pair,
   - seeder mapping,
   - backend fetcher.
-

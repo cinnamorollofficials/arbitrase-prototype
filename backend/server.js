@@ -276,7 +276,7 @@ function buildPendingMarketRow(exchange, pair, status = 'pending', message = 'Wa
     priceTimestamp: null,
     timestamp: Date.now(),
     history: [],
-    message: exchange.name === 'Indodax' || exchange.name === 'Tokocrypto'
+    message: exchange.name === 'Indodax' || exchange.name === 'Tokocrypto' || exchange.name === 'Mobee'
       ? message
       : 'Live market data is not configured for this exchange yet.'
   };
@@ -1016,7 +1016,7 @@ app.get('/api/exchanges-db/:exchangeId/market-data', async (req, res) => {
           return buildPendingMarketRow(
             exchange,
             pair,
-            exchange.name === 'Indodax' || exchange.name === 'Tokocrypto' ? 'pending' : 'unsupported'
+            exchange.name === 'Indodax' || exchange.name === 'Tokocrypto' || exchange.name === 'Mobee' ? 'pending' : 'unsupported'
           );
         }
 
