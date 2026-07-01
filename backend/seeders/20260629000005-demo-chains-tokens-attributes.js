@@ -12,6 +12,9 @@ const mobeeIdrPairs = JSON.parse(
 const bittimeIdrPairs = JSON.parse(
   readFileSync(new URL('../data/bittime-pairs.json', import.meta.url), 'utf8')
 );
+const krakenPairs = JSON.parse(
+  readFileSync(new URL('../data/kraken-pairs.json', import.meta.url), 'utf8')
+);
 
 export async function up(queryInterface, Sequelize) {
   // 1. Insert Chains
@@ -98,12 +101,28 @@ export async function up(queryInterface, Sequelize) {
     { id: 60, symbol: 'VIRTUAL', name: 'Virtuals Protocol', coingecko_id: 'virtual-protocol', is_active: true },
     { id: 61, symbol: 'WLD', name: 'Worldcoin', coingecko_id: 'worldcoin-wld', is_active: true },
     { id: 62, symbol: 'ZIL', name: 'Zilliqa', coingecko_id: 'zilliqa', is_active: true },
-    { id: 63, symbol: 'IDR', name: 'Indonesian Rupiah', coingecko_id: null, is_active: true }
+    { id: 63, symbol: 'IDR', name: 'Indonesian Rupiah', coingecko_id: null, is_active: true },
+    // Kraken quote fiat/crypto currencies
+    { id: 64, symbol: 'USD', name: 'US Dollar', coingecko_id: null, is_active: true },
+    { id: 65, symbol: 'EUR', name: 'Euro', coingecko_id: null, is_active: true },
+    { id: 66, symbol: 'GBP', name: 'British Pound', coingecko_id: null, is_active: true },
+    { id: 67, symbol: 'CAD', name: 'Canadian Dollar', coingecko_id: null, is_active: true },
+    { id: 68, symbol: 'AUD', name: 'Australian Dollar', coingecko_id: null, is_active: true },
+    { id: 69, symbol: 'JPY', name: 'Japanese Yen', coingecko_id: null, is_active: true },
+    { id: 70, symbol: 'CHF', name: 'Swiss Franc', coingecko_id: null, is_active: true },
+    { id: 71, symbol: 'XBT', name: 'Bitcoin (Kraken)', coingecko_id: 'bitcoin', is_active: true },
+    { id: 72, symbol: 'DAI', name: 'Dai', coingecko_id: 'dai', is_active: true }
   ];
   const tokenSymbols = new Set(tokens.map((token) => token.symbol));
   let nextTokenId = Math.max(...tokens.map((token) => token.id)) + 1;
 
-  const marketPairs = [...indodaxIdrPairs, ...rekuIdrPairs, ...mobeeIdrPairs, ...bittimeIdrPairs];
+  const marketPairs = [
+    ...indodaxIdrPairs,
+    ...rekuIdrPairs,
+    ...mobeeIdrPairs,
+    ...bittimeIdrPairs,
+    ...krakenPairs
+  ];
 
   for (const symbol of marketPairs) {
     const [baseSymbol] = symbol.split('_');

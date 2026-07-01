@@ -15,6 +15,7 @@ func SupportedFetchers(client *http.Client, tokocryptoConcurrency int, mobeeAPIK
 	return map[string]Fetcher{
 		"Bittime":    NewBittime(client, tokocryptoConcurrency),
 		"Indodax":    NewIndodax(client),
+		"Kraken":     NewKraken(client, 3),
 		"Mobee":      NewMobee(client, mobeeAPIKey, mobeeAPISecret, mobeeConcurrency),
 		"Reku":       NewReku(client),
 		"Tokocrypto": NewTokocrypto(client, tokocryptoConcurrency),

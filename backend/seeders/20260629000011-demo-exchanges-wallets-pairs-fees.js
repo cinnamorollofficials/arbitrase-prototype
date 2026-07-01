@@ -15,6 +15,9 @@ const mobeeIdrPairs = JSON.parse(
 const bittimeIdrPairs = JSON.parse(
   readFileSync(new URL('../data/bittime-pairs.json', import.meta.url), 'utf8')
 );
+const krakenPairs = JSON.parse(
+  readFileSync(new URL('../data/kraken-pairs.json', import.meta.url), 'utf8')
+);
 
 export async function up(queryInterface, Sequelize) {
   // 1. Seed Exchanges
@@ -132,12 +135,28 @@ export async function up(queryInterface, Sequelize) {
     { id: 60, symbol: 'VIRTUAL' },
     { id: 61, symbol: 'WLD' },
     { id: 62, symbol: 'ZIL' },
-    { id: 63, symbol: 'IDR' }
+    { id: 63, symbol: 'IDR' },
+    // Kraken quote fiat/crypto tokens
+    { id: 64, symbol: 'USD' },
+    { id: 65, symbol: 'EUR' },
+    { id: 66, symbol: 'GBP' },
+    { id: 67, symbol: 'CAD' },
+    { id: 68, symbol: 'AUD' },
+    { id: 69, symbol: 'JPY' },
+    { id: 70, symbol: 'CHF' },
+    { id: 71, symbol: 'XBT' },
+    { id: 72, symbol: 'DAI' }
   ];
   const tokenBySymbol = new Map(tokens.map((token) => [token.symbol, token]));
   let nextTokenId = Math.max(...tokens.map((token) => token.id)) + 1;
 
-  const marketPairs = [...indodaxIdrPairs, ...rekuIdrPairs, ...mobeeIdrPairs, ...bittimeIdrPairs];
+  const marketPairs = [
+    ...indodaxIdrPairs,
+    ...rekuIdrPairs,
+    ...mobeeIdrPairs,
+    ...bittimeIdrPairs,
+    ...krakenPairs
+  ];
 
   for (const symbol of marketPairs) {
     const [baseSymbol] = symbol.split('_');
@@ -197,7 +216,8 @@ export async function up(queryInterface, Sequelize) {
   const tokenPairs = [];
   let pairId = 1;
 
-  // CEX Token Pairs (Binance, OKX, Bybit, Coinbase, Kraken, Gate.io, Bitget, MEXC, Indodax, Tokocrypto, Reku, Mobee, Bittime)
+  // CEX Token Pairs (Binance, OKX, Bybit, Coinbase, Gate.io, Bitget, MEXC)
+  // NOTE: Kraken is excluded here — its pairs come from kraken-pairs.json below.
   for (const token of demoTokens) {
     const sym = token.symbol;
 
@@ -216,10 +236,6 @@ export async function up(queryInterface, Sequelize) {
     // Coinbase (id 4)
     const cbSym = sym === 'USDT' ? 'USDT-USD' : `${sym}-USD`;
     tokenPairs.push({ id: pairId++, exchange_id: 4, base_token_id: token.id, quote_token_id: 1, symbol: cbSym, is_active: true });
-
-    // Kraken (id 5)
-    const krkSym = sym === 'USDT' ? 'USDTUSD' : `${sym}USD`;
-    tokenPairs.push({ id: pairId++, exchange_id: 5, base_token_id: token.id, quote_token_id: 1, symbol: krkSym, is_active: true });
 
     // Gate.io (id 6)
     const gateSym = sym === 'USDT' ? 'USDC_USDT' : `${sym}_USDT`;
@@ -267,6 +283,26 @@ export async function up(queryInterface, Sequelize) {
     tokenPairs.push({
       id: pairId++,
       exchange_id: 10,
+      base_token_id: baseToken.id,
+      quote_token_id: quoteToken.id,
+      symbol,
+      is_active: true
+    });
+  }
+
+  // Kraken (id 5) global pairs from backend/data/kraken-pairs.json.
+  for (const symbol of krakenPairs) {
+    const [baseSymbol, quoteSymbol] = symbol.split('_');
+    const baseToken = tokenBySymbol.get(baseSymbol);
+    const quoteToken = tokenBySymbol.get(quoteSymbol);
+
+    if (!baseToken || !quoteToken) {
+      throw new Error(`Missing token seed for Kraken pair ${symbol}`);
+    }
+
+    tokenPairs.push({
+      id: pairId++,
+      exchange_id: 5,
       base_token_id: baseToken.id,
       quote_token_id: quoteToken.id,
       symbol,

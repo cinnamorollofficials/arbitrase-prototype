@@ -1018,7 +1018,12 @@ app.get('/api/exchanges-db/:exchangeId/market-data', async (req, res) => {
       return res.status(404).json({ error: 'Exchange not found' });
     }
 
-    const fiatSymbols = new Set(['IDR', 'USD']);
+    // fiatSymbols covers all quote currencies used across exchanges.
+    // IDR = Indonesian CEXes, the rest = Kraken (and future global CEXes).
+    const fiatSymbols = new Set([
+      'IDR', 'USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'CHF',
+      'USDT', 'USDC', 'DAI', 'PYUSD', 'XBT', 'ETH', 'SOL'
+    ]);
     const fiatPairs = (exchange.tokenPairs || [])
       .filter((pair) => fiatSymbols.has(pair.quoteToken?.symbol))
       .sort((a, b) => a.symbol.localeCompare(b.symbol));
@@ -1032,7 +1037,9 @@ app.get('/api/exchanges-db/:exchangeId/market-data', async (req, res) => {
           return buildPendingMarketRow(
             exchange,
             pair,
-            exchange.name === 'Indodax' || exchange.name === 'Tokocrypto' || exchange.name === 'Mobee' ? 'pending' : 'unsupported'
+            exchange.name === 'Indodax' || exchange.name === 'Tokocrypto' || exchange.name === 'Mobee' || exchange.name === 'Kraken' || exchange.name === 'Bittime' || exchange.name === 'Reku'
+              ? 'pending'
+              : 'unsupported'
           );
         }
 
