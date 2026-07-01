@@ -767,46 +767,81 @@ function PriceChartModal({ context, onClose }) {
                 </svg>
 
                 {/* Floating Tooltip Box */}
-                {hoveredIndex !== null && points[hoveredIndex] && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: '12px',
-                      left: getChartX(hoveredIndex) > chartWidth / 2 ? '12px' : 'auto',
-                      right: getChartX(hoveredIndex) > chartWidth / 2 ? 'auto' : '12px',
-                      backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                      border: '1px solid rgba(148, 163, 184, 0.25)',
-                      borderRadius: '8px',
-                      padding: '10px 12px',
-                      boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
-                      fontSize: '11px',
-                      zIndex: 10,
-                      pointerEvents: 'none',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '4px',
-                      minWidth: '170px'
-                    }}
-                  >
-                    <div style={{ color: '#94a3b8', fontWeight: 700, borderBottom: '1px solid rgba(148, 163, 184, 0.15)', paddingBottom: '4px', marginBottom: '4px' }}>
-                      Waktu: {new Date(points[hoveredIndex].t).toLocaleTimeString('id-ID')}
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px' }}>
-                      <span style={{ color: '#ffffff', fontWeight: 600 }}>{context.currentExchange?.name || 'Utama'}:</span>
-                      <span style={{ color: trendColor, fontWeight: 800 }}>{formatNativeMarketPrice(points[hoveredIndex].price, quoteSymbol)}</span>
-                    </div>
-                    {compareSeries.map((series) => {
-                      const p = series.points[hoveredIndex];
-                      if (!p) return null;
-                      return (
-                        <div key={series.id} style={{ display: 'flex', justifyContent: 'space-between', gap: '16px' }}>
-                          <span style={{ color: '#cbd5e1' }}>{series.name}:</span>
-                          <span style={{ color: series.color, fontWeight: 800 }}>{formatNativeMarketPrice(p.price, quoteSymbol)}</span>
+                {hoveredIndex !== null && points[hoveredIndex] && (() => {
+                  const primaryPrice = points[hoveredIndex].price;
+                  const comparePrices = compareSeries
+                    .map((s) => s.points[hoveredIndex]?.price)
+                    .filter((p) => p !== undefined && p !== null);
+
+                  const allPrices = [primaryPrice, ...comparePrices];
+                  const hasMultiple = allPrices.length > 1;
+
+                  const maxVal = Math.max(...allPrices);
+                  const minVal = Math.min(...allPrices);
+                  const maxSpreadFlat = maxVal - minVal;
+                  const maxSpreadPct = minVal > 0 ? (maxSpreadFlat / minVal) * 100 : 0;
+
+                  return (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: '12px',
+                        left: getChartX(hoveredIndex) > chartWidth / 2 ? '12px' : 'auto',
+                        right: getChartX(hoveredIndex) > chartWidth / 2 ? 'auto' : '12px',
+                        backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                        border: '1px solid rgba(148, 163, 184, 0.25)',
+                        borderRadius: '8px',
+                        padding: '10px 12px',
+                        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
+                        fontSize: '11px',
+                        zIndex: 10,
+                        pointerEvents: 'none',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '4px',
+                        minWidth: '190px'
+                      }}
+                    >
+                      <div style={{ color: '#94a3b8', fontWeight: 700, borderBottom: '1px solid rgba(148, 163, 184, 0.15)', paddingBottom: '4px', marginBottom: '4px' }}>
+                        Waktu: {new Date(points[hoveredIndex].t).toLocaleTimeString('id-ID')}
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px' }}>
+                        <span style={{ color: '#ffffff', fontWeight: 600 }}>{context.currentExchange?.name || 'Utama'}:</span>
+                        <span style={{ color: trendColor, fontWeight: 800 }}>{formatNativeMarketPrice(primaryPrice, quoteSymbol)}</span>
+                      </div>
+                      {compareSeries.map((series) => {
+                        const p = series.points[hoveredIndex];
+                        if (!p) return null;
+                        
+                        const diffFlat = p.price - primaryPrice;
+                        const diffPct = primaryPrice > 0 ? (diffFlat / primaryPrice) * 100 : 0;
+                        const diffSign = diffFlat > 0 ? '+' : '';
+                        const diffColor = diffFlat > 0 ? '#10b981' : diffFlat < 0 ? '#ef5350' : '#94a3b8';
+
+                        return (
+                          <div key={series.id} style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', marginTop: '2px' }}>
+                              <span style={{ color: '#cbd5e1' }}>{series.name}:</span>
+                              <span style={{ color: series.color, fontWeight: 800 }}>{formatNativeMarketPrice(p.price, quoteSymbol)}</span>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', fontSize: '9px', color: diffColor, fontWeight: 700 }}>
+                              {diffSign}{formatNativeMarketPrice(diffFlat, quoteSymbol)} ({diffSign}{diffPct.toFixed(2)}%)
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {hasMultiple && (
+                        <div style={{ marginTop: '4px', paddingTop: '6px', borderTop: '1px solid rgba(148, 163, 184, 0.15)', display: 'flex', justifyContent: 'space-between', gap: '16px' }}>
+                          <span style={{ color: '#f59e0b', fontWeight: 700 }}>Max Spread:</span>
+                          <span style={{ color: '#f59e0b', fontWeight: 800 }}>
+                            {formatNativeMarketPrice(maxSpreadFlat, quoteSymbol)} ({maxSpreadPct.toFixed(2)}%)
+                          </span>
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginTop: '4px', color: '#94a3b8', fontSize: '11px' }}>
                 <span>Mulai {formatTimeLabel(firstTimestamp)}</span>
