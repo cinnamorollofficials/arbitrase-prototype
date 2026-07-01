@@ -1,92 +1,24 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import CoinIcon from './components/CoinIcon';
 import ExchangeIcon from './components/ExchangeIcon';
+import AppShell from './layouts/AppShell';
+import ExchangesPage from './features/exchanges/ExchangesPage';
+import ExchangeDetailPage from './features/exchanges/ExchangeDetailPage';
+import useExchangeRoute from './features/exchanges/hooks/useExchangeRoute';
+import useExchangeMarketData from './features/exchanges/hooks/useExchangeMarketData';
+import useExchangeMarketTable from './features/exchanges/hooks/useExchangeMarketTable';
 import { defaultSymbols, COIN_ICONS, COIN_META_LOOKUP, EXCHANGE_API_INFO } from './constants/marketData';
 import { TX_STEPS } from './constants/transactions';
 import useUrlState from './hooks/useUrlState';
 import useAgentSimulator from './hooks/useAgentSimulator';
 import useBalances from './hooks/useBalances';
 import useTransactions from './hooks/useTransactions';
-import { formatRupiah, formatCapital, getCapitalTier, getHeaderGradient, getRatingStatus } from './utils/formatters';
-import { escapeCsvValue } from './utils/csv';
-import { formatMarketPriceTimestamp, formatNativeMarketPrice, normalizeMarketSymbol } from './utils/market';
+import { formatRupiah, formatCapital, getCapitalTier, getRatingStatus } from './utils/formatters';
 import { getUsdIdrRate } from './api/exchangeRates';
-import { getExchangeDetails as fetchExchangeDetailsApi, getExchangeMarketData as fetchExchangeMarketDataApi, getExchangesDb as fetchExchangesDbApi } from './api/exchanges';
+import { getExchangeDetails as fetchExchangeDetailsApi, getExchangesDb as fetchExchangesDbApi } from './api/exchanges';
 import { getOpportunities, getPrices } from './api/prices';
 import { getRawPrices } from './api/rawPrices';
 import { getTokensDb as fetchTokensDbApi } from './api/tokens';
-
-function PriceSparkline({ history }) {
-  const points = Array.isArray(history)
-    ? history
-        .map((point) => ({
-          t: Number(point.t),
-          price: Number(point.price)
-        }))
-        .filter((point) => Number.isFinite(point.t) && Number.isFinite(point.price) && point.price > 0)
-        .sort((a, b) => a.t - b.t)
-    : [];
-
-  if (points.length < 2) {
-    return (
-      <div className="price-sparkline is-empty" title="Menunggu minimal 2 titik harga">
-        <span>Mengumpulkan</span>
-      </div>
-    );
-  }
-
-  const width = 104;
-  const height = 34;
-  const padding = 3;
-  const prices = points.map((point) => point.price);
-  const minPrice = Math.min(...prices);
-  const maxPrice = Math.max(...prices);
-  const range = maxPrice - minPrice || Math.max(maxPrice * 0.0001, 1);
-  const xStep = points.length > 1 ? (width - padding * 2) / (points.length - 1) : 0;
-  const path = points.map((point, index) => {
-    const x = padding + index * xStep;
-    const y = height - padding - ((point.price - minPrice) / range) * (height - padding * 2);
-    return `${index === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`;
-  }).join(' ');
-  const firstPrice = points[0].price;
-  const lastPrice = points[points.length - 1].price;
-  const changePct = firstPrice > 0 ? ((lastPrice - firstPrice) / firstPrice) * 100 : 0;
-  const trendClass = changePct > 0 ? 'is-up' : changePct < 0 ? 'is-down' : 'is-flat';
-  const title = `${points.length} titik harga, perubahan ${changePct.toFixed(2)}%`;
-
-  return (
-    <div className={`price-sparkline ${trendClass}`} title={title}>
-      <svg viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
-        <path className="price-sparkline-baseline" d={`M ${padding} ${height - padding} L ${width - padding} ${height - padding}`} />
-        <path className="price-sparkline-line" d={path} />
-      </svg>
-      <span>{changePct >= 0 ? '+' : ''}{changePct.toFixed(2)}%</span>
-    </div>
-  );
-}
-
-const EXCHANGE_DETAIL_PATH_PREFIX = '/exchanges/';
-
-const getExchangeRouteKey = (exchange) => encodeURIComponent(String(exchange?.id ?? exchange?.name ?? '').trim());
-
-const getExchangeRouteKeyFromPath = () => {
-  const { pathname } = window.location;
-  if (!pathname.startsWith(EXCHANGE_DETAIL_PATH_PREFIX)) return null;
-  const rawKey = pathname.slice(EXCHANGE_DETAIL_PATH_PREFIX.length).split('/')[0];
-  return rawKey ? decodeURIComponent(rawKey) : null;
-};
-
-const buildExchangeDetailPath = (exchange) => {
-  const params = new URLSearchParams(window.location.search);
-  params.set('tab', 'exchanges');
-  return `${EXCHANGE_DETAIL_PATH_PREFIX}${getExchangeRouteKey(exchange)}?${params.toString()}`;
-};
-
-const buildExchangesListPath = () => {
-  const params = new URLSearchParams(window.location.search);
-  params.set('tab', 'exchanges');
-  return `/?${params.toString()}`;
-};
 
 function App() {
   const [prices, setPrices] = useState([]);
@@ -188,7 +120,6 @@ function App() {
   const [capital, setCapital] = useUrlState('capital', 10000);
   const [activeSymbol, setActiveSymbol] = useUrlState('coin', 'USDT');
   const [activeTab, setActiveTab] = useUrlState('tab', 'prices');
-  const [exchangeRouteKey, setExchangeRouteKey] = useState(getExchangeRouteKeyFromPath);
   useEffect(() => {
     if (activeTab === 'exchanges') {
       fetchExchangesDb();
@@ -197,49 +128,54 @@ function App() {
     }
   }, [activeTab]);
 
-  useEffect(() => {
-    const syncExchangeRoute = () => {
-      const routeKey = getExchangeRouteKeyFromPath();
-      setExchangeRouteKey(routeKey);
-      if (routeKey) {
-        setActiveTab('exchanges');
-      }
-    };
-
-    syncExchangeRoute();
-    window.addEventListener('popstate', syncExchangeRoute);
-    return () => window.removeEventListener('popstate', syncExchangeRoute);
-  }, []);
-
-  useEffect(() => {
-    if (!exchangeRouteKey) return;
-
-    const match = exchangesDb.find((exchange) => {
-      const id = String(exchange.id ?? '');
-      const name = String(exchange.name ?? '');
-      return id === exchangeRouteKey || name.toLowerCase() === exchangeRouteKey.toLowerCase();
-    });
-
-    if (match) {
-      setExchangeDbDetailTab('overview');
-      setExchangeMarketData([]);
-      setErrorExchangeMarketData(null);
-      setExchangeMarketSearchQuery('');
-      setSelectedExchangeMarketRows(new Set());
-      setSelectedExchangeDb(match);
-    }
-  }, [exchangeRouteKey, exchangesDb]);
-
   const [exchangesViewMode, setExchangesViewMode] = useUrlState('ex_mode', 'table');
-  const [selectedExchangeDb, setSelectedExchangeDb] = useState(null);
   const [exchangeDbDetailTab, setExchangeDbDetailTab] = useState('overview');
-  const [exchangeMarketData, setExchangeMarketData] = useState([]);
-  const [loadingExchangeMarketData, setLoadingExchangeMarketData] = useState(false);
-  const [errorExchangeMarketData, setErrorExchangeMarketData] = useState(null);
-  const [exchangeMarketRefreshCycle, setExchangeMarketRefreshCycle] = useState(0);
-  const [exchangeMarketSortConfig, setExchangeMarketSortConfig] = useState({ key: 'baseToken', direction: 'asc' });
-  const [exchangeMarketSearchQuery, setExchangeMarketSearchQuery] = useState('');
-  const [selectedExchangeMarketRows, setSelectedExchangeMarketRows] = useState(new Set());
+  const resetExchangeDetailTab = useCallback(() => setExchangeDbDetailTab('overview'), []);
+  const {
+    selectedExchangeDb,
+    openExchangeDbPage,
+    closeExchangeDbPage
+  } = useExchangeRoute({
+    exchanges: exchangesDb,
+    setActiveTab,
+    onRouteDetailOpened: resetExchangeDetailTab,
+    onRouteDetailClosed: resetExchangeDetailTab
+  });
+  const {
+    exchangeMarketData,
+    loadingExchangeMarketData,
+    errorExchangeMarketData,
+    exchangeMarketRefreshCycle,
+    resetExchangeMarketData
+  } = useExchangeMarketData({
+    selectedExchange: selectedExchangeDb,
+    activeDetailTab: exchangeDbDetailTab
+  });
+  const {
+    exchangeMarketSearchQuery,
+    setExchangeMarketSearchQuery,
+    selectedExchangeFiatPairs,
+    filteredExchangeFiatPairs,
+    sortedExchangeFiatPairs,
+    selectedExchangeMarketRows,
+    selectedExchangeMarketPairs,
+    allVisibleExchangeMarketRowsSelected,
+    getExchangeMarketRow,
+    getExchangeMarketRowKey,
+    handleExchangeMarketSort,
+    getExchangeMarketSortIndicator,
+    toggleExchangeMarketRowSelection,
+    toggleAllVisibleExchangeMarketRows,
+    handleExportExchangeMarketCsv,
+    resetExchangeMarketTable
+  } = useExchangeMarketTable({
+    selectedExchange: selectedExchangeDb,
+    marketData: exchangeMarketData
+  });
+  useEffect(() => {
+    resetExchangeMarketData();
+    resetExchangeMarketTable();
+  }, [selectedExchangeDb, resetExchangeMarketData, resetExchangeMarketTable]);
   const [isCompact, setIsCompact] = useUrlState('compact', 'false');
   const [opportunities, setOpportunities] = useState([]);
   const [selectedExchange, setSelectedExchange] = useUrlState('ex', 'Binance');
@@ -317,19 +253,6 @@ function App() {
   const getSortIndicator = (key) => {
     if (sortConfig.key !== key) return ' ↕';
     return sortConfig.direction === 'asc' ? ' ▲' : ' ▼';
-  };
-
-  const handleExchangeMarketSort = (key) => {
-    let direction = 'asc';
-    if (exchangeMarketSortConfig.key === key && exchangeMarketSortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
-    setExchangeMarketSortConfig({ key, direction });
-  };
-
-  const getExchangeMarketSortIndicator = (key) => {
-    if (exchangeMarketSortConfig.key !== key) return ' ↕';
-    return exchangeMarketSortConfig.direction === 'asc' ? ' ▲' : ' ▼';
   };
 
   const handleExecuteTransaction = () => {
@@ -638,50 +561,6 @@ function App() {
     fetchPrices();
   };
 
-  const fetchExchangeMarketData = async (exchange) => {
-    if (!exchange?.id) return;
-
-    setExchangeMarketRefreshCycle((cycle) => cycle + 1);
-    setLoadingExchangeMarketData(true);
-    setErrorExchangeMarketData(null);
-    try {
-      const data = await fetchExchangeMarketDataApi(exchange.id);
-      const rows = Array.isArray(data.data)
-        ? data.data
-        : (Array.isArray(data.marketData) ? data.marketData : []);
-      setExchangeMarketData(rows);
-    } catch (err) {
-      console.error('Failed to fetch exchange market data:', err);
-      setErrorExchangeMarketData(err.message);
-      setExchangeMarketData([]);
-    } finally {
-      setLoadingExchangeMarketData(false);
-    }
-  };
-
-  const openExchangeDbPage = (exchange) => {
-    window.history.pushState(null, '', buildExchangeDetailPath(exchange));
-    setExchangeRouteKey(String(exchange?.id ?? exchange?.name ?? ''));
-    setActiveTab('exchanges');
-    setExchangeDbDetailTab('overview');
-    setExchangeMarketData([]);
-    setErrorExchangeMarketData(null);
-    setExchangeMarketSearchQuery('');
-    setSelectedExchangeMarketRows(new Set());
-    setSelectedExchangeDb(exchange);
-  };
-
-  const closeExchangeDbPage = () => {
-    window.history.pushState(null, '', buildExchangesListPath());
-    setExchangeRouteKey(null);
-    setSelectedExchangeDb(null);
-    setExchangeDbDetailTab('overview');
-    setExchangeMarketData([]);
-    setErrorExchangeMarketData(null);
-    setExchangeMarketSearchQuery('');
-    setSelectedExchangeMarketRows(new Set());
-  };
-
   const renderInfoIcon = (tooltipContent) => (
     <span className="tooltip-icon" style={{
       display: 'inline-flex',
@@ -703,331 +582,20 @@ function App() {
     </span>
   );
 
-  const selectedExchangeFiatPairs = useMemo(() => {
-    const fiatSymbols = new Set(['IDR', 'USD']);
-
-    return (selectedExchangeDb?.tokenPairs || [])
-      .filter((pair) => fiatSymbols.has(pair.quoteToken?.symbol))
-      .sort((a, b) => a.symbol.localeCompare(b.symbol));
-  }, [selectedExchangeDb]);
-
-  useEffect(() => {
-    if (selectedExchangeDb && exchangeDbDetailTab === 'market') {
-      fetchExchangeMarketData(selectedExchangeDb);
-    }
-  }, [selectedExchangeDb, exchangeDbDetailTab]);
-
-  useEffect(() => {
-    if (!selectedExchangeDb || exchangeDbDetailTab !== 'market') return undefined;
-
-    const interval = setInterval(() => {
-      fetchExchangeMarketData(selectedExchangeDb);
-    }, 10000);
-
-    return () => clearInterval(interval);
-  }, [selectedExchangeDb, exchangeDbDetailTab]);
-
-  const exchangeMarketDataLookup = useMemo(() => {
-    const lookup = new Map();
-
-    exchangeMarketData.forEach((item) => {
-      if (item.pairId !== undefined && item.pairId !== null) {
-        lookup.set(`id:${item.pairId}`, item);
-      }
-
-      if (item.symbol) {
-        lookup.set(`symbol:${item.symbol}`, item);
-        lookup.set(`symbol:${normalizeMarketSymbol(item.symbol)}`, item);
-      }
-    });
-
-    return lookup;
-  }, [exchangeMarketData]);
-
-  const getExchangeMarketRow = useCallback((pair) => {
-    return exchangeMarketDataLookup.get(`id:${pair.id}`)
-      || exchangeMarketDataLookup.get(`symbol:${pair.symbol}`)
-      || exchangeMarketDataLookup.get(`symbol:${normalizeMarketSymbol(pair.symbol)}`)
-      || null;
-  }, [exchangeMarketDataLookup]);
-
-  const filteredExchangeFiatPairs = useMemo(() => {
-    const query = exchangeMarketSearchQuery.trim().toLowerCase();
-    if (!query) return selectedExchangeFiatPairs;
-
-    return selectedExchangeFiatPairs.filter((pair) => {
-      const market = getExchangeMarketRow(pair);
-      const searchableText = [
-        pair.symbol,
-        pair.baseToken?.symbol,
-        pair.baseToken?.name,
-        pair.quoteToken?.symbol,
-        pair.quoteToken?.name,
-        market?.status,
-        market?.source,
-        market?.nativeCurrency
-      ].filter(Boolean).join(' ').toLowerCase();
-
-      return searchableText.includes(query);
-    });
-  }, [selectedExchangeFiatPairs, exchangeMarketSearchQuery, getExchangeMarketRow]);
-
-  const sortedExchangeFiatPairs = useMemo(() => {
-    const direction = exchangeMarketSortConfig.direction === 'asc' ? 1 : -1;
-    const getMarket = (pair) => exchangeMarketDataLookup.get(`id:${pair.id}`)
-      || exchangeMarketDataLookup.get(`symbol:${pair.symbol}`)
-      || exchangeMarketDataLookup.get(`symbol:${normalizeMarketSymbol(pair.symbol)}`)
-      || null;
-
-    const getNumberValue = (value) => {
-      const numericValue = Number(value);
-      return Number.isFinite(numericValue) ? numericValue : null;
-    };
-
-    const compareNullableNumbers = (a, b) => {
-      if (a === null && b === null) return 0;
-      if (a === null) return 1;
-      if (b === null) return -1;
-      return a - b;
-    };
-
-    const compareStrings = (a, b) => String(a || '').localeCompare(String(b || ''), 'id-ID', {
-      numeric: true,
-      sensitivity: 'base'
-    });
-
-    return [...filteredExchangeFiatPairs].sort((a, b) => {
-      const marketA = getMarket(a);
-      const marketB = getMarket(b);
-      let result = 0;
-
-      switch (exchangeMarketSortConfig.key) {
-        case 'baseToken':
-          result = compareStrings(a.baseToken?.symbol, b.baseToken?.symbol)
-            || compareStrings(a.baseToken?.name, b.baseToken?.name)
-            || compareStrings(a.symbol, b.symbol);
-          break;
-        case 'last':
-          result = compareNullableNumbers(
-            getNumberValue(marketA?.mid ?? marketA?.last ?? marketA?.price),
-            getNumberValue(marketB?.mid ?? marketB?.last ?? marketB?.price)
-          );
-          break;
-        case 'bid':
-          result = compareNullableNumbers(
-            getNumberValue(marketA?.bid ?? marketA?.nativeBid),
-            getNumberValue(marketB?.bid ?? marketB?.nativeBid)
-          );
-          break;
-        case 'ask':
-          result = compareNullableNumbers(
-            getNumberValue(marketA?.ask ?? marketA?.nativeAsk),
-            getNumberValue(marketB?.ask ?? marketB?.nativeAsk)
-          );
-          break;
-        case 'quantity':
-          result = compareNullableNumbers(getNumberValue(marketA?.bidQty), getNumberValue(marketB?.bidQty))
-            || compareNullableNumbers(getNumberValue(marketA?.askQty), getNumberValue(marketB?.askQty));
-          break;
-        case 'timestamp':
-          result = compareNullableNumbers(
-            getNumberValue(marketA?.priceTimestamp || marketA?.timestamp),
-            getNumberValue(marketB?.priceTimestamp || marketB?.timestamp)
-          );
-          break;
-        case 'status':
-          result = compareStrings(marketA?.status || 'pending', marketB?.status || 'pending');
-          break;
-        default:
-          result = compareStrings(a.symbol, b.symbol);
-          break;
-      }
-
-      return result * direction;
-    });
-  }, [filteredExchangeFiatPairs, exchangeMarketDataLookup, exchangeMarketSortConfig]);
-
-  const getExchangeMarketRowKey = (pair) => String(pair.id ?? pair.symbol);
-
-  const selectedExchangeMarketPairs = useMemo(() => {
-    return selectedExchangeFiatPairs.filter((pair) => selectedExchangeMarketRows.has(getExchangeMarketRowKey(pair)));
-  }, [selectedExchangeFiatPairs, selectedExchangeMarketRows]);
-
-  const allVisibleExchangeMarketRowsSelected = sortedExchangeFiatPairs.length > 0
-    && sortedExchangeFiatPairs.every((pair) => selectedExchangeMarketRows.has(getExchangeMarketRowKey(pair)));
-
-  const toggleExchangeMarketRowSelection = (pair) => {
-    const rowKey = getExchangeMarketRowKey(pair);
-    setSelectedExchangeMarketRows((prev) => {
-      const next = new Set(prev);
-      if (next.has(rowKey)) {
-        next.delete(rowKey);
-      } else {
-        next.add(rowKey);
-      }
-      return next;
-    });
-  };
-
-  const toggleAllVisibleExchangeMarketRows = () => {
-    setSelectedExchangeMarketRows((prev) => {
-      const next = new Set(prev);
-      if (allVisibleExchangeMarketRowsSelected) {
-        sortedExchangeFiatPairs.forEach((pair) => next.delete(getExchangeMarketRowKey(pair)));
-      } else {
-        sortedExchangeFiatPairs.forEach((pair) => next.add(getExchangeMarketRowKey(pair)));
-      }
-      return next;
-    });
-  };
-
-  const handleExportExchangeMarketCsv = () => {
-    if (selectedExchangeMarketPairs.length === 0) return;
-
-    const headers = [
-      'Exchange',
-      'Pair',
-      'Base Symbol',
-      'Base Name',
-      'Quote Symbol',
-      'Last / Mid',
-      'Bid',
-      'Ask',
-      'Bid Qty',
-      'Ask Qty',
-      'Price Timestamp',
-      'Status',
-      'Source'
-    ];
-
-    const rows = selectedExchangeMarketPairs.map((pair) => {
-      const market = getExchangeMarketRow(pair);
-      const priceTimestamp = market?.priceTimestamp || market?.timestamp || null;
-      return [
-        selectedExchangeDb?.name || '',
-        pair.symbol || '',
-        pair.baseToken?.symbol || '',
-        pair.baseToken?.name || '',
-        pair.quoteToken?.symbol || '',
-        market?.mid ?? market?.last ?? market?.price ?? '',
-        market?.bid ?? market?.nativeBid ?? '',
-        market?.ask ?? market?.nativeAsk ?? '',
-        market?.bidQty ?? '',
-        market?.askQty ?? '',
-        priceTimestamp ? new Date(priceTimestamp).toISOString() : '',
-        market?.status || 'pending',
-        market?.source || ''
-      ];
-    });
-
-    const csv = [headers, ...rows]
-      .map((row) => row.map(escapeCsvValue).join(','))
-      .join('\n');
-    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    const exchangeName = String(selectedExchangeDb?.name || 'exchange').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase();
-    const dateStamp = new Date().toISOString().slice(0, 10);
-    link.href = url;
-    link.download = `${exchangeName}-market-data-${dateStamp}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
 
   const isExchangeDetailPage = activeTab === 'exchanges' && Boolean(selectedExchangeDb);
 
   return (
-    <div className={`app-container ${compactMode ? 'compact-ui' : ''}`}>
-      {/* Header */}
-      <header className="app-header">
-        <div className="brand-section">
-          <div className="brand-logo" style={{ background: getHeaderGradient(activeSymbol) }}>
-            {activeSymbol[0]}
-          </div>
-          <div>
-            <h1 className="brand-title">{activeSymbol} Arbitrage</h1>
-            <p style={{ fontSize: '12px', color: 'var(--md-sys-color-on-surface-variant)' }}>
-              12 Bursa Utama CEX & DEX (Priced in {activeSymbol === 'USDT' ? 'USD/USDC' : 'USDT'})
-            </p>
-          </div>
-        </div>
-
-        <div className="sync-status-container" style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-          <div className="status-chip">
-            <span className={`status-indicator ${isRefreshing ? 'loading' : ''}`}></span>
-            {isRefreshing ? 'Memperbarui...' : `Auto-refresh dalam ${refreshCountdown}s`}
-          </div>
-          {lastUpdated && (
-            <span style={{ fontSize: '13px', color: 'var(--md-sys-color-on-surface-variant)', whiteSpace: 'nowrap' }}>
-              Update: {lastUpdated.toLocaleTimeString()}
-            </span>
-          )}
-
-          {/* Compact View Toggle Switch */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', borderLeft: '1px solid rgba(255,255,255,0.12)', paddingLeft: '12px' }}>
-            <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--md-sys-color-on-surface-variant)', whiteSpace: 'nowrap' }}>Compact UI</span>
-            <button
-              onClick={() => setIsCompact(compactMode ? 'false' : 'true')}
-              aria-label="Toggle mode compact"
-              style={{
-                width: '34px',
-                height: '18px',
-                borderRadius: '9px',
-                backgroundColor: compactMode ? 'var(--md-sys-color-primary)' : 'rgba(255,255,255,0.15)',
-                border: 'none',
-                cursor: 'pointer',
-                position: 'relative',
-                transition: 'background-color 0.2s ease',
-                padding: 0,
-                flexShrink: 0
-              }}
-            >
-              <div style={{
-                width: '12px',
-                height: '12px',
-                borderRadius: '50%',
-                backgroundColor: '#ffffff',
-                position: 'absolute',
-                top: '3px',
-                left: compactMode ? '18px' : '4px',
-                transition: 'left 0.2s ease',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
-              }} />
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {isExchangeDetailPage && (
-        <nav
-          aria-label="Breadcrumb"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            margin: '0 0 20px',
-            fontSize: '13px',
-            color: 'var(--md-sys-color-on-surface-variant)'
-          }}
-        >
-          <button
-            onClick={closeExchangeDbPage}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              padding: 0,
-              color: 'var(--md-sys-color-primary)',
-              fontSize: '13px',
-              fontWeight: '800',
-              cursor: 'pointer'
-            }}
-          >
-            Exchanges
-          </button>
-          <span>/</span>
-          <span style={{ color: '#ffffff', fontWeight: '800' }}>{selectedExchangeDb.name}</span>
-        </nav>
-      )}
+    <AppShell
+      activeSymbol={activeSymbol}
+      isRefreshing={isRefreshing}
+      refreshCountdown={refreshCountdown}
+      lastUpdated={lastUpdated}
+      compactMode={compactMode}
+      onToggleCompact={() => setIsCompact(compactMode ? 'false' : 'true')}
+      breadcrumbExchangeName={isExchangeDetailPage ? selectedExchangeDb.name : null}
+      onBackToExchanges={closeExchangeDbPage}
+    >
 
       {!isExchangeDetailPage && (
       <>
@@ -2880,501 +2448,17 @@ function App() {
         </div>
       )}
 
-      {/* Exchanges Database Tab */}
       {activeTab === 'exchanges' && !selectedExchangeDb && (
-        <div className="md3-card table-card" style={{ padding: '0px', overflow: 'hidden', animation: 'fadeIn 0.3s ease' }}>
-          <div className="table-header-section" style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-            <div>
-              <h2 className="table-title" style={{ margin: 0 }}>Daftar & Regulasi Bursa Kripto</h2>
-              <p style={{ fontSize: '12px', color: 'var(--md-sys-color-on-surface-variant)', marginTop: '4px', marginBottom: 0 }}>
-                Data real-time dari database berisi bursa CEX & DEX, tautan resmi, logo bursa, status regulasi Bappebti Indonesia, dan skema biaya (fees).
-              </p>
-            </div>
-
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              {/* View mode toggle */}
-              <div className="tabs-container" style={{ margin: 0, padding: '2px', display: 'inline-flex', height: 'auto', gap: '4px' }}>
-                <button
-                  className={`tab-btn ${exchangesViewMode === 'table' ? 'active' : ''}`}
-                  onClick={() => setExchangesViewMode('table')}
-                  style={{ padding: '4px 10px', fontSize: '12px', borderRadius: '4px' }}
-                >
-                  📋 Tabel
-                </button>
-                <button
-                  className={`tab-btn ${exchangesViewMode === 'grid' ? 'active' : ''}`}
-                  onClick={() => setExchangesViewMode('grid')}
-                  style={{ padding: '4px 10px', fontSize: '12px', borderRadius: '4px' }}
-                >
-                  🎴 Grid
-                </button>
-              </div>
-
-              <button
-                onClick={fetchExchangesDb}
-                className="tab-btn"
-                style={{
-                  padding: '8px 16px',
-                  fontSize: '12px',
-                  fontWeight: '700',
-                  backgroundColor: 'rgba(255, 255, 255, 0.06)',
-                  border: '1px solid var(--md-sys-color-outline-variant)',
-                  borderRadius: 'var(--md-shape-corner-medium)',
-                  color: '#ffffff',
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}
-              >
-                🔄 Refresh DB
-              </button>
-            </div>
-          </div>
-
-          {loadingExchangesDb ? (
-            <div style={{ padding: '40px', textAlign: 'center' }}>
-              <div className="skeleton skeleton-text" style={{ width: '40%', margin: '0 auto 12px' }}></div>
-              <div className="skeleton skeleton-text" style={{ width: '60%', margin: '0 auto 24px' }}></div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px', padding: '0 20px' }}>
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="md3-card" style={{ padding: '20px', height: '140px', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: '8px' }}>
-                    <div className="skeleton skeleton-text" style={{ width: '80%' }}></div>
-                    <div className="skeleton skeleton-text" style={{ width: '50%', marginTop: '12px' }}></div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : errorExchangesDb ? (
-            <div style={{ padding: '40px', textAlign: 'center', color: 'var(--md-sys-color-error)' }}>
-              <span style={{ fontSize: '24px' }}>⚠️</span>
-              <p style={{ margin: '8px 0' }}>Gagal memuat data dari database: {errorExchangesDb}</p>
-              <button
-                onClick={fetchExchangesDb}
-                className="tab-btn"
-                style={{ backgroundColor: 'var(--md-sys-color-error-container)', color: 'var(--md-sys-color-on-error-container)' }}
-              >
-                Coba Lagi
-              </button>
-            </div>
-          ) : (
-            <div style={{ padding: '0 20px 20px' }}>
-              {exchangesViewMode === 'table' ? (
-                /* Table View Mode */
-                <div style={{ overflowX: 'auto' }}>
-                  <table className={`md3-table ${compactMode ? 'compact-table' : ''}`} style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
-                    <thead>
-                      <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', backgroundColor: 'rgba(255,255,255,0.02)' }}>
-                        <th style={{ padding: '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700' }}>Bursa / Tipe</th>
-                        <th style={{ padding: '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700' }}>Rating / Kredibilitas</th>
-                        <th style={{ padding: '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700' }}>Reserved Capital / TVL</th>
-                        <th style={{ padding: '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700' }}>Legalitas Indonesia</th>
-                        <th style={{ padding: '16px 20px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '700' }}>Endpoint API / Router</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {exchangesDb.map((ex) => {
-                        const tradeFee = ex.fees?.find(f => f.fee_type === 'CEX_TRADE');
-                        const apiAttribute = ex.attributes?.find(a => a.attribute_key === 'api_url' || a.attribute_key === 'factory_address');
-                        const withdrawalFees = ex.fees?.filter(f => f.fee_type === 'WITHDRAWAL') || [];
-
-                        return (
-                          <tr
-                            key={ex.id}
-                            style={{
-                              borderBottom: '1px solid rgba(255,255,255,0.05)',
-                              transition: 'background-color 0.2s ease'
-                            }}
-                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.02)'}
-                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                          >
-                            {/* Bursa name & icon */}
-                            <td style={{ padding: '16px 20px', fontWeight: '700' }}>
-                              <div 
-                                style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}
-                                onClick={() => openExchangeDbPage(ex)}
-                                title="Buka halaman detail bursa"
-                              >
-                                {ex.logoUrl ? (
-                                  <img
-                                    src={ex.logoUrl}
-                                    alt={ex.name}
-                                    onError={(e) => {
-                                      e.target.style.display = 'none';
-                                      e.target.nextSibling.style.display = 'flex';
-                                    }}
-                                    style={{ width: '28px', height: '28px', borderRadius: '6px', objectFit: 'cover' }}
-                                  />
-                                ) : null}
-                                <div
-                                  style={{
-                                    display: ex.logoUrl ? 'none' : 'flex',
-                                    width: '28px',
-                                    height: '28px',
-                                    borderRadius: '6px',
-                                    background: 'linear-gradient(135deg, #455a64, #607d8b)',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    fontSize: '11px',
-                                    fontWeight: '800',
-                                    color: '#fff'
-                                  }}
-                                >
-                                  {ex.name.slice(0, 2).toUpperCase()}
-                                </div>
-                                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <span>{ex.name}</span>
-                                    <span className={`badge ${ex.type === 'CEX' ? 'badge-cex' : 'badge-dex'}`} style={{ fontSize: '9px', padding: '1px 4px' }}>
-                                      {ex.type}
-                                    </span>
-                                  </div>
-                                  {ex.websiteUrl && (
-                                    <a
-                                      href={ex.websiteUrl}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      style={{ fontSize: '10px', color: 'var(--md-sys-color-primary)', textDecoration: 'none', fontWeight: 'normal' }}
-                                    >
-                                      Kunjungi Website ➔
-                                    </a>
-                                  )}
-                                </div>
-                              </div>
-                            </td>
-
-                            {/* Rating */}
-                            <td style={{ padding: '16px 20px' }}>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                  <span style={{ color: '#ffb300', fontSize: '13px' }}>⭐</span>
-                                  <span style={{ fontWeight: '700', color: '#ffffff', fontSize: '13px' }}>
-                                    {ex.rating ? parseFloat(ex.rating).toFixed(1) : '-'} <span style={{ fontSize: '10px', color: 'var(--md-sys-color-on-surface-variant)', fontWeight: 'normal' }}>/ 10</span>
-                                  </span>
-                                </div>
-                                {ex.rating && (() => {
-                                  const status = getRatingStatus(ex.rating);
-                                  return (
-                                    <span style={{ fontSize: '10px', fontWeight: '700', color: status.color }}>
-                                      {status.label}
-                                    </span>
-                                  );
-                                })()}
-                              </div>
-                            </td>
-
-                            {/* Reserve Capital */}
-                            <td style={{ padding: '16px 20px' }}>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                <span style={{ fontWeight: '700', color: '#ffffff', fontSize: '13px' }}>
-                                  {formatCapital(ex.capital)}
-                                </span>
-                                {ex.capital && (() => {
-                                  const tier = getCapitalTier(ex.capital);
-                                  return (
-                                    <span style={{
-                                      fontSize: '9px',
-                                      fontWeight: '700',
-                                      color: tier.color,
-                                      backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                                      border: `1px solid ${tier.color}33`,
-                                      padding: '1px 5px',
-                                      borderRadius: '3px',
-                                      width: 'fit-content'
-                                    }}>
-                                      {tier.label}
-                                    </span>
-                                  );
-                                })()}
-                              </div>
-                            </td>
-
-                            {/* Legalitas */}
-                            <td style={{ padding: '16px 20px' }}>
-                              {ex.isRegisteredIndonesia ? (
-                                <span style={{
-                                  fontSize: '10px',
-                                  fontWeight: '700',
-                                  color: '#10b981',
-                                  backgroundColor: 'rgba(16, 185, 129, 0.08)',
-                                  padding: '3px 8px',
-                                  borderRadius: '4px',
-                                  border: '1px solid rgba(16, 185, 129, 0.2)'
-                                }}>
-                                  🛡️ Terdaftar Bappebti
-                                </span>
-                              ) : (
-                                <span style={{
-                                  fontSize: '10px',
-                                  fontWeight: '600',
-                                  color: 'var(--md-sys-color-on-surface-variant)',
-                                  backgroundColor: 'rgba(255,255,255,0.05)',
-                                  padding: '3px 8px',
-                                  borderRadius: '4px'
-                                }}>
-                                  🌍 Internasional
-                                </span>
-                              )}
-                            </td>
-
-                            {/* API / Contract Router */}
-                            <td style={{ padding: '16px 20px', fontFamily: 'monospace', fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)', maxWidth: '240px', wordBreak: 'break-all' }}>
-                              {apiAttribute ? apiAttribute.attribute_value : '-'}
-                            </td>
-
-                            {/* Fees */}
-                            <td style={{ padding: '16px 20px', fontWeight: '700', color: 'var(--color-profit-green)' }}>
-                              {tradeFee ? `${(parseFloat(tradeFee.fee_percentage) * 100).toFixed(2)}%` : ex.type === 'CEX' ? '0.10%' : '0.30%'}
-                            </td>
-
-                            {/* Withdrawal Fees */}
-                            <td style={{ padding: '16px 20px' }}>
-                              {withdrawalFees.length > 0 ? (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '11px' }}>
-                                  {withdrawalFees.map(f => {
-                                    const tokenSymbol = f.token_id === 1 ? 'USDT' : f.token_id === 2 ? 'SOL' : f.token_id === 3 ? 'ETH' : 'USDT';
-                                    const chainName = f.chain_id === 1 ? 'Ethereum' : f.chain_id === 2 ? 'BSC' : f.chain_id === 3 ? 'Solana' : 'Solana';
-                                    return (
-                                      <div key={f.id} style={{ display: 'flex', gap: '8px' }}>
-                                        <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>{tokenSymbol} ({chainName}):</span>
-                                        <span style={{ fontWeight: '600', color: '#ffffff' }}>{parseFloat(f.fee_flat).toFixed(2)} {tokenSymbol}</span>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              ) : (
-                                <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>-</span>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                /* Grid Cards View Mode */
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
-                  {exchangesDb.map((ex) => {
-                    const tradeFee = ex.fees?.find(f => f.fee_type === 'CEX_TRADE');
-                    const apiAttribute = ex.attributes?.find(a => a.attribute_key === 'api_url' || a.attribute_key === 'factory_address');
-                    const withdrawalFees = ex.fees?.filter(f => f.fee_type === 'WITHDRAWAL') || [];
-
-                    return (
-                      <div
-                        key={ex.id}
-                        className="md3-card"
-                        style={{
-                          padding: '20px',
-                          backgroundColor: 'rgba(255, 255, 255, 0.02)',
-                          border: '1px solid rgba(255, 255, 255, 0.06)',
-                          borderRadius: 'var(--md-shape-corner-medium)',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          justifyContent: 'space-between',
-                          gap: '16px',
-                          transition: 'transform 0.2s ease, border-color 0.2s ease',
-                          position: 'relative'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.borderColor = 'var(--md-sys-color-primary)';
-                          e.currentTarget.style.transform = 'translateY(-2px)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.06)';
-                          e.currentTarget.style.transform = 'none';
-                        }}
-                      >
-                        {/* Top Row: Logo & Name & Type */}
-                        <div 
-                          style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', cursor: 'pointer' }}
-                          onClick={() => openExchangeDbPage(ex)}
-                          title="Buka halaman detail bursa"
-                        >
-                          {ex.logoUrl ? (
-                            <img
-                              src={ex.logoUrl}
-                              alt={ex.name}
-                              onError={(e) => {
-                                e.target.style.display = 'none';
-                                e.target.nextSibling.style.display = 'flex';
-                              }}
-                              style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.1)' }}
-                            />
-                          ) : null}
-                          <div
-                            style={{
-                              display: ex.logoUrl ? 'none' : 'flex',
-                              width: '40px',
-                              height: '40px',
-                              borderRadius: '8px',
-                              background: 'linear-gradient(135deg, #455a64, #607d8b)',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              fontSize: '16px',
-                              fontWeight: '800',
-                              color: '#fff'
-                            }}
-                          >
-                            {ex.name.slice(0, 2).toUpperCase()}
-                          </div>
-
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span style={{ fontSize: '16px', fontWeight: '800', color: '#ffffff' }}>{ex.name}</span>
-                              <span className={`badge ${ex.type === 'CEX' ? 'badge-cex' : 'badge-dex'}`}>
-                                {ex.type}
-                              </span>
-                            </div>
-                            {ex.websiteUrl && (
-                              <a
-                                href={ex.websiteUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                style={{ fontSize: '11px', color: 'var(--md-sys-color-primary)', textDecoration: 'none' }}
-                              >
-                                🔗 Kunjungi Website
-                              </a>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Middle: Regulated Legal Badge */}
-                        <div style={{ margin: '4px 0' }}>
-                          {ex.isRegisteredIndonesia ? (
-                            <div style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '6px',
-                              fontSize: '11px',
-                              fontWeight: '800',
-                              color: '#10b981',
-                              backgroundColor: 'rgba(16, 185, 129, 0.08)',
-                              padding: '4px 10px',
-                              borderRadius: '4px',
-                              border: '1px solid rgba(16, 185, 129, 0.2)'
-                            }}>
-                              🛡️ TERDAFTAR BAPPEBTI (LEGAL)
-                            </div>
-                          ) : (
-                            <div style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '6px',
-                              fontSize: '11px',
-                              fontWeight: '600',
-                              color: 'var(--md-sys-color-on-surface-variant)',
-                              backgroundColor: 'rgba(255,255,255,0.05)',
-                              padding: '4px 10px',
-                              borderRadius: '4px'
-                            }}>
-                              🌍 BURSA INTERNASIONAL
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Rating & Reserves row */}
-                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', margin: '4px 0' }}>
-                          {ex.rating && (() => {
-                            const status = getRatingStatus(ex.rating);
-                            return (
-                              <div style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '5px',
-                                fontSize: '11px',
-                                fontWeight: '700',
-                                backgroundColor: 'rgba(255, 255, 255, 0.02)',
-                                border: '1px solid rgba(255, 255, 255, 0.05)',
-                                padding: '4px 8px',
-                                borderRadius: '6px'
-                              }}>
-                                <span style={{ color: '#ffb300' }}>⭐</span>
-                                <span style={{ color: '#ffffff' }}>{parseFloat(ex.rating).toFixed(1)}</span>
-                                <span style={{ color: status.color, fontSize: '10px', marginLeft: '2px' }}>({status.label})</span>
-                              </div>
-                            );
-                          })()}
-
-                          {ex.capital && (() => {
-                            const tier = getCapitalTier(ex.capital);
-                            return (
-                              <div style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '5px',
-                                fontSize: '11px',
-                                fontWeight: '700',
-                                backgroundColor: 'rgba(255, 255, 255, 0.02)',
-                                border: '1px solid rgba(255, 255, 255, 0.05)',
-                                padding: '4px 8px',
-                                borderRadius: '6px'
-                              }}>
-                                <span style={{ color: tier.color }}>💰</span>
-                                <span style={{ color: '#ffffff' }}>{formatCapital(ex.capital)}</span>
-                                <span style={{ color: tier.color, fontSize: '9px', marginLeft: '2px', backgroundColor: `${tier.color}15`, padding: '1px 4px', borderRadius: '3px' }}>
-                                  {tier.label.split(' ')[0]}
-                                </span>
-                              </div>
-                            );
-                          })()}
-                        </div>
-
-                        {/* Bottom Info: Config Attribute & Fees */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '10px' }}>
-                          {/* API Config */}
-                          {apiAttribute && (
-                            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
-                              <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
-                                {apiAttribute.attribute_key === 'api_url' ? 'Endpoint API:' : 'Router/Factory:'}
-                              </span>
-                              <span style={{ fontWeight: '500', color: '#ffffff', wordBreak: 'break-all', textAlign: 'right', fontSize: '11px' }}>
-                                {apiAttribute.attribute_value}
-                              </span>
-                            </div>
-                          )}
-
-                          {/* Trade / Pool Fees */}
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
-                              {ex.type === 'CEX' ? 'Trading Fee (Spot):' : 'Default Pool Fee:'}
-                            </span>
-                            <span style={{ fontWeight: '700', color: 'var(--color-profit-green)' }}>
-                              {tradeFee ? `${(parseFloat(tradeFee.fee_percentage) * 100).toFixed(2)}%` : ex.type === 'CEX' ? '0.10%' : '0.30%'}
-                            </span>
-                          </div>
-
-                          {/* Withdrawal Fees List */}
-                          {withdrawalFees.length > 0 && (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px', borderTop: '1px dashed rgba(255,255,255,0.05)', paddingTop: '6px' }}>
-                              <span style={{ color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '600', fontSize: '11px' }}>
-                                Flat Withdrawal Fee (Penarikan CEX):
-                              </span>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '11px', paddingLeft: '8px' }}>
-                                {withdrawalFees.map(f => {
-                                  const tokenSymbol = f.token_id === 1 ? 'USDT' : f.token_id === 2 ? 'SOL' : f.token_id === 3 ? 'ETH' : 'USDT';
-                                  const chainName = f.chain_id === 1 ? 'Ethereum' : f.chain_id === 2 ? 'BSC' : f.chain_id === 3 ? 'Solana' : 'Solana';
-                                  return (
-                                    <div key={f.id} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                      <span>{tokenSymbol} ({chainName}):</span>
-                                      <span style={{ fontWeight: '600', color: '#ffffff' }}>
-                                        {parseFloat(f.fee_flat).toFixed(2)} {tokenSymbol}
-                                      </span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+        <ExchangesPage
+          exchangesDb={exchangesDb}
+          loadingExchangesDb={loadingExchangesDb}
+          errorExchangesDb={errorExchangesDb}
+          exchangesViewMode={exchangesViewMode}
+          setExchangesViewMode={setExchangesViewMode}
+          compactMode={compactMode}
+          onRefresh={fetchExchangesDb}
+          onOpenExchange={openExchangeDbPage}
+        />
       )}
 
       {/* Fullscreen Exchange Modal Info Dashboard */}
@@ -3620,521 +2704,32 @@ function App() {
       </>
       )}
 
-      {/* Real Database Exchange Detail Page */}
       {activeTab === 'exchanges' && selectedExchangeDb && (
-        <div style={{
-          width: '100%',
-          display: 'block',
-          minHeight: '100vh',
-          animation: 'fadeIn 0.3s ease'
-        }}>
-          <div className="md3-card" style={{
-            minHeight: 'calc(100vh - 48px)',
-            overflow: 'hidden',
-            position: 'relative',
-            padding: 0,
-            backgroundColor: 'var(--md-sys-color-surface-container-high)',
-            borderRadius: 'var(--md-shape-corner-large)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            boxShadow: 'none',
-            display: 'flex',
-            flexDirection: 'column'
-          }}>
-            {/* Back Button */}
-            <button
-              className="exchange-detail-back-button"
-              onClick={closeExchangeDbPage}
-              style={{
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                borderRadius: '8px',
-                padding: '8px 12px',
-                color: '#ffffff',
-                fontSize: 0,
-                fontWeight: '800',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                margin: '20px 28px 0',
-                transition: 'background-color 0.2s'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.06)'}
-            >
-              ✕
-            </button>
-
-            <div style={{ flex: 1, padding: '20px 28px 28px' }}>
-            {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '16px' }}>
-              {selectedExchangeDb.logoUrl ? (
-                <img
-                  src={selectedExchangeDb.logoUrl}
-                  alt={selectedExchangeDb.name}
-                  style={{ width: '56px', height: '56px', borderRadius: '12px', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.1)' }}
-                />
-              ) : (
-                <div style={{
-                  width: '56px',
-                  height: '56px',
-                  borderRadius: '12px',
-                  background: 'linear-gradient(135deg, #455a64, #607d8b)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '22px',
-                  fontWeight: '800',
-                  color: '#fff'
-                }}>
-                  {selectedExchangeDb.name.slice(0, 2).toUpperCase()}
-                </div>
-              )}
-              <div>
-                <h2 style={{ fontSize: '22px', margin: 0, fontWeight: '800', color: '#ffffff' }}>{selectedExchangeDb.name}</h2>
-                <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
-                  <span className={`badge ${selectedExchangeDb.type === 'CEX' ? 'badge-cex' : 'badge-dex'}`}>
-                    {selectedExchangeDb.type}
-                  </span>
-                  {selectedExchangeDb.isRegisteredIndonesia ? (
-                    <span className="badge" style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#10b981', fontWeight: 'bold' }}>🛡️ TERDAFTAR BAPPEBTI</span>
-                  ) : (
-                    <span className="badge" style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'var(--md-sys-color-on-surface-variant)' }}>🌍 BURSA INTERNASIONAL</span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Trust & Capital Summary Row */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-              <div style={{
-                backgroundColor: 'rgba(255,255,255,0.03)',
-                padding: '16px',
-                borderRadius: 'var(--md-shape-corner-medium)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '4px'
-              }}>
-                <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)', textTransform: 'uppercase', fontWeight: 'bold' }}>⭐ Kredibilitas & Trust Score</span>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '4px' }}>
-                  <span style={{ fontSize: '20px', fontWeight: '800', color: '#ffffff' }}>
-                    {selectedExchangeDb.rating ? parseFloat(selectedExchangeDb.rating).toFixed(1) : '-'}
-                  </span>
-                  <span style={{ fontSize: '12px', color: 'var(--md-sys-color-on-surface-variant)' }}>/ 10.0</span>
-                </div>
-                {selectedExchangeDb.rating && (() => {
-                  const status = getRatingStatus(selectedExchangeDb.rating);
-                  return (
-                    <span style={{ fontSize: '11px', fontWeight: '700', color: status.color, marginTop: '2px' }}>
-                      Status: {status.label}
-                    </span>
-                  );
-                })()}
-              </div>
-
-              <div style={{
-                backgroundColor: 'rgba(255,255,255,0.03)',
-                padding: '16px',
-                borderRadius: 'var(--md-shape-corner-medium)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '4px'
-              }}>
-                <span style={{ fontSize: '11px', color: 'var(--md-sys-color-on-surface-variant)', textTransform: 'uppercase', fontWeight: 'bold' }}>💰 Modal Cadangan (Proof of Reserves / TVL)</span>
-                <div style={{ fontSize: '20px', fontWeight: '800', color: 'var(--color-profit-green)', marginTop: '4px' }}>
-                  {formatCapital(selectedExchangeDb.capital)}
-                </div>
-                {selectedExchangeDb.capital && (() => {
-                  const tier = getCapitalTier(selectedExchangeDb.capital);
-                  return (
-                    <span style={{ fontSize: '11px', fontWeight: '700', color: tier.color, marginTop: '2px' }}>
-                      Kategori: {tier.label}
-                    </span>
-                  );
-                })()}
-              </div>
-            </div>
-
-            {/* Content Details */}
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px' }}>
-              <button
-                onClick={() => setExchangeDbDetailTab('overview')}
-                className={`tab-btn ${exchangeDbDetailTab === 'overview' ? 'active' : ''}`}
-                style={{
-                  backgroundColor: exchangeDbDetailTab === 'overview' ? 'var(--md-sys-color-primary-container)' : 'rgba(255,255,255,0.04)',
-                  color: exchangeDbDetailTab === 'overview' ? 'var(--md-sys-color-on-primary-container)' : 'var(--md-sys-color-on-surface-variant)',
-                  border: exchangeDbDetailTab === 'overview' ? '1px solid var(--md-sys-color-primary)' : '1px solid rgba(255,255,255,0.08)'
-                }}
-              >
-                Overview
-              </button>
-              <button
-                onClick={() => setExchangeDbDetailTab('market')}
-                className={`tab-btn ${exchangeDbDetailTab === 'market' ? 'active' : ''}`}
-                style={{
-                  backgroundColor: exchangeDbDetailTab === 'market' ? 'var(--md-sys-color-primary-container)' : 'rgba(255,255,255,0.04)',
-                  color: exchangeDbDetailTab === 'market' ? 'var(--md-sys-color-on-primary-container)' : 'var(--md-sys-color-on-surface-variant)',
-                  border: exchangeDbDetailTab === 'market' ? '1px solid var(--md-sys-color-primary)' : '1px solid rgba(255,255,255,0.08)'
-                }}
-              >
-                Market Data
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              {exchangeDbDetailTab === 'market' && (
-              <>
-              {/* Fiat Pairs */}
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '8px', flexWrap: 'wrap' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                    <h4 style={{ margin: 0, fontSize: '13px', color: 'var(--md-sys-color-on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                      Pair Token / Fiat dari Database
-                    </h4>
-                    <span className="badge" style={{ backgroundColor: 'rgba(16,185,129,0.12)', color: '#10b981', fontWeight: '800' }}>
-                      {filteredExchangeFiatPairs.length}/{selectedExchangeFiatPairs.length} pair
-                    </span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <input
-                      type="text"
-                      value={exchangeMarketSearchQuery}
-                      onChange={(e) => setExchangeMarketSearchQuery(e.target.value)}
-                      placeholder="Search pair/token/status..."
-                      style={{
-                        width: '220px',
-                        maxWidth: '42vw',
-                        padding: '7px 10px',
-                        borderRadius: '8px',
-                        border: '1px solid rgba(255,255,255,0.08)',
-                        backgroundColor: 'rgba(255,255,255,0.04)',
-                        color: '#ffffff',
-                        fontSize: '12px',
-                        outline: 'none'
-                      }}
-                    />
-                    {selectedExchangeMarketPairs.length > 0 && (
-                      <span className="badge" style={{ backgroundColor: 'rgba(59,130,246,0.12)', color: '#60a5fa', fontWeight: '800' }}>
-                        {selectedExchangeMarketPairs.length} selected
-                      </span>
-                    )}
-                    <button
-                      onClick={handleExportExchangeMarketCsv}
-                      disabled={selectedExchangeMarketPairs.length === 0}
-                      className="tab-btn"
-                      style={{
-                        padding: '7px 10px',
-                        fontSize: '12px',
-                        backgroundColor: selectedExchangeMarketPairs.length === 0 ? 'rgba(255,255,255,0.04)' : 'rgba(16,185,129,0.14)',
-                        color: selectedExchangeMarketPairs.length === 0 ? 'var(--md-sys-color-on-surface-variant)' : '#10b981',
-                        border: selectedExchangeMarketPairs.length === 0 ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(16,185,129,0.25)',
-                        cursor: selectedExchangeMarketPairs.length === 0 ? 'not-allowed' : 'pointer',
-                        fontWeight: '800'
-                      }}
-                    >
-                      Export CSV
-                    </button>
-                    <div
-                      key={exchangeMarketRefreshCycle}
-                      title="Auto refresh setiap 10 detik"
-                      style={{
-                        width: '30px',
-                        height: '30px',
-                        position: 'relative',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0
-                      }}
-                    >
-                      <svg viewBox="0 0 32 32" style={{ width: '30px', height: '30px' }}>
-                        <circle
-                          cx="16"
-                          cy="16"
-                          r="12"
-                          fill="none"
-                          stroke="rgba(255,255,255,0.12)"
-                          strokeWidth="3"
-                        />
-                        <circle
-                          className="market-refresh-ring-progress"
-                          cx="16"
-                          cy="16"
-                          r="12"
-                          fill="none"
-                          stroke="var(--md-sys-color-primary)"
-                          strokeWidth="3"
-                          strokeLinecap="round"
-                          strokeDasharray="75.4"
-                          strokeDashoffset="75.4"
-                        />
-                      </svg>
-                      <span style={{
-                        position: 'absolute',
-                        fontSize: '8px',
-                        fontWeight: '800',
-                        color: 'var(--md-sys-color-on-surface-variant)'
-                      }}>
-                        10s
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                {errorExchangeMarketData && (
-                  <div style={{ padding: '10px 12px', marginBottom: '8px', border: '1px solid var(--md-sys-color-error)', borderRadius: '8px', color: 'var(--md-sys-color-error)', fontSize: '12px', backgroundColor: 'rgba(239,83,80,0.08)' }}>
-                    Gagal memuat harga market: {errorExchangeMarketData}
-                  </div>
-                )}
-                {selectedExchangeFiatPairs.length === 0 ? (
-                  <div style={{ padding: '14px', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', color: 'var(--md-sys-color-on-surface-variant)', fontSize: '12px', backgroundColor: 'rgba(255,255,255,0.02)' }}>
-                    Tidak ada pair token / fiat yang terdaftar di database untuk bursa ini.
-                  </div>
-                ) : filteredExchangeFiatPairs.length === 0 ? (
-                  <div style={{ padding: '14px', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', color: 'var(--md-sys-color-on-surface-variant)', fontSize: '12px', backgroundColor: 'rgba(255,255,255,0.02)' }}>
-                    Tidak ada pair yang cocok dengan pencarian.
-                  </div>
-                ) : (
-                  <div style={{ overflowX: 'auto', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px' }}>
-                    <table className={`exchange-market-table ${compactMode ? 'compact-table' : ''}`} style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
-                      <thead>
-                        <tr style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                          <th style={{ padding: '10px 12px', width: '36px' }}>
-                            <input
-                              type="checkbox"
-                              checked={allVisibleExchangeMarketRowsSelected}
-                              onChange={toggleAllVisibleExchangeMarketRows}
-                              aria-label="Select all visible market rows"
-                              style={{ cursor: 'pointer' }}
-                            />
-                          </th>
-                          <th style={{ padding: '10px 12px', color: 'var(--md-sys-color-on-surface-variant)', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleExchangeMarketSort('baseToken')}>Base Token {getExchangeMarketSortIndicator('baseToken')}</th>
-                          <th style={{ padding: '10px 12px', color: 'var(--md-sys-color-on-surface-variant)', textAlign: 'right', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleExchangeMarketSort('last')}>Last / Mid {getExchangeMarketSortIndicator('last')}</th>
-                          <th style={{ padding: '10px 12px', color: 'var(--md-sys-color-on-surface-variant)', textAlign: 'center', minWidth: '132px' }}>1 Jam</th>
-                          <th style={{ padding: '10px 12px', color: 'var(--md-sys-color-on-surface-variant)', textAlign: 'right', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleExchangeMarketSort('bid')}>Bid {getExchangeMarketSortIndicator('bid')}</th>
-                          <th style={{ padding: '10px 12px', color: 'var(--md-sys-color-on-surface-variant)', textAlign: 'right', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleExchangeMarketSort('ask')}>Ask {getExchangeMarketSortIndicator('ask')}</th>
-                          <th style={{ padding: '10px 12px', color: 'var(--md-sys-color-on-surface-variant)', textAlign: 'right', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleExchangeMarketSort('quantity')}>Bid / Ask Qty {getExchangeMarketSortIndicator('quantity')}</th>
-                          <th style={{ padding: '10px 12px', color: 'var(--md-sys-color-on-surface-variant)', textAlign: 'right', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleExchangeMarketSort('timestamp')}>Waktu Harga {getExchangeMarketSortIndicator('timestamp')}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {sortedExchangeFiatPairs.map((pair) => {
-                          const market = getExchangeMarketRow(pair);
-                          const quoteSymbol = market?.nativeCurrency || pair.quoteToken?.symbol || 'IDR';
-                          const lastOrMid = market?.mid ?? market?.last ?? market?.price ?? null;
-                          const bid = market?.bid ?? market?.nativeBid ?? null;
-                          const ask = market?.ask ?? market?.nativeAsk ?? null;
-                          const priceTimestamp = market?.priceTimestamp || market?.timestamp || null;
-                          const rowKey = getExchangeMarketRowKey(pair);
-                          const isSelected = selectedExchangeMarketRows.has(rowKey);
-
-                          return (
-                          <tr key={pair.id || pair.symbol} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', backgroundColor: isSelected ? 'rgba(16,185,129,0.04)' : 'transparent' }}>
-                            <td style={{ padding: '10px 12px' }}>
-                              <input
-                                type="checkbox"
-                                checked={isSelected}
-                                onChange={() => toggleExchangeMarketRowSelection(pair)}
-                                aria-label={`Select ${pair.symbol}`}
-                                style={{ cursor: 'pointer' }}
-                              />
-                            </td>
-                            <td style={{ padding: '10px 12px' }}>
-                              <div className="exchange-market-token-cell" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'nowrap', fontWeight: '700' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                                  <CoinIcon symbol={pair.baseToken?.symbol} size={18} />
-                                  <span>{pair.baseToken?.symbol || '-'}</span>
-                                  <span className="exchange-market-token-name" style={{ color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '500', fontSize: '11px' }}>
-                                    {pair.baseToken?.name || ''}
-                                  </span>
-                                </div>
-                                <span style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  padding: '2px 7px',
-                                  borderRadius: '999px',
-                                  border: '1px solid rgba(255,255,255,0.08)',
-                                  backgroundColor: 'rgba(255,255,255,0.05)',
-                                  color: '#ffffff',
-                                  fontFamily: 'Consolas, Monaco, monospace',
-                                  fontSize: '10px',
-                                  fontWeight: '800',
-                                  lineHeight: 1.4,
-                                  whiteSpace: 'nowrap'
-                                }}>
-                                  {pair.symbol}
-                                </span>
-                              </div>
-                            </td>
-                            <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: '800', color: '#ffffff' }}>
-                              {loadingExchangeMarketData && !market ? '...' : formatNativeMarketPrice(lastOrMid, quoteSymbol)}
-                            </td>
-                            <td style={{ padding: '8px 12px', textAlign: 'center' }}>
-                              {loadingExchangeMarketData && !market ? '...' : <PriceSparkline history={market?.history} />}
-                            </td>
-                            <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--md-sys-color-primary)', fontWeight: '700' }}>
-                              {loadingExchangeMarketData && !market ? '...' : formatNativeMarketPrice(bid, quoteSymbol)}
-                            </td>
-                            <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--color-profit-green)', fontWeight: '700' }}>
-                              {loadingExchangeMarketData && !market ? '...' : formatNativeMarketPrice(ask, quoteSymbol)}
-                            </td>
-                            <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--md-sys-color-on-surface-variant)', fontSize: '11px' }}>
-                              {market ? `${market.bidQty ?? '-'} / ${market.askQty ?? '-'}` : '-'}
-                            </td>
-                            <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--md-sys-color-on-surface-variant)', fontSize: '11px', whiteSpace: 'nowrap' }}>
-                              {loadingExchangeMarketData && !market ? '...' : formatMarketPriceTimestamp(priceTimestamp)}
-                            </td>
-                          </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-              </>
-              )}
-
-              {exchangeDbDetailTab === 'overview' && (
-              <>
-              {/* Endpoint API / Router */}
-              {selectedExchangeDb.attributes && selectedExchangeDb.attributes.length > 0 && (
-                <div>
-                  <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', color: 'var(--md-sys-color-on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    Konfigurasi Jaringan API / Smart Contract
-                  </h4>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', backgroundColor: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                    {selectedExchangeDb.attributes.map(attr => (
-                      <div key={attr.id} style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', fontSize: '12px' }}>
-                        <span style={{ color: 'var(--md-sys-color-on-surface-variant)', fontWeight: '600' }}>{attr.attributeKey}:</span>
-                        <span style={{ fontFamily: 'monospace', wordBreak: 'break-all', textAlign: 'right', color: '#ffffff' }}>{attr.attributeValue}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Supported Chains */}
-              <div>
-                <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', color: 'var(--md-sys-color-on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  Blockchain Jaringan yang Didukung (Chains)
-                </h4>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                  {(() => {
-                    const chains = [];
-                    // Extract unique chains from fees
-                    selectedExchangeDb.fees?.forEach(f => {
-                      if (f.chain && !chains.some(c => c.id === f.chain.id)) {
-                        chains.push(f.chain);
-                      }
-                    });
-                    if (chains.length === 0) {
-                      return <span style={{ fontSize: '12px', color: 'var(--md-sys-color-on-surface-variant)' }}>Tidak ada data jaringan blockchain khusus terdaftar.</span>;
-                    }
-                    return chains.map(c => (
-                      <span
-                        key={c.id}
-                        className="badge badge-dex"
-                        style={{ padding: '6px 12px', fontSize: '12px', fontWeight: '700', borderRadius: '6px' }}
-                      >
-                        🌐 {c.name} ({c.chainIdentifier || 'EVM'})
-                      </span>
-                    ));
-                  })()}
-                </div>
-              </div>
-
-              {/* Supported Tokens */}
-              <div>
-                <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', color: 'var(--md-sys-color-on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  Token Kripto Terdaftar & Aktif (Tokens)
-                </h4>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                  {(() => {
-                    const tokens = [];
-                    // Extract unique tokens from tokenPairs baseToken and quoteToken
-                    selectedExchangeDb.tokenPairs?.forEach(tp => {
-                      if (tp.baseToken && !tokens.some(t => t.id === tp.baseToken.id)) {
-                        tokens.push(tp.baseToken);
-                      }
-                      if (tp.quoteToken && !tokens.some(t => t.id === tp.quoteToken.id)) {
-                        tokens.push(tp.quoteToken);
-                      }
-                    });
-                    // Fallback to fees tokens
-                    selectedExchangeDb.fees?.forEach(f => {
-                      if (f.token && !tokens.some(t => t.id === f.token.id)) {
-                        tokens.push(f.token);
-                      }
-                    });
-
-                    if (tokens.length === 0) {
-                      return <span style={{ fontSize: '12px', color: 'var(--md-sys-color-on-surface-variant)' }}>Tidak ada token terdaftar.</span>;
-                    }
-                    return tokens.map(t => (
-                      <div
-                        key={t.id}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          padding: '6px 10px',
-                          backgroundColor: 'rgba(255,255,255,0.03)',
-                          borderRadius: '6px',
-                          border: '1px solid rgba(255,255,255,0.05)',
-                          fontSize: '12px',
-                          fontWeight: '700',
-                          color: '#ffffff'
-                        }}
-                      >
-                        <CoinIcon symbol={t.symbol} size={16} />
-                        <span>{t.symbol}</span>
-                      </div>
-                    ));
-                  })()}
-                </div>
-              </div>
-
-              {/* Fee Rules */}
-              {selectedExchangeDb.fees && selectedExchangeDb.fees.length > 0 && (
-                <div>
-                  <h4 style={{ margin: '0 0 8px 0', fontSize: '13px', color: 'var(--md-sys-color-on-surface-variant)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    Rincian Tarif Biaya (Fees)
-                  </h4>
-                  <div style={{ overflowX: 'auto', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '11px' }}>
-                      <thead>
-                        <tr style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                          <th style={{ padding: '8px 12px', color: 'var(--md-sys-color-on-surface-variant)' }}>Tipe Biaya</th>
-                          <th style={{ padding: '8px 12px', color: 'var(--md-sys-color-on-surface-variant)' }}>Token</th>
-                          <th style={{ padding: '8px 12px', color: 'var(--md-sys-color-on-surface-variant)' }}>Jaringan</th>
-                          <th style={{ padding: '8px 12px', color: 'var(--md-sys-color-on-surface-variant)', textAlign: 'right' }}>Tarif</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {selectedExchangeDb.fees.map(f => (
-                          <tr key={f.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                            <td style={{ padding: '8px 12px', fontWeight: 'bold' }}>{f.feeType}</td>
-                            <td style={{ padding: '8px 12px' }}>{f.token ? f.token.symbol : '-'}</td>
-                            <td style={{ padding: '8px 12px' }}>{f.chain ? f.chain.name : '-'}</td>
-                            <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 'bold', color: 'var(--color-profit-green)' }}>
-                              {f.feePercentage ? `${(parseFloat(f.feePercentage) * 100).toFixed(2)}%` : f.feeFlat ? `${parseFloat(f.feeFlat).toFixed(2)} ${f.token ? f.token.symbol : ''}` : '-'}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-              </>
-              )}
-            </div>
-          </div>
-        </div>
-        </div>
+        <ExchangeDetailPage
+          selectedExchangeDb={selectedExchangeDb}
+          exchangeDbDetailTab={exchangeDbDetailTab}
+          setExchangeDbDetailTab={setExchangeDbDetailTab}
+          compactMode={compactMode}
+          selectedExchangeFiatPairs={selectedExchangeFiatPairs}
+          filteredExchangeFiatPairs={filteredExchangeFiatPairs}
+          sortedExchangeFiatPairs={sortedExchangeFiatPairs}
+          exchangeMarketSearchQuery={exchangeMarketSearchQuery}
+          setExchangeMarketSearchQuery={setExchangeMarketSearchQuery}
+          selectedExchangeMarketPairs={selectedExchangeMarketPairs}
+          exchangeMarketRefreshCycle={exchangeMarketRefreshCycle}
+          errorExchangeMarketData={errorExchangeMarketData}
+          loadingExchangeMarketData={loadingExchangeMarketData}
+          allVisibleExchangeMarketRowsSelected={allVisibleExchangeMarketRowsSelected}
+          selectedExchangeMarketRows={selectedExchangeMarketRows}
+          onBack={closeExchangeDbPage}
+          onExportMarketCsv={handleExportExchangeMarketCsv}
+          onMarketSort={handleExchangeMarketSort}
+          getMarketSortIndicator={getExchangeMarketSortIndicator}
+          getMarketRow={getExchangeMarketRow}
+          getMarketRowKey={getExchangeMarketRowKey}
+          onToggleMarketRow={toggleExchangeMarketRowSelection}
+          onToggleAllVisibleMarketRows={toggleAllVisibleExchangeMarketRows}
+        />
       )}
 
       {/* Confirmation Modal */}
@@ -4480,7 +3075,7 @@ function App() {
         <span>Refresh Sekarang</span>
       </button>
       )}
-    </div>
+    </AppShell>
   );
 }
 
