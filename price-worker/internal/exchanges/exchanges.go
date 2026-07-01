@@ -13,6 +13,7 @@ type Fetcher interface {
 
 func SupportedFetchers(client *http.Client, tokocryptoConcurrency int, mobeeAPIKey string, mobeeAPISecret string, mobeeConcurrency int) map[string]Fetcher {
 	return map[string]Fetcher{
+		"Bittime":    NewBittime(client, tokocryptoConcurrency),
 		"Indodax":    NewIndodax(client),
 		"Mobee":      NewMobee(client, mobeeAPIKey, mobeeAPISecret, mobeeConcurrency),
 		"Reku":       NewReku(client),
