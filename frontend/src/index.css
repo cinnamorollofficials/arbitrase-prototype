@@ -754,6 +754,29 @@ h1, h2, h3, h4 {
   vertical-align: middle;
 }
 
+.price-sparkline-button {
+  appearance: none;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  padding: 2px 4px;
+  cursor: pointer;
+  line-height: 1;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.price-sparkline-button:hover {
+  background-color: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.08);
+  transform: translateY(-1px);
+}
+
+.price-sparkline-button:focus-visible {
+  outline: 2px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
+}
+
 .price-sparkline svg {
   width: 104px;
   height: 34px;
@@ -833,22 +856,6 @@ h1, h2, h3, h4 {
 .compact-ui .price-sparkline {
   width: 104px;
   height: 30px !important;
-  grid-template-rows: 20px 9px;
-}
-
-.compact-ui .price-sparkline svg {
-  width: 88px;
-  height: 24px;
-}
-
-.compact-ui .price-sparkline span {
-  font-size: 8px !important;
-}
-
-.compact-ui .exchange-market-token-cell {
-  min-width: 210px;
-  max-width: 300px;
-}
   grid-template-rows: 20px 9px;
 }
 

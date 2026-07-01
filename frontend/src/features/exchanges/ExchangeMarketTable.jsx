@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import CoinIcon from '../../components/CoinIcon';
+import PriceChartModal from '../../components/modals/PriceChartModal';
 import PriceSparkline from '../../components/PriceSparkline';
 import { formatMarketPriceTimestamp, formatNativeMarketPrice } from '../../utils/market';
 
@@ -23,6 +25,7 @@ function ExchangeMarketTable({
   onToggleMarketRow,
   onToggleAllVisibleMarketRows
 }) {
+  const [priceChartContext, setPriceChartContext] = useState(null);
   const handleExportExchangeMarketCsv = onExportMarketCsv;
   const handleExchangeMarketSort = onMarketSort;
   const getExchangeMarketSortIndicator = getMarketSortIndicator;
@@ -232,7 +235,21 @@ function ExchangeMarketTable({
                               )}
                             </td>
                             <td style={{ padding: '8px 12px', textAlign: 'center' }}>
-                              {loadingExchangeMarketData && !market ? '...' : <PriceSparkline history={hasUsableMarketPrice ? market?.history : []} />}
+                              {loadingExchangeMarketData && !market ? '...' : (
+                                <button
+                                  type="button"
+                                  className="price-sparkline-button"
+                                  onClick={() => setPriceChartContext({
+                                    pair,
+                                    market,
+                                    quoteSymbol
+                                  })}
+                                  aria-label={`Buka detail chart harga ${pair.symbol}`}
+                                  title={`Buka detail chart harga ${pair.symbol}`}
+                                >
+                                  <PriceSparkline history={hasUsableMarketPrice ? market?.history : []} />
+                                </button>
+                              )}
                             </td>
                             <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--md-sys-color-primary)', fontWeight: '700' }}>
                               {loadingExchangeMarketData && !market ? '...' : formatNativeMarketPrice(bid, quoteSymbol)}
@@ -254,6 +271,10 @@ function ExchangeMarketTable({
                   </div>
                 )}
               </div>
+              <PriceChartModal
+                context={priceChartContext}
+                onClose={() => setPriceChartContext(null)}
+              />
     </>
   );
 }
