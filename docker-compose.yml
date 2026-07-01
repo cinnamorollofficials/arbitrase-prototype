@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: arbitrage-db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: yoursecurepassword
+      POSTGRES_DB: arbitrage_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:alpine
+    container_name: arbitrage-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+
+  backend:
+    build:
+      context: ./backend
+    container_name: arbitrage-backend
+    restart: always
+    ports:
+      - "5001:5001"
+    environment:
+      - PORT=5001
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=yoursecurepassword
+      - DB_NAME=arbitrage_db
+      - REDIS_URL=redis://redis:6379
+      - POLL_INTERVAL_SECONDS=10
+      - HISTORY_TTL_SECONDS=86400
+      - HISTORY_SAMPLE_SECONDS=60
+      - HISTORY_MAX_POINTS=1440
+    depends_on:
+      - db
+      - redis
+
+  price-worker:
+    build:
+      context: ./price-worker
+    container_name: arbitrage-price-worker
+    restart: unless-stopped
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=yoursecurepassword
+      - DB_NAME=arbitrage_db
+      - REDIS_URL=redis://redis:6379
+      - POLL_INTERVAL_SECONDS=10
+      - HISTORY_TTL_SECONDS=86400
+      - HISTORY_SAMPLE_SECONDS=60
+      - HISTORY_MAX_POINTS=1440
+      - STALE_AFTER_SECONDS=30
+      - TOKOCRYPTO_CONCURRENCY=5
+      - MOBEE_API_KEY=
+      - MOBEE_API_SECRET=
+      - MOBEE_CONCURRENCY=5
+      - HTTP_TIMEOUT_SECONDS=5
+    depends_on:
+      - db
+      - redis
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: arbitrage-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  redisdata:

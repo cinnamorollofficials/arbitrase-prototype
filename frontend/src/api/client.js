@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'http://localhost:5001';
+export const API_BASE_URL = import.meta.env.VITE_API_URL || `${window.location.protocol}//${window.location.hostname}:5001`;
 
 export async function requestJson(path) {
   const response = await fetch(`${API_BASE_URL}${path}`);
