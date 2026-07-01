@@ -11,10 +11,10 @@ type Fetcher interface {
 	Fetch(ctx context.Context, pairs []market.TokenPair) []market.MarketTick
 }
 
-func SupportedFetchers(client *http.Client, tokocryptoConcurrency int, mobeeAPIKey string, mobeeConcurrency int) map[string]Fetcher {
+func SupportedFetchers(client *http.Client, tokocryptoConcurrency int, mobeeAPIKey string, mobeeAPISecret string, mobeeConcurrency int) map[string]Fetcher {
 	return map[string]Fetcher{
 		"Indodax":    NewIndodax(client),
-		"Mobee":      NewMobee(client, mobeeAPIKey, mobeeConcurrency),
+		"Mobee":      NewMobee(client, mobeeAPIKey, mobeeAPISecret, mobeeConcurrency),
 		"Reku":       NewReku(client),
 		"Tokocrypto": NewTokocrypto(client, tokocryptoConcurrency),
 	}

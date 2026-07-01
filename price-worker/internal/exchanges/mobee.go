@@ -2,6 +2,9 @@ package exchanges
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -15,18 +18,20 @@ import (
 type Mobee struct {
 	client      *http.Client
 	apiKey      string
+	apiSecret   string
 	concurrency int
 }
 
-type mobeeMarketSummaryResponse map[string]any
+type mobeeBidAskResponse map[string]any
 
-func NewMobee(client *http.Client, apiKey string, concurrency int) *Mobee {
+func NewMobee(client *http.Client, apiKey string, apiSecret string, concurrency int) *Mobee {
 	if concurrency < 1 {
 		concurrency = 1
 	}
 	return &Mobee{
 		client:      client,
 		apiKey:      strings.TrimSpace(apiKey),
+		apiSecret:   strings.TrimSpace(apiSecret),
 		concurrency: concurrency,
 	}
 }
@@ -34,6 +39,9 @@ func NewMobee(client *http.Client, apiKey string, concurrency int) *Mobee {
 func (m *Mobee) Fetch(ctx context.Context, pairs []market.TokenPair) []market.MarketTick {
 	if m.apiKey == "" {
 		return unsupportedMobeeTicks(pairs, "MOBEE_API_KEY is not configured")
+	}
+	if m.apiSecret == "" {
+		return unsupportedMobeeTicks(pairs, "MOBEE_API_SECRET is not configured")
 	}
 
 	ticks := make([]market.MarketTick, len(pairs))
@@ -58,13 +66,12 @@ func (m *Mobee) Fetch(ctx context.Context, pairs []market.TokenPair) []market.Ma
 
 func (m *Mobee) fetchPair(ctx context.Context, pair market.TokenPair) market.MarketTick {
 	mobeePair := strings.ReplaceAll(pair.Symbol, "_", "-")
-	endpoint := fmt.Sprintf("https://open-api.mobee.io/v1/markets/%s/summary", url.PathEscape(mobeePair))
-	var response mobeeMarketSummaryResponse
+	path := fmt.Sprintf("/v1/markets/%s/bid-ask-price", url.PathEscape(mobeePair))
+	endpoint := "https://open-api.mobee.io" + path
+	var response mobeeBidAskResponse
 	fetchedAt := market.NowMillis()
 
-	if err := getJSONWithHeaders(ctx, m.client, endpoint, map[string]string{
-		"X-API-Key": m.apiKey,
-	}, &response); err != nil {
+	if err := getJSONWithHeaders(ctx, m.client, endpoint, m.signedHeaders(http.MethodGet, path), &response); err != nil {
 		return market.MarketTick{
 			ExchangeID:     pair.ExchangeID,
 			ExchangeName:   pair.ExchangeName,
@@ -73,7 +80,7 @@ func (m *Mobee) fetchPair(ctx context.Context, pair market.TokenPair) market.Mar
 			BaseSymbol:     pair.BaseToken.Symbol,
 			QuoteSymbol:    pair.QuoteToken.Symbol,
 			NativeCurrency: pair.QuoteToken.Symbol,
-			Source:         "mobee_market_summary",
+			Source:         "mobee_bid_ask_price",
 			Status:         "error",
 			Error:          market.StringPtr(err.Error()),
 			PriceTimestamp: fetchedAt,
@@ -83,19 +90,15 @@ func (m *Mobee) fetchPair(ctx context.Context, pair market.TokenPair) market.Mar
 
 	bid := firstJSONNumber(response, "bid", "highestBid", "highest_bid", "bestBid", "best_bid", "buy")
 	ask := firstJSONNumber(response, "ask", "lowestAsk", "lowest_ask", "bestAsk", "best_ask", "sell")
-	last := firstJSONNumber(response, "last", "lastPrice", "last_price", "latestPrice", "latest_price", "close")
 	bidQty := firstJSONNumber(response, "bidQty", "bidQuantity", "bid_qty", "bidSize", "bid_size")
 	askQty := firstJSONNumber(response, "askQty", "askQuantity", "ask_qty", "askSize", "ask_size")
 	mid := market.MidFromBidAsk(bid, ask)
-	if mid == nil && last != nil {
-		mid = market.FloatPtr(*last)
-	}
 
 	status := "success"
 	var errPtr *string
-	if bid == nil && ask == nil && last == nil {
+	if bid == nil && ask == nil {
 		status = "empty"
-		errPtr = market.StringPtr("market summary has no numeric bid, ask, or last")
+		errPtr = market.StringPtr("bid ask response has no numeric bid or ask")
 	}
 
 	return market.MarketTick{
@@ -107,12 +110,11 @@ func (m *Mobee) fetchPair(ctx context.Context, pair market.TokenPair) market.Mar
 		QuoteSymbol:    pair.QuoteToken.Symbol,
 		Bid:            bid,
 		Ask:            ask,
-		Last:           last,
 		Mid:            mid,
 		BidQty:         bidQty,
 		AskQty:         askQty,
 		NativeCurrency: pair.QuoteToken.Symbol,
-		Source:         "mobee_market_summary",
+		Source:         "mobee_bid_ask_price",
 		Status:         status,
 		Error:          errPtr,
 		PriceTimestamp: fetchedAt,
@@ -120,10 +122,24 @@ func (m *Mobee) fetchPair(ctx context.Context, pair market.TokenPair) market.Mar
 	}
 }
 
+func (m *Mobee) signedHeaders(method string, path string) map[string]string {
+	timestamp := strconv.FormatInt(market.NowMillis()/1000, 10)
+	payload := strings.Join([]string{method, path, timestamp}, "\n")
+	mac := hmac.New(sha256.New, []byte(m.apiSecret))
+	_, _ = mac.Write([]byte(payload))
+	signature := base64.StdEncoding.EncodeToString(mac.Sum(nil))
+
+	return map[string]string{
+		"X-API-Key":           m.apiKey,
+		"X-Request-Signature": signature,
+		"X-Request-Timestamp": timestamp,
+	}
+}
+
 func unsupportedMobeeTicks(pairs []market.TokenPair, message string) []market.MarketTick {
 	ticks := make([]market.MarketTick, 0, len(pairs))
 	for _, pair := range pairs {
-		ticks = append(ticks, UnsupportedTick(pair, "mobee_market_summary", message))
+		ticks = append(ticks, UnsupportedTick(pair, "mobee_bid_ask_price", message))
 	}
 	return ticks
 }

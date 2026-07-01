@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import crypto from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -7,26 +8,20 @@ dotenv.config({ path: new URL('../.env', import.meta.url) });
 dotenv.config({ path: new URL('../../.env', import.meta.url) });
 
 const apiKey = process.env.MOBEE_API_KEY;
-if (!apiKey) {
-  console.error('MOBEE_API_KEY is required to fetch Mobee market pairs.');
+const apiSecret = process.env.MOBEE_API_SECRET;
+if (!apiKey || !apiSecret) {
+  console.error('MOBEE_API_KEY and MOBEE_API_SECRET are required to fetch Mobee market pairs.');
   process.exit(1);
 }
 
-const endpoints = [
-  'https://open-api.mobee.io/v1/market/settings',
-  'https://open-api.mobee.io/v1/markets/settings'
-];
+const endpoints = ['/v1/market/settings', '/v1/markets/settings'];
 
 let lastError = null;
 let payload = null;
 for (const endpoint of endpoints) {
   try {
-    const response = await fetch(endpoint, {
-      headers: {
-        Accept: 'application/json',
-        'X-API-Key': apiKey,
-        'User-Agent': 'arbitrase-prototype/1.0'
-      }
+    const response = await fetch(`https://open-api.mobee.io${endpoint}`, {
+      headers: signedHeaders('GET', endpoint)
     });
 
     if (!response.ok) {
@@ -109,4 +104,21 @@ function getString(value, keys) {
 
 function normalizePair(value) {
   return value.trim().toUpperCase().replace('-', '_').replace('/', '_');
+}
+
+function signedHeaders(method, path) {
+  const timestamp = Math.floor(Date.now() / 1000).toString();
+  const payload = `${method}\n${path}\n${timestamp}`;
+  const signature = crypto
+    .createHmac('sha256', apiSecret)
+    .update(payload)
+    .digest('base64');
+
+  return {
+    Accept: 'application/json',
+    'User-Agent': 'arbitrase-prototype/1.0',
+    'X-API-Key': apiKey,
+    'X-Request-Signature': signature,
+    'X-Request-Timestamp': timestamp
+  };
 }

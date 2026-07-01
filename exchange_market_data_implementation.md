@@ -304,23 +304,25 @@ Perlu adapter symbol dari `BTC_IDR` menjadi `btc_idr`.
 
 - Pair API memakai format `BASE-QUOTE`, contoh `BTC-IDR`.
 - Fixture aplikasi tetap memakai format internal `BASE_IDR`.
-- Daftar pair bisa diperbarui dari API Mobee setelah `MOBEE_API_KEY` diisi:
+- Daftar pair bisa diperbarui dari API Mobee setelah `MOBEE_API_KEY` dan `MOBEE_API_SECRET` diisi:
 
 ```bash
 cd backend
 npm run update:mobee-pairs
 ```
 
-- Worker memakai endpoint summary per pair:
+- Worker memakai endpoint bid/ask per pair:
 
 ```text
-https://open-api.mobee.io/v1/markets/BTC-IDR/summary
+https://open-api.mobee.io/v1/markets/BTC-IDR/bid-ask-price
 ```
 
 - Header wajib:
 
 ```text
 X-API-Key: <MOBEE_API_KEY>
+X-Request-Signature: <HMAC_SHA256_BASE64>
+X-Request-Timestamp: <UNIX_SECONDS>
 ```
 
 ## Prinsip Desain
