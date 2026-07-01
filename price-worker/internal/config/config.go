@@ -88,7 +88,7 @@ func databaseURL() string {
 	user := envString("DB_USER", "postgres")
 	password := os.Getenv("DB_PASSWORD")
 	host := envString("DB_HOST", "127.0.0.1")
-	port := envString("DB_PORT", "5432")
+	port := envString("DB_PORT", "5433")
 	name := envString("DB_NAME", "arbitrage_db")
 	sslMode := "disable"
 	if os.Getenv("DB_SSL") == "true" {

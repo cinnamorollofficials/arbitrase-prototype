@@ -4,11 +4,11 @@ dotenv.config();
 const useSsl = process.env.DB_SSL === 'true';
 const dialectOptions = useSsl
   ? {
-      ssl: {
-        require: true,
-        rejectUnauthorized: false
-      }
+    ssl: {
+      require: true,
+      rejectUnauthorized: false
     }
+  }
   : {};
 
 const config = {
@@ -16,7 +16,7 @@ const config = {
   password: process.env.DB_PASSWORD || null,
   database: process.env.DB_NAME || 'arbitrage_db',
   host: process.env.DB_HOST || '127.0.0.1',
-  port: process.env.DB_PORT || 5432,
+  port: process.env.DB_PORT || 5433,
   dialect: 'postgres',
   logging: false,
   dialectOptions,

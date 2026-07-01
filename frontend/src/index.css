@@ -825,6 +825,11 @@ h1, h2, h3, h4 {
   vertical-align: bottom;
 }
 
+.exchange-detail-back-button::before {
+  content: "Kembali ke daftar bursa";
+  font-size: 12px;
+}
+
 .compact-ui .price-sparkline {
   width: 104px;
   height: 30px !important;

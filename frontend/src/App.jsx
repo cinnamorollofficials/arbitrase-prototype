@@ -65,6 +65,29 @@ function PriceSparkline({ history }) {
   );
 }
 
+const EXCHANGE_DETAIL_PATH_PREFIX = '/exchanges/';
+
+const getExchangeRouteKey = (exchange) => encodeURIComponent(String(exchange?.id ?? exchange?.name ?? '').trim());
+
+const getExchangeRouteKeyFromPath = () => {
+  const { pathname } = window.location;
+  if (!pathname.startsWith(EXCHANGE_DETAIL_PATH_PREFIX)) return null;
+  const rawKey = pathname.slice(EXCHANGE_DETAIL_PATH_PREFIX.length).split('/')[0];
+  return rawKey ? decodeURIComponent(rawKey) : null;
+};
+
+const buildExchangeDetailPath = (exchange) => {
+  const params = new URLSearchParams(window.location.search);
+  params.set('tab', 'exchanges');
+  return `${EXCHANGE_DETAIL_PATH_PREFIX}${getExchangeRouteKey(exchange)}?${params.toString()}`;
+};
+
+const buildExchangesListPath = () => {
+  const params = new URLSearchParams(window.location.search);
+  params.set('tab', 'exchanges');
+  return `/?${params.toString()}`;
+};
+
 function App() {
   const [prices, setPrices] = useState([]);
   const [usdToIdrRate, setUsdToIdrRate] = useState(16500);
@@ -165,6 +188,7 @@ function App() {
   const [capital, setCapital] = useUrlState('capital', 10000);
   const [activeSymbol, setActiveSymbol] = useUrlState('coin', 'USDT');
   const [activeTab, setActiveTab] = useUrlState('tab', 'prices');
+  const [exchangeRouteKey, setExchangeRouteKey] = useState(getExchangeRouteKeyFromPath);
   useEffect(() => {
     if (activeTab === 'exchanges') {
       fetchExchangesDb();
@@ -172,6 +196,40 @@ function App() {
       fetchTokensDb();
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    const syncExchangeRoute = () => {
+      const routeKey = getExchangeRouteKeyFromPath();
+      setExchangeRouteKey(routeKey);
+      if (routeKey) {
+        setActiveTab('exchanges');
+      }
+    };
+
+    syncExchangeRoute();
+    window.addEventListener('popstate', syncExchangeRoute);
+    return () => window.removeEventListener('popstate', syncExchangeRoute);
+  }, []);
+
+  useEffect(() => {
+    if (!exchangeRouteKey) return;
+
+    const match = exchangesDb.find((exchange) => {
+      const id = String(exchange.id ?? '');
+      const name = String(exchange.name ?? '');
+      return id === exchangeRouteKey || name.toLowerCase() === exchangeRouteKey.toLowerCase();
+    });
+
+    if (match) {
+      setExchangeDbDetailTab('overview');
+      setExchangeMarketData([]);
+      setErrorExchangeMarketData(null);
+      setExchangeMarketSearchQuery('');
+      setSelectedExchangeMarketRows(new Set());
+      setSelectedExchangeDb(match);
+    }
+  }, [exchangeRouteKey, exchangesDb]);
+
   const [exchangesViewMode, setExchangesViewMode] = useUrlState('ex_mode', 'table');
   const [selectedExchangeDb, setSelectedExchangeDb] = useState(null);
   const [exchangeDbDetailTab, setExchangeDbDetailTab] = useState('overview');
@@ -601,13 +659,27 @@ function App() {
     }
   };
 
-  const openExchangeDbModal = (exchange) => {
+  const openExchangeDbPage = (exchange) => {
+    window.history.pushState(null, '', buildExchangeDetailPath(exchange));
+    setExchangeRouteKey(String(exchange?.id ?? exchange?.name ?? ''));
+    setActiveTab('exchanges');
     setExchangeDbDetailTab('overview');
     setExchangeMarketData([]);
     setErrorExchangeMarketData(null);
     setExchangeMarketSearchQuery('');
     setSelectedExchangeMarketRows(new Set());
     setSelectedExchangeDb(exchange);
+  };
+
+  const closeExchangeDbPage = () => {
+    window.history.pushState(null, '', buildExchangesListPath());
+    setExchangeRouteKey(null);
+    setSelectedExchangeDb(null);
+    setExchangeDbDetailTab('overview');
+    setExchangeMarketData([]);
+    setErrorExchangeMarketData(null);
+    setExchangeMarketSearchQuery('');
+    setSelectedExchangeMarketRows(new Set());
   };
 
   const renderInfoIcon = (tooltipContent) => (
@@ -862,6 +934,8 @@ function App() {
     URL.revokeObjectURL(url);
   };
 
+  const isExchangeDetailPage = activeTab === 'exchanges' && Boolean(selectedExchangeDb);
+
   return (
     <div className={`app-container ${compactMode ? 'compact-ui' : ''}`}>
       {/* Header */}
@@ -923,6 +997,40 @@ function App() {
           </div>
         </div>
       </header>
+
+      {isExchangeDetailPage && (
+        <nav
+          aria-label="Breadcrumb"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            margin: '0 0 20px',
+            fontSize: '13px',
+            color: 'var(--md-sys-color-on-surface-variant)'
+          }}
+        >
+          <button
+            onClick={closeExchangeDbPage}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              padding: 0,
+              color: 'var(--md-sys-color-primary)',
+              fontSize: '13px',
+              fontWeight: '800',
+              cursor: 'pointer'
+            }}
+          >
+            Exchanges
+          </button>
+          <span>/</span>
+          <span style={{ color: '#ffffff', fontWeight: '800' }}>{selectedExchangeDb.name}</span>
+        </nav>
+      )}
+
+      {!isExchangeDetailPage && (
+      <>
 
       {/* Asset Selector Row with Infinite Animated Scrolling Ticker */}
       <div className="asset-selector-row" style={{ marginBottom: '24px' }}>
@@ -2773,7 +2881,7 @@ function App() {
       )}
 
       {/* Exchanges Database Tab */}
-      {activeTab === 'exchanges' && (
+      {activeTab === 'exchanges' && !selectedExchangeDb && (
         <div className="md3-card table-card" style={{ padding: '0px', overflow: 'hidden', animation: 'fadeIn 0.3s ease' }}>
           <div className="table-header-section" style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
             <div>
@@ -2884,8 +2992,8 @@ function App() {
                             <td style={{ padding: '16px 20px', fontWeight: '700' }}>
                               <div 
                                 style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}
-                                onClick={() => openExchangeDbModal(ex)}
-                                title="Klik untuk detail bursa (Database)"
+                                onClick={() => openExchangeDbPage(ex)}
+                                title="Buka halaman detail bursa"
                               >
                                 {ex.logoUrl ? (
                                   <img
@@ -3080,8 +3188,8 @@ function App() {
                         {/* Top Row: Logo & Name & Type */}
                         <div 
                           style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', cursor: 'pointer' }}
-                          onClick={() => openExchangeDbModal(ex)}
-                          title="Klik untuk detail bursa (Database)"
+                          onClick={() => openExchangeDbPage(ex)}
+                          title="Buka halaman detail bursa"
                         >
                           {ex.logoUrl ? (
                             <img
@@ -3509,65 +3617,56 @@ function App() {
         </div>
       )}
 
-      {/* Real Database Exchange Detail Modal */}
-      {selectedExchangeDb && (
+      </>
+      )}
+
+      {/* Real Database Exchange Detail Page */}
+      {activeTab === 'exchanges' && selectedExchangeDb && (
         <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(10, 11, 15, 0.75)',
-          backdropFilter: 'blur(16px)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'stretch',
-          zIndex: 9999,
-          padding: 0,
+          width: '100%',
+          display: 'block',
+          minHeight: '100vh',
           animation: 'fadeIn 0.3s ease'
         }}>
           <div className="md3-card" style={{
-            width: '100vw',
-            height: '100vh',
-            maxWidth: 'none',
-            maxHeight: 'none',
+            minHeight: 'calc(100vh - 48px)',
             overflow: 'hidden',
             position: 'relative',
             padding: 0,
             backgroundColor: 'var(--md-sys-color-surface-container-high)',
-            borderRadius: 0,
-            border: 'none',
+            borderRadius: 'var(--md-shape-corner-large)',
+            border: '1px solid rgba(255,255,255,0.08)',
             boxShadow: 'none',
             display: 'flex',
             flexDirection: 'column'
           }}>
-            {/* Close Button */}
+            {/* Back Button */}
             <button
-              onClick={() => setSelectedExchangeDb(null)}
+              className="exchange-detail-back-button"
+              onClick={closeExchangeDbPage}
               style={{
-                position: 'absolute',
-                top: '18px',
-                right: '18px',
                 background: 'rgba(255,255,255,0.06)',
-                border: 'none',
-                borderRadius: '50%',
-                width: '32px',
-                height: '32px',
+                border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: '8px',
+                padding: '8px 12px',
                 color: '#ffffff',
-                fontSize: '16px',
+                fontSize: 0,
+                fontWeight: '800',
                 cursor: 'pointer',
-                display: 'flex',
+                display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                gap: '8px',
+                margin: '20px 28px 0',
                 transition: 'background-color 0.2s'
               }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(244, 63, 94, 0.2)'}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.06)'}
             >
               ✕
             </button>
 
-            <div style={{ flex: 1, overflowY: 'auto', padding: '28px', paddingRight: '72px' }}>
+            <div style={{ flex: 1, padding: '20px 28px 28px' }}>
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '16px' }}>
               {selectedExchangeDb.logoUrl ? (
@@ -4368,6 +4467,7 @@ function App() {
       )}
 
       {/* Material Floating Action Button (FAB) for manual refresh */}
+      {!isExchangeDetailPage && (
       <button
         className={`md3-fab ${isRefreshing ? 'refreshing' : ''}`}
         onClick={handleManualRefresh}
@@ -4379,6 +4479,7 @@ function App() {
         </svg>
         <span>Refresh Sekarang</span>
       </button>
+      )}
     </div>
   );
 }
