@@ -12,28 +12,26 @@ import (
 
 // Kraken fetches spot ticker data using the public REST API.
 //
-// Endpoint: GET https://api.kraken.com/0/public/Ticker?pair=<sym1>,<sym2>,...
+// Endpoint: GET https://api.kraken.com/0/public/Ticker?pair=<p1>,<p2>,...
 //
-// The "pair" parameter accepts Kraken wsname format (BASE/QUOTE, e.g. "BTC/USD")
-// or the Kraken altname format (e.g. "XBTUSD"). We use wsname because that is
-// what is stored in the DB symbol field as "BASE_QUOTE" and can be converted
-// trivially by replacing "_" with "/".
+// Pair format accepted: altname (e.g. "XBTUSD", "ETHUSD", "ALEOUSD").
+// Our internal symbol "BASE_QUOTE" is converted to altname by removing "_".
 //
-// The response result keys may differ from the requested names
-// (e.g. "XXBTZUSD" for "XBT/USD"). We therefore do a secondary lookup
-// using the "altname" field inside each result to match back to our pairs.
+// Response result keys are always Kraken's internal altnames. Some legacy
+// assets use X/Z prefixes (e.g. "XXBTZUSD" for "XBTUSD"). We handle this
+// with a normalised fallback map.
+//
+// Important: Kraken may return non-empty error[] alongside a valid result{}.
+// We always process result{} regardless of errors[].
 type Kraken struct {
 	client      *http.Client
 	concurrency int
 }
 
 type krakenTickerEntry struct {
-	// A = ask [price, wholeLotVolume, lotVolume]
-	A []jsonNumber `json:"a"`
-	// B = bid [price, wholeLotVolume, lotVolume]
-	B []jsonNumber `json:"b"`
-	// C = last trade closed [price, lotVolume]
-	C []jsonNumber `json:"c"`
+	A []jsonNumber `json:"a"` // ask [price, wholeLotVol, lotVol]
+	B []jsonNumber `json:"b"` // bid [price, wholeLotVol, lotVol]
+	C []jsonNumber `json:"c"` // last trade [price, lotVol]
 }
 
 type krakenTickerResponse struct {
@@ -41,8 +39,7 @@ type krakenTickerResponse struct {
 	Result map[string]krakenTickerEntry `json:"result"`
 }
 
-// krakenBatchSize is the max number of pairs per Ticker request.
-// Kraken supports up to ~100 pairs in a single call.
+// krakenBatchSize is the max pairs per request. Kraken supports ~100.
 const krakenBatchSize = 50
 
 func NewKraken(client *http.Client, concurrency int) *Kraken {
@@ -52,113 +49,158 @@ func NewKraken(client *http.Client, concurrency int) *Kraken {
 	return &Kraken{client: client, concurrency: concurrency}
 }
 
-// pairToWsname converts "BASE_QUOTE" → "BASE/QUOTE".
-func pairToWsname(symbol string) string {
-	return strings.Replace(symbol, "_", "/", 1)
+// symbolToAltname converts internal "BASE_QUOTE" → "BASEQUOTE" (altname format).
+// e.g. "ALEO_USD" → "ALEOUSD", "XBT_EUR" → "XBTEUR"
+func symbolToAltname(symbol string) string {
+	return strings.Replace(symbol, "_", "", 1)
+}
+
+// normaliseKey strips any single leading "X" or "Z" prefix that Kraken uses
+// for legacy assets and returns an uppercase key for fuzzy matching.
+// e.g. "XXBTZUSD" → "XBTUSD", "XETHZEUR" → "ETHEUR"
+func normaliseKrakenKey(key string) string {
+	upper := strings.ToUpper(key)
+	// Kraken wraps legacy bases in "X" and legacy quotes in "Z".
+	// This produces patterns like: X<BASE>Z<QUOTE>
+	// Strip leading X and trailing Z-segment by trying common quote suffixes.
+	// Simpler approach: just strip leading "X" from known prefixed pairs.
+	if len(upper) > 6 && strings.HasPrefix(upper, "X") {
+		// try removing leading X
+		candidate := upper[1:]
+		// and a trailing Z if the quote segment was Z-prefixed
+		// e.g. "XBTZUSD" after stripping X → "BTZUSD" — strip Z before QUOTE
+		// We'll handle this by also normalizing the lookup symbol the same way.
+		return candidate
+	}
+	return upper
 }
 
 func (k *Kraken) Fetch(ctx context.Context, pairs []market.TokenPair) []market.MarketTick {
-	// Split pairs into batches.
-	type batchResult struct {
-		offset  int
-		results map[string]krakenTickerEntry // wsname → entry
+	// Map altname → pair index so we can match responses back to pairs.
+	altnameToIdx := make(map[string]int, len(pairs))
+	for i, pair := range pairs {
+		altnameToIdx[symbolToAltname(pair.Symbol)] = i
 	}
 
-	batches := make([][]market.TokenPair, 0)
+	// Split into batches.
+	type batch struct {
+		pairs    []market.TokenPair
+		altnames []string
+	}
+	batches := make([]batch, 0)
 	for start := 0; start < len(pairs); start += krakenBatchSize {
 		end := start + krakenBatchSize
 		if end > len(pairs) {
 			end = len(pairs)
 		}
-		batches = append(batches, pairs[start:end])
+		bp := pairs[start:end]
+		alts := make([]string, len(bp))
+		for i, p := range bp {
+			alts[i] = symbolToAltname(p.Symbol)
+		}
+		batches = append(batches, batch{pairs: bp, altnames: alts})
 	}
 
-	sem := make(chan struct{}, k.concurrency)
 	var mu sync.Mutex
-	// wsname → ticker entry collected from all batches
-	allEntries := make(map[string]krakenTickerEntry)
+	// Store all ticker entries keyed by Kraken's raw response key (uppercase).
+	rawEntries := make(map[string]krakenTickerEntry)
 
+	sem := make(chan struct{}, k.concurrency)
 	var wg sync.WaitGroup
-	for bi, batch := range batches {
-		bi := bi
-		batch := batch
+
+	for _, b := range batches {
+		b := b
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			sem <- struct{}{}
 			defer func() { <-sem }()
 
-			wsnames := make([]string, len(batch))
-			for i, pair := range batch {
-				wsnames[i] = pairToWsname(pair.Symbol)
-			}
-
 			url := fmt.Sprintf(
 				"https://api.kraken.com/0/public/Ticker?pair=%s",
-				strings.Join(wsnames, ","),
+				strings.Join(b.altnames, ","),
 			)
 
 			var response krakenTickerResponse
 			if err := getJSON(ctx, k.client, url, &response); err != nil {
-				// Batch failed; entries will be missing → emptyTick fallback below.
-				_ = bi
-				return
-			}
-			if len(response.Error) > 0 {
+				// Network / HTTP error — skip batch, pairs fall through to emptyTick.
 				return
 			}
 
+			// NOTE: Do NOT bail on response.Error here.
+			// Kraken returns warnings in error[] but still populates result{}.
+			// e.g. unknown pairs yield an error entry but valid pairs still appear.
+
 			mu.Lock()
 			for key, entry := range response.Result {
-				// Key is Kraken's internal name. We store by wsname for lookup.
-				// We also store by the key itself to aid secondary lookup.
-				allEntries[key] = entry
+				rawEntries[strings.ToUpper(key)] = entry
 			}
 			mu.Unlock()
 		}()
 	}
 	wg.Wait()
 
-	// Build a normalised lookup: lowercase-no-slash-no-underscore → entry.
-	// This helps match "XBTUSD" ↔ "XBT/USD" ↔ "XBT_USD".
-	normalised := make(map[string]krakenTickerEntry, len(allEntries))
-	for key, entry := range allEntries {
-		norm := strings.ToUpper(strings.NewReplacer("/", "", "_", "", "X", "").Replace(key))
-		_ = norm
-		// Store by raw key as-is.
-		normalised[strings.ToUpper(key)] = entry
+	// Build a normalised lookup for fuzzy matching (strips X/Z legacy prefixes).
+	// Key: uppercase altname without separators → entry
+	normEntries := make(map[string]krakenTickerEntry, len(rawEntries))
+	for key, entry := range rawEntries {
+		// Exact key
+		normEntries[key] = entry
+		// Without leading X (e.g. XXBTZUSD → XBTZUSD)
+		if strings.HasPrefix(key, "X") {
+			normEntries[key[1:]] = entry
+		}
+		// Without trailing Z-quote prefix (e.g. XBTZUSD → XBTUSD)
+		// We'll handle this in the per-pair lookup below.
 	}
 
 	fetchedAt := market.NowMillis()
 	ticks := make([]market.MarketTick, len(pairs))
 
 	for i, pair := range pairs {
-		ws := pairToWsname(pair.Symbol) // e.g. "ADA/USD"
+		altname := strings.ToUpper(symbolToAltname(pair.Symbol)) // e.g. "ALEOUSD"
 
-		// Try direct lookup by wsname.
-		entry, ok := allEntries[ws]
+		// Strategy 1: exact altname match
+		entry, ok := rawEntries[altname]
+
+		// Strategy 2: Kraken prepends X to base (e.g. "XALEOUSD")
 		if !ok {
-			// Try by compressed symbol (e.g. "ADAUSD").
-			compressed := strings.ToUpper(strings.Replace(pair.Symbol, "_", "", 1))
-			entry, ok = allEntries[compressed]
+			entry, ok = rawEntries["X"+altname]
 		}
+
+		// Strategy 3: Kraken legacy Z-quote (e.g. "XBTZUSD" for XBTUSD)
+		// Split by known quote currencies and try inserting "Z"
 		if !ok {
-			// Try Kraken's X/Z-prefixed internal names (e.g. "XXBTZUSD").
-			parts := strings.SplitN(pair.Symbol, "_", 2)
-			if len(parts) == 2 {
-				xBase := "X" + parts[0]
-				zQuote := "Z" + parts[1]
-				entry, ok = allEntries[xBase+zQuote]
-				if !ok {
-					entry, ok = allEntries["X"+parts[0]+"Z"+parts[1]]
+			for _, quote := range []string{"USD", "EUR", "GBP", "CAD", "AUD", "JPY", "CHF"} {
+				if strings.HasSuffix(altname, quote) {
+					base := altname[:len(altname)-len(quote)]
+					// Try X<base>Z<quote> and X<base><quote>
+					entry, ok = rawEntries["X"+base+"Z"+quote]
+					if !ok {
+						entry, ok = rawEntries[base+"Z"+quote]
+					}
+					if ok {
+						break
+					}
 				}
 			}
 		}
+
+		// Strategy 4: scan all raw keys for case-insensitive match
 		if !ok {
-			// Last resort: case-insensitive scan.
-			ws2 := strings.ToUpper(strings.Replace(pair.Symbol, "_", "", 1))
-			for key, e := range allEntries {
-				if strings.ToUpper(strings.Replace(key, "/", "", 1)) == ws2 {
+			for key, e := range rawEntries {
+				// Strip X/Z prefixes from key and compare to altname
+				stripped := key
+				if strings.HasPrefix(stripped, "X") {
+					stripped = stripped[1:]
+				}
+				for _, quote := range []string{"ZUSD", "ZEUR", "ZGBP", "ZCAD", "ZAUD", "ZJPY", "ZCHF"} {
+					if strings.HasSuffix(stripped, quote) {
+						stripped = stripped[:len(stripped)-len(quote)] + quote[1:]
+						break
+					}
+				}
+				if stripped == altname {
 					entry = e
 					ok = true
 					break
