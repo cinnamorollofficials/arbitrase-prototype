@@ -87,6 +87,7 @@ function PriceChartModal({ context, onClose }) {
   const [loadingCompareByExchangeId, setLoadingCompareByExchangeId] = useState({});
   const [errorCompareByExchangeId, setErrorCompareByExchangeId] = useState({});
   const mountedRef = useRef(false);
+  const svgRef = useRef(null);
   const pendingCompareRequestsRef = useRef(new Set());
   const latestCompareContextRef = useRef({ currentExchangeId: '', pairKey: '' });
   const currentExchangeId = context?.currentExchange?.id ? String(context.currentExchange.id) : '';
@@ -314,6 +315,120 @@ function PriceChartModal({ context, onClose }) {
     setSelectedCompareExchangeIds((current) => current.filter((id) => id !== exchangeId));
   };
 
+  const downloadSvg = () => {
+    const svgEl = svgRef.current;
+    if (!svgEl) return;
+
+    // Clone SVG so we don't mutate the live DOM
+    const clone = svgEl.cloneNode(true);
+    const vw = Number(svgEl.getAttribute('viewBox')?.split(' ')[2] || chartWidth);
+    const vh = Number(svgEl.getAttribute('viewBox')?.split(' ')[3] || chartHeight);
+
+    // Extend viewBox to make room for header and footer
+    const headerH = 60;
+    const footerH = 30;
+    const totalH = vh + headerH + footerH;
+    clone.setAttribute('viewBox', `0 0 ${vw} ${totalH}`);
+    clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    clone.setAttribute('width', String(vw));
+    clone.setAttribute('height', String(totalH));
+
+    // --- Background ---
+    const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    bg.setAttribute('x', '0');
+    bg.setAttribute('y', '0');
+    bg.setAttribute('width', String(vw));
+    bg.setAttribute('height', String(totalH));
+    bg.setAttribute('fill', '#0b1120');
+    clone.insertBefore(bg, clone.firstChild);
+
+    // Shift all existing chart children down by headerH
+    Array.from(clone.children).forEach((child) => {
+      if (child === bg) return;
+      const transform = child.getAttribute('transform') || '';
+      child.setAttribute('transform', `translate(0, ${headerH}) ${transform}`.trim());
+    });
+
+    // --- Header: title & subtitle ---
+    const title = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    title.setAttribute('x', '20');
+    title.setAttribute('y', '26');
+    title.setAttribute('fill', '#ffffff');
+    title.setAttribute('font-size', '16');
+    title.setAttribute('font-weight', '800');
+    title.setAttribute('font-family', 'system-ui, sans-serif');
+    title.textContent = `Chart Harga ${pair?.symbol || ''} — ${context?.currentExchange?.name || ''}`;
+    clone.appendChild(title);
+
+    const subtitle = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    subtitle.setAttribute('x', '20');
+    subtitle.setAttribute('y', '44');
+    subtitle.setAttribute('fill', '#94a3b8');
+    subtitle.setAttribute('font-size', '11');
+    subtitle.setAttribute('font-family', 'system-ui, sans-serif');
+    subtitle.textContent = `${points.length} titik harga · ${startedAt} s/d ${endedAt}`;
+    clone.appendChild(subtitle);
+
+    // --- Legend (top-right) ---
+    let legendX = vw - 20;
+    allSeries.forEach((series) => {
+      if (series.points.length < 2) return;
+      const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      const textW = series.name.length * 7 + 16;
+      legendX -= textW;
+      dot.setAttribute('cx', String(legendX));
+      dot.setAttribute('cy', '28');
+      dot.setAttribute('r', '5');
+      dot.setAttribute('fill', series.color);
+      label.setAttribute('x', String(legendX + 10));
+      label.setAttribute('y', '32');
+      label.setAttribute('fill', '#e2e8f0');
+      label.setAttribute('font-size', '11');
+      label.setAttribute('font-family', 'system-ui, sans-serif');
+      label.textContent = series.name;
+      clone.appendChild(dot);
+      clone.appendChild(label);
+      legendX -= 8;
+    });
+
+    // --- Footer: change % and timestamp ---
+    const footerY = totalH - 10;
+    const changeText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    changeText.setAttribute('x', '20');
+    changeText.setAttribute('y', String(footerY));
+    changeText.setAttribute('fill', trendColor);
+    changeText.setAttribute('font-size', '11');
+    changeText.setAttribute('font-weight', '800');
+    changeText.setAttribute('font-family', 'system-ui, sans-serif');
+    changeText.textContent = `Perubahan: ${changePct >= 0 ? '+' : ''}${changePct.toFixed(2)}%`;
+    clone.appendChild(changeText);
+
+    const tsText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    tsText.setAttribute('x', String(vw - 20));
+    tsText.setAttribute('y', String(footerY));
+    tsText.setAttribute('fill', '#64748b');
+    tsText.setAttribute('font-size', '11');
+    tsText.setAttribute('text-anchor', 'end');
+    tsText.setAttribute('font-family', 'system-ui, sans-serif');
+    tsText.textContent = `Export: ${new Date().toLocaleString('id-ID')}`;
+    clone.appendChild(tsText);
+
+    // Serialize and trigger download
+    const serializer = new XMLSerializer();
+    const svgString = serializer.serializeToString(clone);
+    const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    a.href = url;
+    a.download = `chart-${(pair?.symbol || 'harga').toLowerCase()}-${ts}.svg`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const modalContent = (
     <div
       role="presentation"
@@ -360,24 +475,53 @@ function PriceChartModal({ context, onClose }) {
               {pair?.baseToken?.symbol || '-'} / {pair?.quoteToken?.symbol || quoteSymbol || '-'} · {points.length} titik harga · {startedAt} - {endedAt}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Tutup detail chart harga"
-            style={{
-              width: '34px',
-              height: '34px',
-              borderRadius: '8px',
-              border: '1px solid rgba(148, 163, 184, 0.2)',
-              backgroundColor: '#1f2937',
-              color: '#ffffff',
-              fontSize: '20px',
-              lineHeight: 1,
-              cursor: 'pointer'
-            }}
-          >
-            &times;
-          </button>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button
+              type="button"
+              onClick={downloadSvg}
+              title="Download Chart SVG"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                height: '34px',
+                padding: '0 12px',
+                borderRadius: '8px',
+                border: '1px solid rgba(148, 163, 184, 0.2)',
+                backgroundColor: '#1f2937',
+                color: '#ffffff',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              Download SVG
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Tutup detail chart harga"
+              style={{
+                width: '34px',
+                height: '34px',
+                borderRadius: '8px',
+                border: '1px solid rgba(148, 163, 184, 0.2)',
+                backgroundColor: '#1f2937',
+                color: '#ffffff',
+                fontSize: '20px',
+                lineHeight: 1,
+                cursor: 'pointer'
+              }}
+            >
+              &times;
+            </button>
+          </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(145px, 1fr))', gap: '10px', marginTop: '16px' }}>
@@ -481,6 +625,7 @@ function PriceChartModal({ context, onClose }) {
               </div>
               <div style={{ height: '420px', padding: 0, pointerEvents: 'none' }}>
                 <svg
+                  ref={svgRef}
                   viewBox={`0 0 ${chartWidth} ${chartHeight}`}
                   aria-hidden="true"
                   style={{ display: 'block', width: '100%', height: '100%' }}
