@@ -25,13 +25,19 @@ func main() {
 	}
 	defer dbStore.Close()
 
-	redisStore, err := redisstore.New(ctx, cfg.RedisURL, cfg.HistoryTTL, cfg.HistoryMaxPoints)
+	redisStore, err := redisstore.New(ctx, cfg.RedisURL, cfg.HistoryTTL, cfg.HistorySampleInterval, cfg.HistoryMaxPoints)
 	if err != nil {
 		log.Fatalf("connect redis failed: %v", err)
 	}
 	defer redisStore.Close()
 
-	log.Printf("price worker started poll_interval=%s history_ttl=%s", cfg.PollInterval, cfg.HistoryTTL)
+	log.Printf(
+		"price worker started poll_interval=%s history_ttl=%s history_sample_interval=%s history_max_points=%d",
+		cfg.PollInterval,
+		cfg.HistoryTTL,
+		cfg.HistorySampleInterval,
+		cfg.HistoryMaxPoints,
+	)
 	scheduler.New(cfg, dbStore, redisStore).Run(ctx)
 	log.Printf("price worker stopped")
 }

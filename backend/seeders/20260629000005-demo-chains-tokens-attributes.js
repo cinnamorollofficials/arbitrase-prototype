@@ -9,6 +9,9 @@ const rekuIdrPairs = JSON.parse(
 const mobeeIdrPairs = JSON.parse(
   readFileSync(new URL('../data/mobee-pairs.json', import.meta.url), 'utf8')
 );
+const bittimeIdrPairs = JSON.parse(
+  readFileSync(new URL('../data/bittime-pairs.json', import.meta.url), 'utf8')
+);
 
 export async function up(queryInterface, Sequelize) {
   // 1. Insert Chains
@@ -100,7 +103,7 @@ export async function up(queryInterface, Sequelize) {
   const tokenSymbols = new Set(tokens.map((token) => token.symbol));
   let nextTokenId = Math.max(...tokens.map((token) => token.id)) + 1;
 
-  const marketPairs = [...indodaxIdrPairs, ...rekuIdrPairs, ...mobeeIdrPairs];
+  const marketPairs = [...indodaxIdrPairs, ...rekuIdrPairs, ...mobeeIdrPairs, ...bittimeIdrPairs];
 
   for (const symbol of marketPairs) {
     const [baseSymbol] = symbol.split('_');

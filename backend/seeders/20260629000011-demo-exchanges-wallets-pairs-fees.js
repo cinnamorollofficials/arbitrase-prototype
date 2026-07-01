@@ -12,6 +12,9 @@ const rekuIdrPairs = JSON.parse(
 const mobeeIdrPairs = JSON.parse(
   readFileSync(new URL('../data/mobee-pairs.json', import.meta.url), 'utf8')
 );
+const bittimeIdrPairs = JSON.parse(
+  readFileSync(new URL('../data/bittime-pairs.json', import.meta.url), 'utf8')
+);
 
 export async function up(queryInterface, Sequelize) {
   // 1. Seed Exchanges
@@ -31,7 +34,8 @@ export async function up(queryInterface, Sequelize) {
     { id: 13, name: 'PancakeSwap V3', type: 'DEX', is_active: true, website_url: 'https://pancakeswap.finance', logo_url: 'https://cryptologos.cc/logos/pancakeswap-cake-logo.png', is_registered_indonesia: false, rating: 9.2, capital: 1900000000.00 },
     { id: 14, name: 'Raydium', type: 'DEX', is_active: true, website_url: 'https://avatars.githubusercontent.com/u/78411976?s=280&v=4', logo_url: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSPaZ-gdOabOTEG23aVOPY_gLAFvhg4pC0cmg&s', is_registered_indonesia: false, rating: 8.5, capital: 950000000.00 },
     { id: 15, name: 'Orca', type: 'DEX', is_active: true, website_url: 'https://orca.so', logo_url: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQDdu_bh5yJc4fXMxsGEDyZ9_SxawifHtMh8A&s', is_registered_indonesia: false, rating: 8.7, capital: 250000000.00 },
-    { id: 16, name: 'Mobee', type: 'CEX', is_active: true, website_url: 'https://mobee.io', logo_url: 'https://mobee.io/favicon.ico', is_registered_indonesia: true, rating: 7.5, capital: 100000000.00 }
+    { id: 16, name: 'Mobee', type: 'CEX', is_active: true, website_url: 'https://mobee.io', logo_url: 'https://mobee.io/favicon.ico', is_registered_indonesia: true, rating: 7.5, capital: 100000000.00 },
+    { id: 17, name: 'Bittime', type: 'CEX', is_active: true, website_url: 'https://bittime.com', logo_url: 'https://bittime.com/favicon.ico', is_registered_indonesia: true, rating: 7.6, capital: 100000000.00 }
   ];
   await queryInterface.bulkInsert('exchanges', exchanges);
 
@@ -52,7 +56,8 @@ export async function up(queryInterface, Sequelize) {
     { exchange_id: 13, attribute_key: 'factory_address', attribute_value: '0x0BFbCF9fa4e9c742591820902446d12d576C5d9d', data_type: 'string' },
     { exchange_id: 14, attribute_key: 'amm_program_id', attribute_value: '675k1a29k5bT8C7yVb31T5y36C5y881288B8C888B888', data_type: 'string' },
     { exchange_id: 15, attribute_key: 'factory_address', attribute_value: 'whirOS12a1BA25B6C5D4D6B5D2D5D6E6F6A7B8C9D', data_type: 'string' },
-    { exchange_id: 16, attribute_key: 'api_url', attribute_value: 'https://open-api.mobee.io', data_type: 'string' }
+    { exchange_id: 16, attribute_key: 'api_url', attribute_value: 'https://open-api.mobee.io', data_type: 'string' },
+    { exchange_id: 17, attribute_key: 'api_url', attribute_value: 'https://openapi.bittime.com', data_type: 'string' }
   ];
   await queryInterface.bulkInsert('exchange_attributes', exchangeAttributes);
 
@@ -132,7 +137,7 @@ export async function up(queryInterface, Sequelize) {
   const tokenBySymbol = new Map(tokens.map((token) => [token.symbol, token]));
   let nextTokenId = Math.max(...tokens.map((token) => token.id)) + 1;
 
-  const marketPairs = [...indodaxIdrPairs, ...rekuIdrPairs, ...mobeeIdrPairs];
+  const marketPairs = [...indodaxIdrPairs, ...rekuIdrPairs, ...mobeeIdrPairs, ...bittimeIdrPairs];
 
   for (const symbol of marketPairs) {
     const [baseSymbol] = symbol.split('_');
@@ -192,7 +197,7 @@ export async function up(queryInterface, Sequelize) {
   const tokenPairs = [];
   let pairId = 1;
 
-  // CEX Token Pairs (Binance, OKX, Bybit, Coinbase, Kraken, Gate.io, Bitget, MEXC, Indodax, Tokocrypto, Reku, Mobee)
+  // CEX Token Pairs (Binance, OKX, Bybit, Coinbase, Kraken, Gate.io, Bitget, MEXC, Indodax, Tokocrypto, Reku, Mobee, Bittime)
   for (const token of demoTokens) {
     const sym = token.symbol;
 
@@ -309,6 +314,26 @@ export async function up(queryInterface, Sequelize) {
     });
   }
 
+  // Bittime (id 17) IDR market pairs from backend/data/bittime-pairs.json.
+  for (const symbol of bittimeIdrPairs) {
+    const [baseSymbol, quoteSymbol] = symbol.split('_');
+    const baseToken = tokenBySymbol.get(baseSymbol);
+    const quoteToken = tokenBySymbol.get(quoteSymbol);
+
+    if (!baseToken || !quoteToken) {
+      throw new Error(`Missing token seed for Bittime pair ${symbol}`);
+    }
+
+    tokenPairs.push({
+      id: pairId++,
+      exchange_id: 17,
+      base_token_id: baseToken.id,
+      quote_token_id: quoteToken.id,
+      symbol,
+      is_active: true
+    });
+  }
+
   // DEX Token Pairs
   for (const token of demoTokens) {
     const sym = token.symbol;
@@ -357,7 +382,8 @@ export async function up(queryInterface, Sequelize) {
     9: 0.0021,  // Indodax 0.21%
     10: 0.0010, // Tokocrypto 0.1%
     11: 0.0010, // Reku 0.1%
-    16: 0.0010  // Mobee 0.1%
+    16: 0.0010, // Mobee 0.1%
+    17: 0.0010  // Bittime 0.1%
   };
 
   for (const [exId, rate] of Object.entries(cexFeeRates)) {
@@ -399,7 +425,7 @@ export async function up(queryInterface, Sequelize) {
   }
 
   // C. Seed withdrawal fees for major tokens (USDT, SOL, ETH) across CEXes
-  const cexIds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 16];
+  const cexIds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 16, 17];
   for (const exId of cexIds) {
     // USDT (token_id 1) withdrawals
     // To Ethereum (chain 1): Flat 5 USDT

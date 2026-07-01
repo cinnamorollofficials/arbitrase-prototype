@@ -15,6 +15,7 @@ type Config struct {
 	RedisURL              string
 	PollInterval          time.Duration
 	HistoryTTL            time.Duration
+	HistorySampleInterval time.Duration
 	HistoryMaxPoints      int64
 	StaleAfter            time.Duration
 	TokocryptoConcurrency int
@@ -31,8 +32,9 @@ func Load() Config {
 		DatabaseURL:           databaseURL(),
 		RedisURL:              envString("REDIS_URL", "redis://127.0.0.1:6379"),
 		PollInterval:          time.Duration(envInt("POLL_INTERVAL_SECONDS", 10)) * time.Second,
-		HistoryTTL:            time.Duration(envInt("HISTORY_TTL_SECONDS", 3600)) * time.Second,
-		HistoryMaxPoints:      int64(envInt("HISTORY_MAX_POINTS", 360)),
+		HistoryTTL:            time.Duration(envInt("HISTORY_TTL_SECONDS", 86400)) * time.Second,
+		HistorySampleInterval: time.Duration(envInt("HISTORY_SAMPLE_SECONDS", 60)) * time.Second,
+		HistoryMaxPoints:      int64(envInt("HISTORY_MAX_POINTS", 1440)),
 		StaleAfter:            time.Duration(envInt("STALE_AFTER_SECONDS", 30)) * time.Second,
 		TokocryptoConcurrency: envInt("TOKOCRYPTO_CONCURRENCY", 5),
 		MobeeAPIKey:           envString("MOBEE_API_KEY", ""),

@@ -32,8 +32,16 @@ redisClient.connect().catch(err => {
 // Graceful fallback in-memory cache for raw price logger
 const rawPriceFallbackCache = new Map();
 const FALLBACK_CACHE_TTL_MS = 300000; // 5 minutes TTL
-const PRICE_HISTORY_TTL_SECONDS = 3600;
-const PRICE_HISTORY_MAX_POINTS = 360;
+const PRICE_HISTORY_TTL_SECONDS = parsePositiveInt(
+  process.env.PRICE_HISTORY_TTL_SECONDS || process.env.HISTORY_TTL_SECONDS,
+  86400,
+  2592000
+);
+const PRICE_HISTORY_MAX_POINTS = parsePositiveInt(
+  process.env.PRICE_HISTORY_MAX_POINTS || process.env.HISTORY_MAX_POINTS,
+  1440,
+  20000
+);
 const MARKET_DATA_STALE_AFTER_MS = Number(process.env.MARKET_DATA_STALE_AFTER_MS || 30000);
 const priceHistoryFallbackCache = new Map();
 

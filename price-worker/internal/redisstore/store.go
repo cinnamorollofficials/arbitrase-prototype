@@ -11,12 +11,13 @@ import (
 )
 
 type Store struct {
-	client           *redis.Client
-	historyTTL       time.Duration
-	historyMaxPoints int64
+	client                *redis.Client
+	historyTTL            time.Duration
+	historySampleInterval time.Duration
+	historyMaxPoints      int64
 }
 
-func New(ctx context.Context, redisURL string, historyTTL time.Duration, historyMaxPoints int64) (*Store, error) {
+func New(ctx context.Context, redisURL string, historyTTL time.Duration, historySampleInterval time.Duration, historyMaxPoints int64) (*Store, error) {
 	options, err := redis.ParseURL(redisURL)
 	if err != nil {
 		return nil, err
@@ -26,7 +27,12 @@ func New(ctx context.Context, redisURL string, historyTTL time.Duration, history
 		client.Close()
 		return nil, err
 	}
-	return &Store{client: client, historyTTL: historyTTL, historyMaxPoints: historyMaxPoints}, nil
+	return &Store{
+		client:                client,
+		historyTTL:            historyTTL,
+		historySampleInterval: historySampleInterval,
+		historyMaxPoints:      historyMaxPoints,
+	}, nil
 }
 
 func (s *Store) Close() error {
@@ -63,12 +69,36 @@ func (s *Store) SaveTick(ctx context.Context, tick market.MarketTick) error {
 				return err
 			}
 			historyKey := HistoryKey(tick.ExchangeID, tick.PairID)
-			pipe.LPush(ctx, historyKey, historyPayload)
-			pipe.LTrim(ctx, historyKey, 0, s.historyMaxPoints-1)
-			pipe.Expire(ctx, historyKey, s.historyTTL)
+			if s.shouldSaveHistoryPoint(ctx, historyKey, point.T) {
+				pipe.LPush(ctx, historyKey, historyPayload)
+				pipe.LTrim(ctx, historyKey, 0, s.historyMaxPoints-1)
+				pipe.Expire(ctx, historyKey, s.historyTTL)
+			}
 		}
 	}
 
 	_, err = pipe.Exec(ctx)
 	return err
+}
+
+func (s *Store) shouldSaveHistoryPoint(ctx context.Context, historyKey string, timestamp int64) bool {
+	if s.historySampleInterval <= 0 {
+		return true
+	}
+
+	latestPayload, err := s.client.LIndex(ctx, historyKey, 0).Result()
+	if err == redis.Nil || err != nil {
+		return true
+	}
+
+	var latest market.HistoryPoint
+	if err := json.Unmarshal([]byte(latestPayload), &latest); err != nil {
+		return true
+	}
+
+	if latest.T <= 0 || timestamp <= 0 {
+		return true
+	}
+
+	return timestamp-latest.T >= s.historySampleInterval.Milliseconds()
 }
