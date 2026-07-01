@@ -1,6 +1,8 @@
 import CoinIcon from '../../components/CoinIcon';
 import ExchangeMarketTable from './ExchangeMarketTable';
 import { formatCapital, getCapitalTier, getRatingStatus } from '../../utils/formatters';
+import useExchangeMarketData from './hooks/useExchangeMarketData';
+import useExchangeMarketTable from './hooks/useExchangeMarketTable';
 
 function ExchangeDetailPage({
   selectedExchangeDb,
@@ -8,34 +10,46 @@ function ExchangeDetailPage({
   exchangeDbDetailTab,
   setExchangeDbDetailTab,
   compactMode,
-  selectedExchangeFiatPairs,
-  filteredExchangeFiatPairs,
-  sortedExchangeFiatPairs,
-  exchangeMarketSearchQuery,
-  setExchangeMarketSearchQuery,
-  selectedExchangeMarketPairs,
-  exchangeMarketRefreshCycle,
-  errorExchangeMarketData,
-  loadingExchangeMarketData,
-  allVisibleExchangeMarketRowsSelected,
-  selectedExchangeMarketRows,
-  onBack,
-  onExportMarketCsv,
-  onMarketSort,
-  getMarketSortIndicator,
-  getMarketRow,
-  getMarketRowKey,
-  onToggleMarketRow,
-  onToggleAllVisibleMarketRows
+  onBack
 }) {
   const closeExchangeDbPage = onBack;
-  const handleExportExchangeMarketCsv = onExportMarketCsv;
-  const handleExchangeMarketSort = onMarketSort;
-  const getExchangeMarketSortIndicator = getMarketSortIndicator;
-  const getExchangeMarketRow = getMarketRow;
-  const getExchangeMarketRowKey = getMarketRowKey;
-  const toggleExchangeMarketRowSelection = onToggleMarketRow;
-  const toggleAllVisibleExchangeMarketRows = onToggleAllVisibleMarketRows;
+
+  const {
+    exchangeMarketData,
+    loadingExchangeMarketData,
+    errorExchangeMarketData,
+    exchangeMarketRefreshCycle
+  } = useExchangeMarketData({
+    selectedExchange: selectedExchangeDb,
+    activeDetailTab: exchangeDbDetailTab
+  });
+
+  const {
+    exchangeMarketSearchQuery,
+    setExchangeMarketSearchQuery,
+    selectedExchangeFiatPairs,
+    filteredExchangeFiatPairs,
+    sortedExchangeFiatPairs,
+    paginatedExchangeFiatPairs,
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+    totalPages,
+    selectedExchangeMarketRows,
+    selectedExchangeMarketPairs,
+    allVisibleExchangeMarketRowsSelected,
+    getExchangeMarketRow,
+    getExchangeMarketRowKey,
+    handleExchangeMarketSort,
+    getExchangeMarketSortIndicator,
+    toggleExchangeMarketRowSelection,
+    toggleAllVisibleExchangeMarketRows,
+    handleExportExchangeMarketCsv
+  } = useExchangeMarketTable({
+    selectedExchange: selectedExchangeDb,
+    marketData: exchangeMarketData
+  });
 
   return (
         <div style={{
@@ -81,7 +95,7 @@ function ExchangeDetailPage({
             >
               ✕
             </button>
-
+ 
             <div style={{ flex: 1, padding: '20px 28px 28px' }}>
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '16px' }}>
@@ -121,7 +135,7 @@ function ExchangeDetailPage({
                 </div>
               </div>
             </div>
-
+ 
             {/* Trust & Capital Summary Row */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px', marginBottom: '24px' }}>
               <div style={{
@@ -149,7 +163,7 @@ function ExchangeDetailPage({
                   );
                 })()}
               </div>
-
+ 
               <div style={{
                 backgroundColor: 'rgba(255,255,255,0.03)',
                 padding: '16px',
@@ -173,7 +187,7 @@ function ExchangeDetailPage({
                 })()}
               </div>
             </div>
-
+ 
             {/* Content Details */}
             <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px' }}>
               <button
@@ -199,7 +213,7 @@ function ExchangeDetailPage({
                 Market Data
               </button>
             </div>
-
+ 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               {exchangeDbDetailTab === 'market' && (
               <>
@@ -210,6 +224,12 @@ function ExchangeDetailPage({
                 selectedExchangeFiatPairs={selectedExchangeFiatPairs}
                 filteredExchangeFiatPairs={filteredExchangeFiatPairs}
                 sortedExchangeFiatPairs={sortedExchangeFiatPairs}
+                paginatedExchangeFiatPairs={paginatedExchangeFiatPairs}
+                page={page}
+                setPage={setPage}
+                pageSize={pageSize}
+                setPageSize={setPageSize}
+                totalPages={totalPages}
                 exchangeMarketSearchQuery={exchangeMarketSearchQuery}
                 setExchangeMarketSearchQuery={setExchangeMarketSearchQuery}
                 selectedExchangeMarketPairs={selectedExchangeMarketPairs}

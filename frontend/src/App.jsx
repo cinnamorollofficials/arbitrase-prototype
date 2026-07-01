@@ -2,8 +2,6 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import AppShell from './layouts/AppShell';
 import AppRoutes from './routes/AppRoutes';
 import useExchangeRoute from './features/exchanges/hooks/useExchangeRoute';
-import useExchangeMarketData from './features/exchanges/hooks/useExchangeMarketData';
-import useExchangeMarketTable from './features/exchanges/hooks/useExchangeMarketTable';
 import { defaultSymbols, COIN_ICONS, COIN_META_LOOKUP } from './constants/marketData';
 import useUrlState from './hooks/useUrlState';
 import useAgentSimulator from './hooks/useAgentSimulator';
@@ -151,41 +149,6 @@ function App() {
     onRouteDetailOpened: resetExchangeDetailTab,
     onRouteDetailClosed: resetExchangeDetailTab
   });
-  const {
-    exchangeMarketData,
-    loadingExchangeMarketData,
-    errorExchangeMarketData,
-    exchangeMarketRefreshCycle,
-    resetExchangeMarketData
-  } = useExchangeMarketData({
-    selectedExchange: selectedExchangeDb,
-    activeDetailTab: exchangeDbDetailTab
-  });
-  const {
-    exchangeMarketSearchQuery,
-    setExchangeMarketSearchQuery,
-    selectedExchangeFiatPairs,
-    filteredExchangeFiatPairs,
-    sortedExchangeFiatPairs,
-    selectedExchangeMarketRows,
-    selectedExchangeMarketPairs,
-    allVisibleExchangeMarketRowsSelected,
-    getExchangeMarketRow,
-    getExchangeMarketRowKey,
-    handleExchangeMarketSort,
-    getExchangeMarketSortIndicator,
-    toggleExchangeMarketRowSelection,
-    toggleAllVisibleExchangeMarketRows,
-    handleExportExchangeMarketCsv,
-    resetExchangeMarketTable
-  } = useExchangeMarketTable({
-    selectedExchange: selectedExchangeDb,
-    marketData: exchangeMarketData
-  });
-  useEffect(() => {
-    resetExchangeMarketData();
-    resetExchangeMarketTable();
-  }, [selectedExchangeDb, resetExchangeMarketData, resetExchangeMarketTable]);
   const [isCompact, setIsCompact] = useUrlState('compact', 'false');
   const [opportunities, setOpportunities] = useState([]);
   const [selectedExchange, setSelectedExchange] = useUrlState('ex', 'Binance');
@@ -682,25 +645,7 @@ function App() {
         selectedExchangeDb={selectedExchangeDb}
         exchangeDbDetailTab={exchangeDbDetailTab}
         setExchangeDbDetailTab={setExchangeDbDetailTab}
-        selectedExchangeFiatPairs={selectedExchangeFiatPairs}
-        filteredExchangeFiatPairs={filteredExchangeFiatPairs}
-        sortedExchangeFiatPairs={sortedExchangeFiatPairs}
-        exchangeMarketSearchQuery={exchangeMarketSearchQuery}
-        setExchangeMarketSearchQuery={setExchangeMarketSearchQuery}
-        selectedExchangeMarketPairs={selectedExchangeMarketPairs}
-        exchangeMarketRefreshCycle={exchangeMarketRefreshCycle}
-        errorExchangeMarketData={errorExchangeMarketData}
-        loadingExchangeMarketData={loadingExchangeMarketData}
-        allVisibleExchangeMarketRowsSelected={allVisibleExchangeMarketRowsSelected}
-        selectedExchangeMarketRows={selectedExchangeMarketRows}
         closeExchangeDbPage={closeExchangeDbPage}
-        handleExportExchangeMarketCsv={handleExportExchangeMarketCsv}
-        handleExchangeMarketSort={handleExchangeMarketSort}
-        getExchangeMarketSortIndicator={getExchangeMarketSortIndicator}
-        getExchangeMarketRow={getExchangeMarketRow}
-        getExchangeMarketRowKey={getExchangeMarketRowKey}
-        toggleExchangeMarketRowSelection={toggleExchangeMarketRowSelection}
-        toggleAllVisibleExchangeMarketRows={toggleAllVisibleExchangeMarketRows}
         showConfirmModal={showConfirmModal}
         setShowRawModal={setShowRawModal}
         handleExecuteTransaction={handleExecuteTransaction}

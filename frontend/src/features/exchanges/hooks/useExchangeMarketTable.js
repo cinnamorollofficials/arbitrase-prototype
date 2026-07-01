@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   filterExchangePairs,
   getExchangeMarketLookup,
@@ -13,6 +13,13 @@ function useExchangeMarketTable({ selectedExchange, marketData }) {
   const [exchangeMarketSortConfig, setExchangeMarketSortConfig] = useState({ key: 'baseToken', direction: 'asc' });
   const [exchangeMarketSearchQuery, setExchangeMarketSearchQuery] = useState('');
   const [selectedExchangeMarketRows, setSelectedExchangeMarketRows] = useState(new Set());
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+
+  // Reset page when filtering, sorting or active exchange changes
+  useEffect(() => {
+    setPage(1);
+  }, [exchangeMarketSearchQuery, exchangeMarketSortConfig, selectedExchange?.id]);
 
   const selectedExchangeFiatPairs = useMemo(() => getFiatPairs(selectedExchange), [selectedExchange]);
   const exchangeMarketDataLookup = useMemo(() => getExchangeMarketLookup(marketData), [marketData]);
@@ -28,6 +35,17 @@ function useExchangeMarketTable({ selectedExchange, marketData }) {
   const sortedExchangeFiatPairs = useMemo(() => {
     return sortExchangePairs(filteredExchangeFiatPairs, exchangeMarketSortConfig, exchangeMarketDataLookup);
   }, [filteredExchangeFiatPairs, exchangeMarketDataLookup, exchangeMarketSortConfig]);
+
+  const paginatedExchangeFiatPairs = useMemo(() => {
+    if (pageSize === 'all') return sortedExchangeFiatPairs;
+    const start = (page - 1) * pageSize;
+    return sortedExchangeFiatPairs.slice(start, start + pageSize);
+  }, [sortedExchangeFiatPairs, page, pageSize]);
+
+  const totalPages = useMemo(() => {
+    if (pageSize === 'all') return 1;
+    return Math.ceil(sortedExchangeFiatPairs.length / pageSize) || 1;
+  }, [sortedExchangeFiatPairs.length, pageSize]);
 
   const selectedExchangeMarketPairs = useMemo(() => {
     return selectedExchangeFiatPairs.filter((pair) => selectedExchangeMarketRows.has(getExchangeMarketRowKey(pair)));
@@ -95,6 +113,12 @@ function useExchangeMarketTable({ selectedExchange, marketData }) {
     selectedExchangeFiatPairs,
     filteredExchangeFiatPairs,
     sortedExchangeFiatPairs,
+    paginatedExchangeFiatPairs,
+    page,
+    setPage,
+    pageSize,
+    setPageSize,
+    totalPages,
     selectedExchangeMarketRows,
     selectedExchangeMarketPairs,
     allVisibleExchangeMarketRowsSelected,

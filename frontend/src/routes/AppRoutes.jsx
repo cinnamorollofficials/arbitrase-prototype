@@ -12,25 +12,7 @@ function AppRoutes(props) {
     selectedExchangeDb,
     exchangeDbDetailTab,
     setExchangeDbDetailTab,
-    selectedExchangeFiatPairs,
-    filteredExchangeFiatPairs,
-    sortedExchangeFiatPairs,
-    exchangeMarketSearchQuery,
-    setExchangeMarketSearchQuery,
-    selectedExchangeMarketPairs,
-    exchangeMarketRefreshCycle,
-    errorExchangeMarketData,
-    loadingExchangeMarketData,
-    allVisibleExchangeMarketRowsSelected,
-    selectedExchangeMarketRows,
     closeExchangeDbPage,
-    handleExportExchangeMarketCsv,
-    handleExchangeMarketSort,
-    getExchangeMarketSortIndicator,
-    getExchangeMarketRow,
-    getExchangeMarketRowKey,
-    toggleExchangeMarketRowSelection,
-    toggleAllVisibleExchangeMarketRows,
     isRefreshing,
     isExchangeDetailPage
   } = props;
@@ -46,25 +28,7 @@ function AppRoutes(props) {
           exchangeDbDetailTab={exchangeDbDetailTab}
           setExchangeDbDetailTab={setExchangeDbDetailTab}
           compactMode={compactMode}
-          selectedExchangeFiatPairs={selectedExchangeFiatPairs}
-          filteredExchangeFiatPairs={filteredExchangeFiatPairs}
-          sortedExchangeFiatPairs={sortedExchangeFiatPairs}
-          exchangeMarketSearchQuery={exchangeMarketSearchQuery}
-          setExchangeMarketSearchQuery={setExchangeMarketSearchQuery}
-          selectedExchangeMarketPairs={selectedExchangeMarketPairs}
-          exchangeMarketRefreshCycle={exchangeMarketRefreshCycle}
-          errorExchangeMarketData={errorExchangeMarketData}
-          loadingExchangeMarketData={loadingExchangeMarketData}
-          allVisibleExchangeMarketRowsSelected={allVisibleExchangeMarketRowsSelected}
-          selectedExchangeMarketRows={selectedExchangeMarketRows}
           onBack={closeExchangeDbPage}
-          onExportMarketCsv={handleExportExchangeMarketCsv}
-          onMarketSort={handleExchangeMarketSort}
-          getMarketSortIndicator={getExchangeMarketSortIndicator}
-          getMarketRow={getExchangeMarketRow}
-          getMarketRowKey={getExchangeMarketRowKey}
-          onToggleMarketRow={toggleExchangeMarketRowSelection}
-          onToggleAllVisibleMarketRows={toggleAllVisibleExchangeMarketRows}
         />
       )}
 

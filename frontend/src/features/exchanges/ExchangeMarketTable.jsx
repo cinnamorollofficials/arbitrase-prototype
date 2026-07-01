@@ -11,6 +11,12 @@ function ExchangeMarketTable({
   selectedExchangeFiatPairs,
   filteredExchangeFiatPairs,
   sortedExchangeFiatPairs,
+  paginatedExchangeFiatPairs,
+  page,
+  setPage,
+  pageSize,
+  setPageSize,
+  totalPages,
   exchangeMarketSearchQuery,
   setExchangeMarketSearchQuery,
   selectedExchangeMarketPairs,
@@ -148,7 +154,8 @@ function ExchangeMarketTable({
                     Tidak ada pair yang cocok dengan pencarian.
                   </div>
                 ) : (
-                  <div style={{ overflowX: 'auto', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px' }}>
+                  <>
+                    <div style={{ overflowX: 'auto', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px' }}>
                     <table className={`exchange-market-table ${compactMode ? 'compact-table' : ''}`} style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
                       <thead>
                         <tr style={{ backgroundColor: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
@@ -171,7 +178,7 @@ function ExchangeMarketTable({
                         </tr>
                       </thead>
                       <tbody>
-                        {sortedExchangeFiatPairs.map((pair) => {
+                        {paginatedExchangeFiatPairs.map((pair) => {
                           const market = getExchangeMarketRow(pair);
                           const marketStatus = market?.status || (loadingExchangeMarketData ? 'loading' : 'pending');
                           const hasUsableMarketPrice = market && (marketStatus === 'success' || marketStatus === 'stale');
@@ -273,7 +280,112 @@ function ExchangeMarketTable({
                       </tbody>
                     </table>
                   </div>
-                )}
+                  
+                  {/* Pagination Controls */}
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginTop: '12px',
+                    padding: '8px 4px',
+                    gap: '12px',
+                    flexWrap: 'wrap',
+                    fontSize: '12px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--md-sys-color-on-surface-variant)' }}>
+                      <span>Tampilkan:</span>
+                      <select
+                        value={pageSize}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setPageSize(val === 'all' ? 'all' : Number(val));
+                          setPage(1);
+                        }}
+                        style={{
+                          padding: '4px 8px',
+                          borderRadius: '6px',
+                          border: '1px solid rgba(255,255,255,0.08)',
+                          backgroundColor: 'rgba(255,255,255,0.04)',
+                          color: '#ffffff',
+                          fontSize: '11px',
+                          fontWeight: '800',
+                          outline: 'none',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <option value={20}>20 baris</option>
+                        <option value={50}>50 baris</option>
+                        <option value={100}>100 baris</option>
+                        <option value="all">Semua</option>
+                      </select>
+                    </div>
+
+                    {pageSize !== 'all' && totalPages > 1 && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <button
+                          onClick={() => setPage(1)}
+                          disabled={page === 1}
+                          className="tab-btn"
+                          style={{
+                            padding: '5px 8px',
+                            fontSize: '11px',
+                            opacity: page === 1 ? 0.4 : 1,
+                            cursor: page === 1 ? 'not-allowed' : 'pointer'
+                          }}
+                        >
+                          &laquo; First
+                        </button>
+                        <button
+                          onClick={() => setPage(prev => Math.max(1, prev - 1))}
+                          disabled={page === 1}
+                          className="tab-btn"
+                          style={{
+                            padding: '5px 8px',
+                            fontSize: '11px',
+                            opacity: page === 1 ? 0.4 : 1,
+                            cursor: page === 1 ? 'not-allowed' : 'pointer'
+                          }}
+                        >
+                          Prev
+                        </button>
+                        <span style={{ margin: '0 6px', fontWeight: '800', color: '#ffffff' }}>
+                          Halaman {page} dari {totalPages}
+                        </span>
+                        <button
+                          onClick={() => setPage(prev => Math.min(totalPages, prev + 1))}
+                          disabled={page === totalPages}
+                          className="tab-btn"
+                          style={{
+                            padding: '5px 8px',
+                            fontSize: '11px',
+                            opacity: page === totalPages ? 0.4 : 1,
+                            cursor: page === totalPages ? 'not-allowed' : 'pointer'
+                          }}
+                        >
+                          Next
+                        </button>
+                        <button
+                          onClick={() => setPage(totalPages)}
+                          disabled={page === totalPages}
+                          className="tab-btn"
+                          style={{
+                            padding: '5px 8px',
+                            fontSize: '11px',
+                            opacity: page === totalPages ? 0.4 : 1,
+                            cursor: page === totalPages ? 'not-allowed' : 'pointer'
+                          }}
+                        >
+                          Last &raquo;
+                        </button>
+                      </div>
+                    )}
+
+                    <div style={{ color: 'var(--md-sys-color-on-surface-variant)', fontSize: '11px' }}>
+                      Menampilkan {sortedExchangeFiatPairs.length > 0 ? (page - 1) * (pageSize === 'all' ? sortedExchangeFiatPairs.length : pageSize) + 1 : 0} - {pageSize === 'all' ? sortedExchangeFiatPairs.length : Math.min(page * pageSize, sortedExchangeFiatPairs.length)} dari {sortedExchangeFiatPairs.length} item
+                    </div>
+                  </div>
+                </>
+              )}
               </div>
               <PriceChartModal
                 context={priceChartContext}

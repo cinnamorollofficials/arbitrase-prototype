@@ -1,3 +1,5 @@
+import { memo } from 'react';
+
 function PriceSparkline({ history }) {
   const points = Array.isArray(history)
     ? history
@@ -47,4 +49,10 @@ function PriceSparkline({ history }) {
   );
 }
 
-export default PriceSparkline;
+export default memo(PriceSparkline, (prevProps, nextProps) => {
+  const prevHist = prevProps.history || [];
+  const nextHist = nextProps.history || [];
+  if (prevHist.length !== nextHist.length) return false;
+  if (prevHist.length === 0) return true;
+  return prevHist[prevHist.length - 1]?.t === nextHist[nextHist.length - 1]?.t;
+});
