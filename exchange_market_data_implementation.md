@@ -311,10 +311,10 @@ cd backend
 npm run update:mobee-pairs
 ```
 
-- Worker memakai endpoint bid/ask per pair:
+- Worker memakai endpoint batch summary:
 
 ```text
-https://open-api.mobee.io/v1/markets/BTC-IDR/bid-ask-price
+https://open-api.mobee.io/v1/markets/summary
 ```
 
 - Header wajib:

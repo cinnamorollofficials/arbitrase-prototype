@@ -17,6 +17,21 @@ import { getTokensDb as fetchTokensDbApi } from './api/tokens';
 
 function App() {
   const [prices, setPrices] = useState([]);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem('theme');
+    if (saved) return saved === 'dark';
+    return true; // Default theme is dark mode
+  });
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.body.classList.remove('light-mode');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.body.classList.add('light-mode');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [isDarkMode]);
   const [usdToIdrRate, setUsdToIdrRate] = useState(16500);
   const [symbolsList, setSymbolsList] = useState(defaultSymbols);
   const [spreads, setSpreads] = useState({});
@@ -588,6 +603,8 @@ function App() {
       lastUpdated={lastUpdated}
       compactMode={compactMode}
       onToggleCompact={() => setIsCompact(compactMode ? 'false' : 'true')}
+      isDarkMode={isDarkMode}
+      onToggleDarkMode={() => setIsDarkMode(prev => !prev)}
       breadcrumbExchangeName={isExchangeDetailPage ? selectedExchangeDb.name : null}
       onBackToExchanges={closeExchangeDbPage}
     >
@@ -694,6 +711,7 @@ function App() {
         rawModalError={rawModalError}
         rawModalData={rawModalData}
         isRefreshing={isRefreshing}
+        lastUpdated={lastUpdated}
         isExchangeDetailPage={isExchangeDetailPage}
       />
     </AppShell>

@@ -80,7 +80,7 @@ func loadEnvFile(path string) {
 			continue
 		}
 
-		if _, exists := os.LookupEnv(key); !exists {
+		if currentValue, exists := os.LookupEnv(key); !exists || currentValue == "" {
 			_ = os.Setenv(key, value)
 		}
 	}

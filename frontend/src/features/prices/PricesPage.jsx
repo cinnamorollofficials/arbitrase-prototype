@@ -2,6 +2,7 @@ import CoinIcon from '../../components/CoinIcon';
 import ExchangeIcon from '../../components/ExchangeIcon';
 import { TX_STEPS } from '../../constants/transactions';
 import { formatRupiah } from '../../utils/formatters';
+import { COIN_META_LOOKUP } from '../../constants/marketData';
 
 function PricesPage(props) {
   const {
@@ -11,6 +12,7 @@ function PricesPage(props) {
     loading,
     prices,
     compactMode,
+    lastUpdated,
     stats,
     usdToIdrRate,
     capital,

@@ -8,6 +8,8 @@ function AppShell({
   lastUpdated,
   compactMode,
   onToggleCompact,
+  isDarkMode,
+  onToggleDarkMode,
   breadcrumbExchangeName,
   onBackToExchanges,
   children
@@ -21,6 +23,8 @@ function AppShell({
         lastUpdated={lastUpdated}
         compactMode={compactMode}
         onToggleCompact={onToggleCompact}
+        isDarkMode={isDarkMode}
+        onToggleDarkMode={onToggleDarkMode}
       />
 
       {breadcrumbExchangeName && (

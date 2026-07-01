@@ -10,7 +10,7 @@ Go background worker untuk mengambil harga `token_pairs` secara berkala dan menu
 ## Supported Exchanges
 
 - Indodax: `ticker_all`, satu request per interval.
-- Mobee: `v1/markets/{pair}/bid-ask-price`, satu request per pair dengan signed headers.
+- Mobee: `v1/markets/summary`, satu request batch per interval dengan signed headers.
 - Reku: `v2/bidask`, satu request per interval.
 - Tokocrypto: order book depth per pair, dengan concurrency limit.
 

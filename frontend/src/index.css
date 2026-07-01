@@ -849,6 +849,22 @@ h1, h2, h3, h4 {
   min-width: 210px;
   max-width: 300px;
 }
+  grid-template-rows: 20px 9px;
+}
+
+.compact-ui .price-sparkline svg {
+  width: 88px;
+  height: 24px;
+}
+
+.compact-ui .price-sparkline span {
+  font-size: 8px !important;
+}
+
+.compact-ui .exchange-market-token-cell {
+  min-width: 210px;
+  max-width: 300px;
+}
 
 .compact-ui .exchange-market-token-name {
   max-width: 110px;
@@ -862,4 +878,195 @@ h1, h2, h3, h4 {
   to {
     stroke-dashoffset: 0;
   }
+}
+
+/* ==========================================================================
+   Light Mode & Settings Dropdown Customizations
+   ========================================================================== */
+
+/* Reusable MD3 Switch component */
+.md3-switch {
+  width: 34px;
+  height: 18px;
+  border-radius: 9px;
+  background-color: var(--md-sys-color-outline-variant);
+  border: none;
+  cursor: pointer;
+  position: relative;
+  transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1);
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.md3-switch.active {
+  background-color: var(--md-sys-color-primary);
+}
+
+.md3-switch-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  position: absolute;
+  top: 3px;
+  left: 4px;
+  transition: left 0.2s cubic-bezier(0.2, 0, 0, 1), background-color 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.md3-switch.active .md3-switch-thumb {
+  left: 18px;
+}
+
+body.light-mode .md3-switch-thumb {
+  background-color: #ffffff;
+}
+
+body.light-mode .md3-switch.active .md3-switch-thumb {
+  background-color: #ffffff;
+}
+
+/* Settings Menu Styles */
+.settings-menu-container {
+  position: relative;
+  display: inline-block;
+}
+
+.settings-toggle-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--md-sys-color-on-surface-variant);
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.settings-toggle-btn:hover {
+  background-color: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface);
+}
+
+.settings-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  background-color: var(--md-sys-color-surface-container-high);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--md-shape-corner-medium);
+  box-shadow: var(--md-elevation-3);
+  padding: 12px;
+  min-width: 220px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: fadeInDropdown 0.15s cubic-bezier(0, 0, 0.2, 1);
+}
+
+@keyframes fadeInDropdown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.settings-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 6px 4px;
+}
+
+.settings-dropdown-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-dropdown-divider {
+  height: 1px;
+  background-color: var(--md-sys-color-outline-variant);
+  margin: 4px 0;
+}
+
+/* Light Mode Overrides */
+body.light-mode {
+  --md-sys-color-primary: #005FAF;
+  --md-sys-color-on-primary: #ffffff;
+  --md-sys-color-primary-container: #d0e4ff;
+  --md-sys-color-on-primary-container: #001d3b;
+  
+  --md-sys-color-secondary: #535f70;
+  --md-sys-color-on-secondary: #ffffff;
+  --md-sys-color-secondary-container: #dbf0ff;
+  --md-sys-color-on-secondary-container: #101c2b;
+  
+  --md-sys-color-tertiary: #725578;
+  --md-sys-color-on-tertiary: #ffffff;
+  --md-sys-color-tertiary-container: #ffd5ff;
+  --md-sys-color-on-tertiary-container: #29132d;
+
+  --md-sys-color-error: #ba1a1a;
+  --md-sys-color-on-error: #ffffff;
+  --md-sys-color-error-container: #ffdad6;
+  --md-sys-color-on-error-container: #410002;
+
+  --md-sys-color-background: #e2e8f0;
+  --md-sys-color-on-background: #0f172a;
+  
+  --md-sys-color-surface: #ffffff;
+  --md-sys-color-surface-container: #ffffff;
+  --md-sys-color-surface-container-high: #f1f5f9;
+  --md-sys-color-surface-container-highest: #cbd5e1;
+  --md-sys-color-on-surface: #0f172a;
+  --md-sys-color-on-surface-variant: #475569;
+  
+  --md-sys-color-outline: #64748b;
+  --md-sys-color-outline-variant: #cbd5e1;
+}
+
+/* Fine-tune table styling for light mode */
+body.light-mode .md3-table td {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+body.light-mode .md3-table tr:hover td {
+  background-color: rgba(0, 0, 0, 0.015);
+}
+
+body.light-mode .brand-title {
+  background: linear-gradient(to right, var(--md-sys-color-on-background), var(--md-sys-color-primary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+body.light-mode .rec-node {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: var(--md-sys-color-on-surface);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body.light-mode .rec-arrow {
+  color: var(--md-sys-color-primary);
+}
+
+body.light-mode .tab-btn:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+body.light-mode .tooltip-icon {
+  background-color: rgba(0, 0, 0, 0.1);
+  color: var(--md-sys-color-on-surface);
 }

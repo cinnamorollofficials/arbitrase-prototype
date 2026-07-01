@@ -18,6 +18,7 @@ dist-ssr/
 **/dist-ssr/
 build/
 **/build/
+.gocache-worker*/
 
 # Environment files
 .env
