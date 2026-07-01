@@ -88,6 +88,7 @@ function PriceChartModal({ context, onClose }) {
   const [errorCompareByExchangeId, setErrorCompareByExchangeId] = useState({});
   const mountedRef = useRef(false);
   const svgRef = useRef(null);
+  const [hoveredIndex, setHoveredIndex] = useState(null);
   const pendingCompareRequestsRef = useRef(new Set());
   const latestCompareContextRef = useRef({ currentExchangeId: '', pairKey: '' });
   const currentExchangeId = context?.currentExchange?.id ? String(context.currentExchange.id) : '';
@@ -111,6 +112,7 @@ function PriceChartModal({ context, onClose }) {
     setCompareRowsByExchangeId({});
     setLoadingCompareByExchangeId({});
     setErrorCompareByExchangeId({});
+    setHoveredIndex(null);
   }, [currentExchangeId, pairKey]);
 
   useEffect(() => {
@@ -429,6 +431,25 @@ function PriceChartModal({ context, onClose }) {
     URL.revokeObjectURL(url);
   };
 
+  const handleMouseMove = (event) => {
+    const svgEl = svgRef.current;
+    if (!svgEl || points.length < 2) return;
+
+    const rect = svgEl.getBoundingClientRect();
+    const clientX = event.clientX - rect.left;
+    const x = (clientX / rect.width) * chartWidth;
+
+    const relativeX = x - chartPadding.left;
+    const pct = relativeX / chartInnerWidth;
+    const index = Math.max(0, Math.min(points.length - 1, Math.round(pct * (points.length - 1))));
+    
+    setHoveredIndex(index);
+  };
+
+  const handleMouseLeave = () => {
+    setHoveredIndex(null);
+  };
+
   const modalContent = (
     <div
       role="presentation"
@@ -623,12 +644,16 @@ function PriceChartModal({ context, onClose }) {
                   <span>Low {formatNativeMarketPrice(minPrice, quoteSymbol)}</span>
                 </div>
               </div>
-              <div style={{ height: '420px', padding: 0, pointerEvents: 'none' }}>
+              <div style={{ height: '420px', padding: 0, position: 'relative' }}>
                 <svg
                   ref={svgRef}
                   viewBox={`0 0 ${chartWidth} ${chartHeight}`}
                   aria-hidden="true"
-                  style={{ display: 'block', width: '100%', height: '100%' }}
+                  style={{ display: 'block', width: '100%', height: '100%', cursor: 'crosshair' }}
+                  onMouseMove={handleMouseMove}
+                  onMouseLeave={handleMouseLeave}
+                  onTouchMove={handleMouseMove}
+                  onTouchEnd={handleMouseLeave}
                 >
                   <rect
                     x={chartPadding.left}
@@ -698,7 +723,90 @@ function PriceChartModal({ context, onClose }) {
                       </text>
                     </g>
                   ))}
+
+                  {/* Vertical hover line & crosshair dot */}
+                  {hoveredIndex !== null && points[hoveredIndex] && (
+                    <g>
+                      <line
+                        x1={getChartX(hoveredIndex)}
+                        y1={chartPadding.top}
+                        x2={getChartX(hoveredIndex)}
+                        y2={chartPadding.top + chartInnerHeight}
+                        stroke="#64748b"
+                        strokeWidth="1.5"
+                        strokeDasharray="4 4"
+                      />
+                      {/* Circle on primary series */}
+                      <circle
+                        cx={getChartX(hoveredIndex)}
+                        cy={getChartY(points[hoveredIndex].price)}
+                        r="6"
+                        fill={trendColor}
+                        stroke="#ffffff"
+                        strokeWidth="2"
+                      />
+                      {/* Circles on compare series */}
+                      {compareSeries.map((series) => {
+                        if (series.points.length <= hoveredIndex) return null;
+                        const p = series.points[hoveredIndex];
+                        if (!p) return null;
+                        return (
+                          <circle
+                            key={series.id}
+                            cx={getSeriesX(series.points, hoveredIndex)}
+                            cy={getChartY(p.price)}
+                            r="5"
+                            fill={series.color}
+                            stroke="#ffffff"
+                            strokeWidth="1.5"
+                          />
+                        );
+                      })}
+                    </g>
+                  )}
                 </svg>
+
+                {/* Floating Tooltip Box */}
+                {hoveredIndex !== null && points[hoveredIndex] && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '12px',
+                      left: getChartX(hoveredIndex) > chartWidth / 2 ? '12px' : 'auto',
+                      right: getChartX(hoveredIndex) > chartWidth / 2 ? 'auto' : '12px',
+                      backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                      border: '1px solid rgba(148, 163, 184, 0.25)',
+                      borderRadius: '8px',
+                      padding: '10px 12px',
+                      boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
+                      fontSize: '11px',
+                      zIndex: 10,
+                      pointerEvents: 'none',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '4px',
+                      minWidth: '170px'
+                    }}
+                  >
+                    <div style={{ color: '#94a3b8', fontWeight: 700, borderBottom: '1px solid rgba(148, 163, 184, 0.15)', paddingBottom: '4px', marginBottom: '4px' }}>
+                      Waktu: {new Date(points[hoveredIndex].t).toLocaleTimeString('id-ID')}
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px' }}>
+                      <span style={{ color: '#ffffff', fontWeight: 600 }}>{context.currentExchange?.name || 'Utama'}:</span>
+                      <span style={{ color: trendColor, fontWeight: 800 }}>{formatNativeMarketPrice(points[hoveredIndex].price, quoteSymbol)}</span>
+                    </div>
+                    {compareSeries.map((series) => {
+                      const p = series.points[hoveredIndex];
+                      if (!p) return null;
+                      return (
+                        <div key={series.id} style={{ display: 'flex', justifyContent: 'space-between', gap: '16px' }}>
+                          <span style={{ color: '#cbd5e1' }}>{series.name}:</span>
+                          <span style={{ color: series.color, fontWeight: 800 }}>{formatNativeMarketPrice(p.price, quoteSymbol)}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', marginTop: '4px', color: '#94a3b8', fontSize: '11px' }}>
                 <span>Mulai {formatTimeLabel(firstTimestamp)}</span>
