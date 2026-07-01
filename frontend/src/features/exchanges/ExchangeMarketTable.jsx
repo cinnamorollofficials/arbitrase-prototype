@@ -168,13 +168,21 @@ function ExchangeMarketTable({
                       <tbody>
                         {sortedExchangeFiatPairs.map((pair) => {
                           const market = getExchangeMarketRow(pair);
+                          const marketStatus = market?.status || (loadingExchangeMarketData ? 'loading' : 'pending');
+                          const hasUsableMarketPrice = market && (marketStatus === 'success' || marketStatus === 'stale');
                           const quoteSymbol = market?.nativeCurrency || pair.quoteToken?.symbol || 'IDR';
-                          const lastOrMid = market?.mid ?? market?.last ?? market?.price ?? null;
-                          const bid = market?.bid ?? market?.nativeBid ?? null;
-                          const ask = market?.ask ?? market?.nativeAsk ?? null;
+                          const lastOrMid = hasUsableMarketPrice ? (market?.mid ?? market?.last ?? market?.price ?? null) : null;
+                          const bid = hasUsableMarketPrice ? (market?.bid ?? market?.nativeBid ?? null) : null;
+                          const ask = hasUsableMarketPrice ? (market?.ask ?? market?.nativeAsk ?? null) : null;
                           const priceTimestamp = market?.priceTimestamp || market?.timestamp || null;
                           const rowKey = getExchangeMarketRowKey(pair);
                           const isSelected = selectedExchangeMarketRows.has(rowKey);
+                          const statusLabel = marketStatus === 'loading'
+                            ? '...'
+                            : marketStatus === 'success'
+                              ? null
+                              : marketStatus;
+                          const statusTitle = market?.message || market?.error || marketStatus;
 
                           return (
                           <tr key={pair.id || pair.symbol} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', backgroundColor: isSelected ? 'rgba(16,185,129,0.04)' : 'transparent' }}>
@@ -215,10 +223,16 @@ function ExchangeMarketTable({
                               </div>
                             </td>
                             <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: '800', color: '#ffffff' }}>
-                              {loadingExchangeMarketData && !market ? '...' : formatNativeMarketPrice(lastOrMid, quoteSymbol)}
+                              {loadingExchangeMarketData && !market ? '...' : (
+                                statusLabel ? (
+                                  <span title={statusTitle} style={{ color: 'var(--md-sys-color-on-surface-variant)', fontSize: '11px', textTransform: 'uppercase' }}>
+                                    {statusLabel}
+                                  </span>
+                                ) : formatNativeMarketPrice(lastOrMid, quoteSymbol)
+                              )}
                             </td>
                             <td style={{ padding: '8px 12px', textAlign: 'center' }}>
-                              {loadingExchangeMarketData && !market ? '...' : <PriceSparkline history={market?.history} />}
+                              {loadingExchangeMarketData && !market ? '...' : <PriceSparkline history={hasUsableMarketPrice ? market?.history : []} />}
                             </td>
                             <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--md-sys-color-primary)', fontWeight: '700' }}>
                               {loadingExchangeMarketData && !market ? '...' : formatNativeMarketPrice(bid, quoteSymbol)}
@@ -227,7 +241,7 @@ function ExchangeMarketTable({
                               {loadingExchangeMarketData && !market ? '...' : formatNativeMarketPrice(ask, quoteSymbol)}
                             </td>
                             <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--md-sys-color-on-surface-variant)', fontSize: '11px' }}>
-                              {market ? `${market.bidQty ?? '-'} / ${market.askQty ?? '-'}` : '-'}
+                              {hasUsableMarketPrice ? `${market.bidQty ?? '-'} / ${market.askQty ?? '-'}` : '-'}
                             </td>
                             <td style={{ padding: '10px 12px', textAlign: 'right', color: 'var(--md-sys-color-on-surface-variant)', fontSize: '11px', whiteSpace: 'nowrap' }}>
                               {loadingExchangeMarketData && !market ? '...' : formatMarketPriceTimestamp(priceTimestamp)}

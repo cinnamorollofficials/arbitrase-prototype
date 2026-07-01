@@ -282,6 +282,14 @@ function buildPendingMarketRow(exchange, pair, status = 'pending', message = 'Wa
   };
 }
 
+function toNullableFiniteNumber(value) {
+  if (value === null || value === undefined || value === '') {
+    return null;
+  }
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? numericValue : null;
+}
+
 const app = express();
 const PORT = process.env.PORT || 5001;
 
@@ -1026,12 +1034,12 @@ app.get('/api/exchanges-db/:exchangeId/market-data', async (req, res) => {
           symbol: pair.symbol,
           baseToken: serializeToken(pair.baseToken),
           quoteToken: serializeToken(pair.quoteToken),
-          bid: Number.isFinite(Number(latest.bid)) ? Number(latest.bid) : null,
-          bidQty: Number.isFinite(Number(latest.bidQty)) ? Number(latest.bidQty) : null,
-          ask: Number.isFinite(Number(latest.ask)) ? Number(latest.ask) : null,
-          askQty: Number.isFinite(Number(latest.askQty)) ? Number(latest.askQty) : null,
-          last: Number.isFinite(Number(latest.last)) ? Number(latest.last) : null,
-          mid: Number.isFinite(Number(latest.mid)) ? Number(latest.mid) : null,
+          bid: toNullableFiniteNumber(latest.bid),
+          bidQty: toNullableFiniteNumber(latest.bidQty),
+          ask: toNullableFiniteNumber(latest.ask),
+          askQty: toNullableFiniteNumber(latest.askQty),
+          last: toNullableFiniteNumber(latest.last),
+          mid: toNullableFiniteNumber(latest.mid),
           nativeCurrency: latest.nativeCurrency || pair.quoteToken?.symbol || null,
           status,
           source: latest.source || null,
