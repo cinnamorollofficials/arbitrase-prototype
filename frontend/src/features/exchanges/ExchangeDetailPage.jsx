@@ -4,6 +4,7 @@ import { formatCapital, getCapitalTier, getRatingStatus } from '../../utils/form
 
 function ExchangeDetailPage({
   selectedExchangeDb,
+  exchangesDb,
   exchangeDbDetailTab,
   setExchangeDbDetailTab,
   compactMode,
@@ -203,6 +204,8 @@ function ExchangeDetailPage({
               {exchangeDbDetailTab === 'market' && (
               <>
               <ExchangeMarketTable
+                currentExchange={selectedExchangeDb}
+                exchangesDb={exchangesDb}
                 compactMode={compactMode}
                 selectedExchangeFiatPairs={selectedExchangeFiatPairs}
                 filteredExchangeFiatPairs={filteredExchangeFiatPairs}

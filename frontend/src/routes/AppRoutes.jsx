@@ -8,6 +8,7 @@ function AppRoutes(props) {
     handleManualRefresh,
     compactMode,
     activeTab,
+    exchangesDb,
     selectedExchangeDb,
     exchangeDbDetailTab,
     setExchangeDbDetailTab,
@@ -41,6 +42,7 @@ function AppRoutes(props) {
       {activeTab === 'exchanges' && selectedExchangeDb && (
         <ExchangeDetailPage
           selectedExchangeDb={selectedExchangeDb}
+          exchangesDb={exchangesDb}
           exchangeDbDetailTab={exchangeDbDetailTab}
           setExchangeDbDetailTab={setExchangeDbDetailTab}
           compactMode={compactMode}

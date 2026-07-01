@@ -5,6 +5,8 @@ import PriceSparkline from '../../components/PriceSparkline';
 import { formatMarketPriceTimestamp, formatNativeMarketPrice } from '../../utils/market';
 
 function ExchangeMarketTable({
+  currentExchange,
+  exchangesDb,
   compactMode,
   selectedExchangeFiatPairs,
   filteredExchangeFiatPairs,
@@ -242,7 +244,9 @@ function ExchangeMarketTable({
                                   onClick={() => setPriceChartContext({
                                     pair,
                                     market,
-                                    quoteSymbol
+                                    quoteSymbol,
+                                    currentExchange,
+                                    exchangesDb
                                   })}
                                   aria-label={`Buka detail chart harga ${pair.symbol}`}
                                   title={`Buka detail chart harga ${pair.symbol}`}
